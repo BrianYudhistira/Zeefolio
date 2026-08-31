@@ -32,6 +32,38 @@ class PortfolioController
         return response()->json($portfolio, 200);
     }
 
+    public function getPortfolioHome(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $homeSection = $this->portfolioService->getHomeSection($user);
+
+        if (!$homeSection) {
+            return response()->json(['message' => 'Home section not found'], 404);
+        }
+
+        return response()->json($homeSection, 200);
+    }
+
+    public function getPortfolioAbout(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $aboutSection = $this->portfolioService->getAboutSection($user);
+
+        if (!$aboutSection) {
+            return response()->json(['message' => 'About section not found'], 404);
+        }
+
+        return response()->json($aboutSection, 200);
+    }
+
     public function getLogo(Request $request)
     {
         $user = $request->user();

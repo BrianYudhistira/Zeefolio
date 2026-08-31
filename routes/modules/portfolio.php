@@ -7,7 +7,9 @@ use App\Http\Controllers\API\PortfolioController;
 Route::middleware(['throttle:60,1'])->group(function () {
     Route::get('/portfolio', [PortfolioController::class, 'getPortfolioByUserId'])->name('portfolio');
     Route::get('/asset/logos', [PortfolioController::class, 'getLogo'])->name('asset.logo');
-    
+    Route::get('/portfolio/home', [PortfolioController::class, 'getPortfolioHome'])->name('portfolio.home');
+    Route::get('/portfolio/about', [PortfolioController::class, 'getPortfolioAbout'])->name('portfolio.about');
+
     Route::post('/portfolio/update_home', [PortfolioController::class, 'editHome'])->name('portfolio.home.edit');
     Route::post('/portfolio/update_about', [PortfolioController::class, 'editAbout'])->name('portfolio.about.edit');
     Route::post('/portfolio/update_projects/order', [PortfolioController::class, 'editProjectsOrder'])->name('portfolio.projects.edit');

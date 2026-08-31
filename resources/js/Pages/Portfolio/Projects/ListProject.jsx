@@ -109,7 +109,7 @@ export default function ListProject({ projects })
 
                                 return (
                                     <Link href={`/me/projects/${project.slug}`} key={project.id} className="block h-full">
-                                        <div className="group h-full relative bg-[#050510] border border-white/10 hover:border-cyan-400 transition-all duration-300 p-4 flex flex-col rounded-xl">
+                                        <div className="group h-full relative bg-[#050510] border border-white/10  transition-all duration-300 p-4 flex flex-col rounded-xl">
                                             <div className="relative w-full h-48 mb-5 overflow-hidden border border-white/5 group-hover:border-cyan-400/30 transition-colors">
                                                 <img 
                                                     src={project.images?.[0]?.image_url || '/images/placeholder.png'} 
@@ -162,8 +162,6 @@ export default function ListProject({ projects })
                                                     </span>
                                                 )}
                                             </div>
-
-                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-transparent group-hover:bg-cyan-400 transition-colors pointer-events-none"></div>
                                         </div>
                                     </Link>
                                 );

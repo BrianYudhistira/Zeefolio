@@ -26,6 +26,18 @@ class PortfolioService
         });
     }
 
+    public function getHomeSection(User $user)
+    {
+        $portfolio = $this->getPortfolio($user);
+        return $portfolio ? $portfolio->home : null;
+    }
+
+    public function getAboutSection(User $user)
+    {
+        $portfolio = $this->getPortfolio($user);
+        return $portfolio ? $portfolio->about : null;
+    }
+
     /**
      * Create or update portfolio
      */

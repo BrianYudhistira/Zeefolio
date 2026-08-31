@@ -24,20 +24,20 @@ export default function HomeSection({ home }) {
                             delay={0}
                         >
                             <p>
-                                <span className="text-xl sm:text-2xl xl:text-3xl 2xl:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-700 relative transition-all duration-300 font-retro-pixel tracking-wider">
+                                <span className="text-xl sm:text-2xl xl:text-2xl 2xl:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-700 relative transition-all duration-300 font-retro-pixel tracking-wider">
                                     {home.greeting}
                                 </span>
                             </p>
 
                             <div className="relative leading-none">
                                 <div className="absolute inset-0 blur-sm opacity-50 pointer-events-none">
-                                    <p className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-700 relative transition-all duration-300 font-retro-pixel tracking-wider">
+                                    <p className="text-3xl sm:text-4xl xl:text-5xl 2xl:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-700 relative transition-all duration-300 font-retro-pixel tracking-wider">
                                         {home.name}
                                     </p>
                                 </div>
                             </div>
 
-                            <p className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-700 relative transition-all duration-300 font-retro-pixel tracking-wider">
+                            <p className="text-3xl sm:text-4xl xl:text-5xl 2xl:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-700 relative transition-all duration-300 font-retro-pixel tracking-wider">
                                 {home.name}
                             </p>
                         </AnimatedContent>
@@ -60,7 +60,7 @@ export default function HomeSection({ home }) {
                                 pauseDuration={2000}
                                 showCursor={true}
                                 cursorCharacter="|"
-                                className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-4xl font-bold text-white/90 relative z-10 leading-none py-2 transition-all duration-300 font-retro-mono"
+                                className="text-xl sm:text-2xl lg:text-3xl 2xl:text-4xl font-bold text-white/90 relative z-10 leading-none py-2 transition-all duration-300 font-retro-mono"
                             />
                         </AnimatedContent>
 
@@ -76,7 +76,7 @@ export default function HomeSection({ home }) {
                             threshold={0.1}
                             delay={0}
                         >
-                            <p className="text-sm sm:text-lg xl:text-xl font-medium mt-2 text-white/90 leading-relaxed transition-all duration-300 font-retro-mono">
+                            <p className="text-sm xl:text-base 2xl:text-xl font-medium mt-2 text-white/90 leading-relaxed transition-all duration-300 font-retro-mono">
                                {home.description}
                             </p>
                         </AnimatedContent>
@@ -98,7 +98,7 @@ export default function HomeSection({ home }) {
                                     href={home.social_media_links.linkedin}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-3 py-2 sm:px-4 sm:py-2 rounded-md text-cyan-200 bg-[#0a1b2e] border-2 border-cyan-400 shadow-[6px_6px_0_0_#0e3a5b] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_#0e3a5b] transition-all duration-200 group"
+                                    className="px-3 py-2 sm:px-4 sm:py-2 rounded-md text-cyan-200 bg-[#0a1b2e] border-2 border-cyan-400 transition-all duration-200 group"
                                     aria-label="LinkedIn Profile"
                                 >
                                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-200 group-hover:text-[#0077B5] transition-colors" fill="currentColor" viewBox="0 0 24 24">
@@ -110,7 +110,7 @@ export default function HomeSection({ home }) {
                                     href={home.social_media_links.github}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-3 py-2 sm:px-4 sm:py-2 rounded-md text-cyan-200 bg-[#0a1b2e] border-2 border-cyan-400 shadow-[6px_6px_0_0_#0e3a5b] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_#0e3a5b] transition-all duration-200 group"
+                                    className="px-3 py-2 sm:px-4 sm:py-2 rounded-md text-cyan-200 bg-[#0a1b2e] border-2 border-cyan-400 transition-all duration-200 group"
                                     aria-label="GitHub Profile"
                                 >
                                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-200 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
@@ -122,7 +122,7 @@ export default function HomeSection({ home }) {
                                     href={home.social_media_links.instagram}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-3 py-2 sm:px-4 sm:py-2 rounded-md text-cyan-200 bg-[#0a1b2e] border-2 border-cyan-400 shadow-[6px_6px_0_0_#0e3a5b] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_0_#0e3a5b] transition-all duration-200 group"
+                                    className="px-3 py-2 sm:px-4 sm:py-2 rounded-md text-cyan-200 bg-[#0a1b2e] border-2 border-cyan-400 transition-all duration-200 group"
                                     aria-label="Instagram Profile"
                                 >
                                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-200 group-hover:text-pink-500 transition-colors" fill="currentColor" viewBox="0 0 24 24">
@@ -150,7 +150,7 @@ export default function HomeSection({ home }) {
                                 <img
                                     src={`/${home.logo_path}`}
                                     alt="Home Main Illustration"
-                                    className="w-52 sm:w-60 md:w-72 lg:w-80 xl:w-96 2xl:w-[420px] hover:scale-110 object-contain transition-transform duration-500"
+                                    className="w-52 sm:w-60 md:w-72 lg:w-80 2xl:w-[420px] hover:scale-110 object-contain transition-transform duration-500"
                                 />
                             </Magnet>
                         </AnimatedContent>
