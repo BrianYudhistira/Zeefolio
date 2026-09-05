@@ -29,16 +29,9 @@ return new class extends Migration
             $table->json('passions')->nullable();
             $table->text('description');
             $table->string('logo_path')->nullable();
-            $table->json('social_media_links')->nullable();
-            $table->timestamps();
-        });
-
-        Schema::create('about', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('portfolio_user_id')->constrained('portfolio_users')->onDelete('cascade');
-            $table->text('description');
             $table->string('image_path')->nullable();
             $table->string('cv_path')->nullable();
+            $table->json('social_media_links')->nullable();
             $table->timestamps();
         });
 
@@ -91,9 +84,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('experiences');
         Schema::dropIfExists('contacts');
         Schema::dropIfExists('projects');
-        Schema::dropIfExists('about');
         Schema::dropIfExists('home');
         Schema::dropIfExists('portfolio_users');
     }

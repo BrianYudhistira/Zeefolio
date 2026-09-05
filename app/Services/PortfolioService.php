@@ -21,7 +21,7 @@ class PortfolioService
         
         return Cache::remember($cacheKey, 3600, function () use ($user) {
             return $user->portfolioUser()
-                ->with(['home', 'about', 'projects', 'contacts'])
+                ->with(['home', 'projects', 'contacts'])
                 ->first();
         });
     }
@@ -32,10 +32,14 @@ class PortfolioService
         return $portfolio ? $portfolio->home : null;
     }
 
+    /**
+     * Get the about / profile info from the home section.
+     * (The `about` table has been merged into `home`.)
+     */
     public function getAboutSection(User $user)
     {
         $portfolio = $this->getPortfolio($user);
-        return $portfolio ? $portfolio->about : null;
+        return $portfolio ? $portfolio->home : null;
     }
 
     /**
@@ -49,12 +53,14 @@ class PortfolioService
             // Handle file uploads
             if (isset($files['about_image'])) {
                 $imagePath = $this->storeFile($files['about_image'], 'portfolios/images');
-                $data['about']['image_path'] = $imagePath;
+                // Now stored in home, not about
+                $data['home']['image_path'] = $imagePath;
             }
 
             if (isset($files['about_cv'])) {
                 $cvPath = $this->storeFile($files['about_cv'], 'portfolios/cvs');
-                $data['about']['cv_path'] = $cvPath;
+                // Now stored in home, not about
+                $data['home']['cv_path'] = $cvPath;
             }
 
             if (isset($files['home_logo'])) {
@@ -87,7 +93,7 @@ class PortfolioService
             // Invalidate cache after successful update
             $this->clearPortfolioCache($user->id);
 
-            return $portfolio->load(['home', 'about', 'projects', 'contacts']);
+            return $portfolio->load(['home', 'projects', 'contacts']);
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
@@ -106,23 +112,19 @@ class PortfolioService
             'is_active' => $data['is_active'] ?? true,
         ]);
 
-        // Create home section
+        // Create home section (includes profile image & CV path, formerly in `about`)
         $portfolio->home()->create([
             'greeting' => $data['home']['greeting'] ?? 'Hello, I am',
             'name' => $data['home']['name'] ?? $user->name,
             'passions' => $data['home']['passions'] ?? [],
             'description' => $data['home']['description'] ?? null,
             'logo_path' => $data['home']['logo_path'] ?? null,
+            'image_path' => $data['home']['image_path'] ?? $data['about']['image_path'] ?? null,
+            'cv_path' => $data['home']['cv_path'] ?? $data['about']['cv_path'] ?? null,
             'social_media_links' => $data['home']['social_media_links'] ?? [],
         ]);
 
-        // Create about section
-        $portfolio->about()->create([
-            'description' => $data['about']['description'] ?? null,
-            'image_path' => $data['about']['image_path'] ?? null,
-            'skills' => $data['about']['skills'] ?? [],
-            'cv_path' => $data['about']['cv_path'] ?? null,
-        ]);
+        // Note: `about` table has been removed. image_path & cv_path live in `home`.
 
         // Create contacts section
         $portfolio->contacts()->create([
@@ -165,22 +167,29 @@ class PortfolioService
             'is_active' => $data['is_active'] ?? $portfolio->is_active,
         ]);
 
-        // Update home section
+        // Update home section (includes image_path & cv_path, formerly in `about`)
         if (isset($data['home']) && $portfolio->home) {
             $portfolio->home->update($data['home']);
         }
 
-        // Update about section
-        if (isset($data['about']) && $portfolio->about) {
-            // Delete old files if new ones provided
-            if (isset($data['about']['image_path']) && $portfolio->about->image_path) {
-                Storage::disk('public')->delete($portfolio->about->image_path);
+        // Handle about data migration: if API sends $data['about'], redirect to home
+        if (isset($data['about']) && $portfolio->home) {
+            $homeUpdate = [];
+            if (isset($data['about']['image_path'])) {
+                if ($portfolio->home->image_path) {
+                    Storage::disk('public')->delete($portfolio->home->image_path);
+                }
+                $homeUpdate['image_path'] = $data['about']['image_path'];
             }
-            if (isset($data['about']['cv_path']) && $portfolio->about->cv_path) {
-                Storage::disk('public')->delete($portfolio->about->cv_path);
+            if (isset($data['about']['cv_path'])) {
+                if ($portfolio->home->cv_path) {
+                    Storage::disk('public')->delete($portfolio->home->cv_path);
+                }
+                $homeUpdate['cv_path'] = $data['about']['cv_path'];
             }
-
-            $portfolio->about->update($data['about']);
+            if (!empty($homeUpdate)) {
+                $portfolio->home->update($homeUpdate);
+            }
         }
 
         // Update contacts section
@@ -261,18 +270,16 @@ class PortfolioService
         DB::beginTransaction();
 
         try {
-            // Delete home logo
-            if ($portfolio->home && $portfolio->home->logo_path) {
-                Storage::disk('public')->delete($portfolio->home->logo_path);
-            }
-
-            // Delete about images and CV
-            if ($portfolio->about) {
-                if ($portfolio->about->image_path) {
-                    Storage::disk('public')->delete($portfolio->about->image_path);
+            // Delete home logo, profile image & CV
+            if ($portfolio->home) {
+                if ($portfolio->home->logo_path) {
+                    Storage::disk('public')->delete($portfolio->home->logo_path);
                 }
-                if ($portfolio->about->cv_path) {
-                    Storage::disk('public')->delete($portfolio->about->cv_path);
+                if ($portfolio->home->image_path) {
+                    Storage::disk('public')->delete($portfolio->home->image_path);
+                }
+                if ($portfolio->home->cv_path) {
+                    Storage::disk('public')->delete($portfolio->home->cv_path);
                 }
             }
 

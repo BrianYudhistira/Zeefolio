@@ -19,6 +19,8 @@ class Home extends Model
         'passions',
         'description',
         'logo_path',
+        'image_path',
+        'cv_path',
         'social_media_links',
     ];
 
@@ -29,6 +31,8 @@ class Home extends Model
 
     protected $appends = [
         'logo_url',
+        'image_url',
+        'cv_url',
     ];
 
     /**
@@ -45,5 +49,29 @@ class Home extends Model
     public function getLogoUrlAttribute(): ?string
     {
         return $this->logo_path ? asset($this->logo_path) : null;
+    }
+
+    /**
+     * Get the profile image URL attribute.
+     * (Formerly stored in the `about` table, now merged into `home`.)
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        if (empty($this->image_path)) {
+            return null;
+        }
+        return asset('storage/' . ltrim($this->image_path, '/'));
+    }
+
+    /**
+     * Get the CV / resume URL attribute.
+     * (Formerly stored in the `about` table, now merged into `home`.)
+     */
+    public function getCvUrlAttribute(): ?string
+    {
+        if (empty($this->cv_path)) {
+            return null;
+        }
+        return asset('storage/' . ltrim($this->cv_path, '/'));
     }
 }

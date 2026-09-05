@@ -1,169 +1,266 @@
-import GlareHover from '@/Components/Animations/UI/GlareHover';
-import { AiOutlineMail } from 'react-icons/ai';
-import { MdOutlineCall } from 'react-icons/md';
-import { FaLinkedin, FaGithub, FaInstagram } from 'react-icons/fa6';
-import { useForm } from '@inertiajs/react';
+import AnimatedContent from "@/Components/Animations/UI/AnimatedContent";
+import { useForm } from "@inertiajs/react";
+import { HiOutlineEnvelope, HiOutlinePhone, HiPaperAirplane, HiCheckCircle } from "react-icons/hi2";
+import { FaLinkedinIn, FaGithub, FaInstagram } from "react-icons/fa6";
 
 export default function ContactSection({ contacts, sosmedLinks }) {
-    const { data, setData, post, processing, reset, recentlySuccessful } = useForm({
-        name: '',
-        email: '',
-        message: '',
+    const { data, setData, post, processing, reset, recentlySuccessful, errors } = useForm({
+        name: "",
+        email: "",
+        message: "",
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post('/messageMe', {
+        post("/messageMe", {
             preserveScroll: true,
             onSuccess: () => reset(),
         });
     };
 
-    return (
-        <section id="contact" className='flex flex-col items-center mx-auto py-20 scroll-mt-16 relative'>
-            <div className='flex flex-col justify-center max-w-[80%] md:max-w-[75%] xl:max-w-[70%] w-full z-20'>
-                <div className="flex flex-col justify-center items-center mb-10">
-                    <span className='text-transparent text-4xl sm:text-6xl font-extrabold mb-5 bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-700 font-retro-pixel tracking-wider'>Get In Touch</span>
-                    <p className='text-white text-lg text-center font-retro-mono'>Feel Free to contact me</p>
+    const socialLinks = sosmedLinks || {};
 
+    return (
+        <section id="contact" className="relative w-full py-24 sm:py-32 scroll-mt-16">
+            <div className="max-w-[85%] 2xl:max-w-[80%] mx-auto w-full relative z-10">
+                {/* Section Header */}
+                <div className="mb-16 md:mb-20 text-center">
+                    <AnimatedContent
+                        distance={40}
+                        direction="vertical"
+                        reverse={true}
+                        duration={1}
+                        ease="power3.out"
+                        initialOpacity={0}
+                        animateOpacity
+                        scale={1}
+                        threshold={0.15}
+                        delay={0}
+                    >
+                        <span className="text-xs font-mono tracking-[0.25em] text-neutral-400 uppercase block mb-3">
+                            04 // CONTACT
+                        </span>
+                        <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-4">
+                            Let's Connect
+                        </h2>
+                        <p className="text-neutral-400 text-sm sm:text-base max-w-xl mx-auto">
+                            Have an opportunity, question, or engineering project in mind? Reach out anytime.
+                        </p>
+                    </AnimatedContent>
                 </div>
-                <div className="flex flex-col xl:flex-row w-full justify-center items-center xl:items-start">
-                    <div className='xl:w-2/5 2xl:w-1/3 xl:flex flex-col space-y-5 items-center xl:items-start mb-10 xl:mb-0 order-2 md:order-1'>
-                        <h2 className='hidden md:block text-white text-2xl lg:text-3xl font-extrabold text-center font-retro-pixel tracking-wider'>Contact Information</h2>
-                        <GlareHover
-                            glareColor="#ffffff"
-                            width='325px'
-                            height='78px'
-                            glareOpacity={0.3}
-                            glareAngle={-30}
-                            glareSize={300}
-                            transitionDuration={800}
-                            playOnce={false}
-                            className='hidden md:flex flex-row justify-start items-center backdrop-blur-sm rounded-lg px-4 py-3 cursor-pointer hover:scale-[1.02] transition-transform duration-300'
+
+                {/* 2-Column Layout */}
+                <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
+                    {/* Left Column - Contact Details */}
+                    <div className="w-full lg:w-5/12 space-y-8">
+                        <AnimatedContent
+                            distance={50}
+                            direction="horizontal"
+                            reverse={true}
+                            duration={1.2}
+                            ease="power3.out"
+                            initialOpacity={0}
+                            animateOpacity
+                            scale={1}
+                            threshold={0.1}
+                            delay={0.1}
                         >
-                            <div className='flex flex-row justify-start items-center cursor-pointer'>
-                                <AiOutlineMail className='text-white text-4xl p-1 rounded-full bg-blue-400' />
-                                <div className='flex flex-col justify-center ml-4'>
-                                    <span className='text-white text-sm md:text-base'>Email:</span>
-                                    <span className='text-white text-sm md:text-base'>{contacts.email}</span>
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-bold text-white tracking-tight">
+                                    Direct Channels
+                                </h3>
+                                <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                                    Feel free to send an email, place a call, or connect across professional networks.
+                                </p>
+
+                                {/* Email Box */}
+                                {contacts?.email && (
+                                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl hover:border-white/20 transition-all">
+                                        <div className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
+                                            <HiOutlineEnvelope className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 block">
+                                                Email
+                                            </span>
+                                            <a
+                                                href={`mailto:${contacts.email}`}
+                                                className="text-sm font-mono text-white hover:underline truncate block"
+                                            >
+                                                {contacts.email}
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Phone Box */}
+                                {contacts?.phone && (
+                                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl hover:border-white/20 transition-all">
+                                        <div className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
+                                            <HiOutlinePhone className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 block">
+                                                Phone
+                                            </span>
+                                            <a
+                                                href={`tel:${contacts.phone}`}
+                                                className="text-sm font-mono text-white hover:underline truncate block"
+                                            >
+                                                {contacts.phone}
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Social Presence */}
+                            <div className="pt-4 space-y-3">
+                                <span className="text-xs font-mono uppercase tracking-[0.2em] text-neutral-400 block">
+                                    Social Networks
+                                </span>
+                                <div className="flex items-center gap-3">
+                                    {socialLinks.linkedin && (
+                                        <a
+                                            href={socialLinks.linkedin}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/30 text-neutral-400 hover:text-white transition-all duration-300 backdrop-blur-md hover:scale-105"
+                                            aria-label="LinkedIn"
+                                        >
+                                            <FaLinkedinIn className="w-4 h-4" />
+                                        </a>
+                                    )}
+                                    {socialLinks.github && (
+                                        <a
+                                            href={socialLinks.github}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/30 text-neutral-400 hover:text-white transition-all duration-300 backdrop-blur-md hover:scale-105"
+                                            aria-label="GitHub"
+                                        >
+                                            <FaGithub className="w-4 h-4" />
+                                        </a>
+                                    )}
+                                    {socialLinks.instagram && (
+                                        <a
+                                            href={socialLinks.instagram}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/30 text-neutral-400 hover:text-white transition-all duration-300 backdrop-blur-md hover:scale-105"
+                                            aria-label="Instagram"
+                                        >
+                                            <FaInstagram className="w-4 h-4" />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
-                        </GlareHover>
-                        <GlareHover
-                            glareColor="#ffffff"
-                            width='325px'
-                            height='78px'
-                            glareOpacity={0.3}
-                            glareAngle={-30}
-                            glareSize={300}
-                            transitionDuration={800}
-                            playOnce={false}
-                            className='hidden md:flex flex-row justify-start items-center backdrop-blur-sm rounded-lg px-4 py-3 cursor-pointer hover:scale-[1.02] transition-transform duration-300'
-                        >
-                            <div className='flex flex-row justify-start items-center cursor-pointer'>
-                                <MdOutlineCall className='text-white text-2xl md:text-4xl p-1 text-center rounded-full bg-blue-400' />
-                                <div className='flex flex-col justify-center ml-4'>
-                                    <span className='text-white text-sm md:text-base'>phone:</span>
-                                    <span className='text-white text-sm md:text-base'>{contacts.phone}</span>
-                                </div>
-                            </div>
-                        </GlareHover>
-                        <div className='flex w-full justify-center xl:justify-start items-center mt-6'>
-                            <div className="flex flex-col gap-2 md:gap-3">
-                                <div className='text-center xl:text-left'>
-                                    <span className='text-white text-sm xl:text-lg mb-2'>Find me on</span>
-                                </div>
-                                <div className='flex flex-row gap-2 md:gap-3 items-center px-2'>
-                                    <a href={sosmedLinks.linkedin} target="_blank" rel="noopener noreferrer"
-                                        className="group relative">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-2xl transform scale-0 group-hover:scale-100 transition-transform duration-500 ease-out"></div>
-                                        <FaLinkedin
-                                            className="relative text-white group-hover:text-[#0A66C2] transition-all duration-400 ease-out text-4xl md:text-5xl p-1 md:p-2 rounded-xl md:rounded-2xl bg-gradient-to-br group-hover:from-white group-hover:to-blue-50 backdrop-blur-sm transform group-hover:scale-105 group-hover:rotate-6 shadow-lg group-hover:shadow-xl group-hover:shadow-blue-400/25 border border-gray-600 group-hover:border-[#0A66C2] group-hover:-translate-y-3"
-                                        />
-                                    </a>
-                                    <a href={sosmedLinks.github} target="_blank" rel="noopener noreferrer"
-                                        className="group relative">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-gray-500/20 to-gray-600/20 rounded-2xl transform scale-0 group-hover:scale-100 transition-transform duration-500 ease-out"></div>
-                                        <FaGithub
-                                            className="relative text-white group-hover:text-[#181717] transition-all duration-400 ease-out text-4xl md:text-5xl p-1 md:p-2 rounded-xl md:rounded-2xl bg-gradient-to-br group-hover:from-white group-hover:to-gray-50 backdrop-blur-sm transform group-hover:scale-105 group-hover:rotate-6 shadow-lg group-hover:shadow-xl group-hover:shadow-gray-400/25 border border-gray-600 group-hover:border-[#181717] group-hover:-translate-y-3"
-                                        />
-                                    </a>
-                                    <a href={sosmedLinks.instagram} target="_blank" rel="noopener noreferrer"
-                                        className="group relative">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 to-purple-600/20 rounded-2xl transform scale-0 group-hover:scale-100 transition-transform duration-500 ease-out"></div>
-                                        <FaInstagram
-                                            className="relative text-white group-hover:text-[#E4405F] transition-all duration-400 ease-out text-4xl md:text-5xl p-1 md:p-2 rounded-xl md:rounded-2xl bg-gradient-to-br group-hover:from-white group-hover:to-pink-50 backdrop-blur-sm transform group-hover:scale-105 group-hover:rotate-6 shadow-lg group-hover:shadow-xl group-hover:shadow-pink-400/25 border border-gray-600 group-hover:border-[#E4405F] group-hover:-translate-y-3"
-                                        />
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                        </AnimatedContent>
                     </div>
-                    <div className='w-full xl:w-1/2 flex flex-col justify-center bg-gradient-to-br from-white/10 to-white/5 p-7 rounded-xl backdrop-blur-lg border border-white/20 shadow-2xl order-1 md:order-2'>
-                        <div className="mb-6">
-                            <h3 className='text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-700 font-retro-pixel tracking-wider'>Send Message</h3>
-                            <p className='text-gray-300 text-sm font-retro-mono'>Let's start a conversation</p>
-                        </div>
-                        {recentlySuccessful && (
-                            <div className="mb-4 p-3 bg-green-500/20 border border-green-500 rounded-md text-green-400 text-sm font-retro-mono text-center">
-                                Message sent successfully!
+
+                    {/* Right Column - Glassmorphic Contact Form */}
+                    <div className="w-full lg:w-7/12">
+                        <AnimatedContent
+                            distance={50}
+                            direction="horizontal"
+                            reverse={false}
+                            duration={1.2}
+                            ease="power3.out"
+                            initialOpacity={0}
+                            animateOpacity
+                            scale={1}
+                            threshold={0.1}
+                            delay={0.2}
+                        >
+                            <div className="rounded-3xl bg-white/[0.02] border border-white/10 backdrop-blur-2xl p-6 sm:p-8 md:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+                                <h3 className="text-xl font-bold tracking-tight text-white mb-2">
+                                    Send a Message
+                                </h3>
+                                <p className="text-xs sm:text-sm text-neutral-400 mb-6">
+                                    I will get back to your inquiry promptly.
+                                </p>
+
+                                {recentlySuccessful && (
+                                    <div className="mb-6 p-4 rounded-xl bg-white/[0.05] border border-white/20 flex items-center gap-3 text-white text-sm font-mono">
+                                        <HiCheckCircle className="w-5 h-5 text-white shrink-0" />
+                                        <span>Message sent successfully! Thank you for reaching out.</span>
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleSubmit} className="space-y-5">
+                                    {/* Name Input */}
+                                    <div className="space-y-2">
+                                        <label className="block text-xs font-mono tracking-wider uppercase text-neutral-300">
+                                            Your Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            required
+                                            placeholder="e.g. Alex Morgan"
+                                            value={data.name}
+                                            onChange={(e) => setData("name", e.target.value)}
+                                            className="w-full text-sm px-4 py-3 rounded-xl bg-white/[0.02] border border-white/10 focus:border-white/40 focus:bg-white/[0.04] text-white placeholder-neutral-600 outline-none transition-all duration-200"
+                                        />
+                                        {errors?.name && (
+                                            <p className="text-xs text-neutral-400">{errors.name}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Email Input */}
+                                    <div className="space-y-2">
+                                        <label className="block text-xs font-mono tracking-wider uppercase text-neutral-300">
+                                            Email Address
+                                        </label>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            required
+                                            placeholder="e.g. alex@example.com"
+                                            value={data.email}
+                                            onChange={(e) => setData("email", e.target.value)}
+                                            className="w-full text-sm px-4 py-3 rounded-xl bg-white/[0.02] border border-white/10 focus:border-white/40 focus:bg-white/[0.04] text-white placeholder-neutral-600 outline-none transition-all duration-200"
+                                        />
+                                        {errors?.email && (
+                                            <p className="text-xs text-neutral-400">{errors.email}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Message Input */}
+                                    <div className="space-y-2">
+                                        <label className="block text-xs font-mono tracking-wider uppercase text-neutral-300">
+                                            Message
+                                        </label>
+                                        <textarea
+                                            rows={5}
+                                            name="message"
+                                            required
+                                            placeholder="Describe your project, goals, or inquiry..."
+                                            value={data.message}
+                                            onChange={(e) => setData("message", e.target.value)}
+                                            className="w-full text-sm px-4 py-3 rounded-xl bg-white/[0.02] border border-white/10 focus:border-white/40 focus:bg-white/[0.04] text-white placeholder-neutral-600 outline-none transition-all duration-200 resize-none"
+                                        />
+                                        {errors?.message && (
+                                            <p className="text-xs text-neutral-400">{errors.message}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Submit Button */}
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className={`w-full py-3.5 px-6 rounded-xl bg-white text-black font-medium text-sm hover:bg-neutral-200 transition-all duration-300 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.15)] ${processing ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                            }`}
+                                    >
+                                        <span>{processing ? "Sending..." : "Send Inquiry"}</span>
+                                        <HiPaperAirplane className="w-4 h-4" />
+                                    </button>
+                                </form>
                             </div>
-                        )}
-                        <form className='w-full' onSubmit={handleSubmit}>
-                            <div className='flex flex-col space-y-6'>
-                                <div className="relative group">
-                                    <label className='text-base font-semibold text-white mb-2 block group-focus-within:text-cyan-300 transition-colors duration-300 font-retro-mono'>Full Name</label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        placeholder=' your full name'
-                                        required
-                                        className='w-full text-sm px-3 py-2 md:px-4 md:py-3 rounded-md font-retro-mono text-gray-100 bg-gray-900/90 border-2 border-gray-400 hover:border-blue-400 focus:border-blue-500 placeholder-gray-400 focus:outline-none focus:ring-0 transition-all duration-200'
-                                        value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
-                                    />
-                                </div>
-                                <div className="relative group">
-                                    <label className='text-base font-semibold text-white mb-2 block group-focus-within:text-cyan-300 transition-colors duration-300 font-retro-mono'>Email Address</label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        placeholder='your.email@example.com'
-                                        required
-                                        className='w-full text-sm px-3 py-2 md:px-4 md:py-3 rounded-md font-retro-mono text-gray-100 bg-gray-900/90 border-2 border-gray-400 hover:border-blue-400 focus:border-blue-500 placeholder-gray-400 focus:outline-none focus:ring-0 transition-all duration-200'
-                                        value={data.email}
-                                        onChange={(e) => setData('email', e.target.value)}
-                                    />
-                                </div>
-                                <div className="relative group">
-                                    <label className='text-base font-semibold text-white mb-2 block group-focus-within:text-cyan-300 transition-colors duration-300 font-retro-mono'>Message</label>
-                                    <textarea
-                                        name="message"
-                                        rows="4"
-                                        placeholder='Tell me something'
-                                        required
-                                        className='w-full text-sm px-3 py-2 md:px-4 md:py-3 rounded-md font-retro-mono text-gray-100 bg-gray-900/90 border-2 border-gray-400 hover:border-blue-400 focus:border-blue-500 placeholder-gray-400 focus:outline-none focus:ring-0 transition-all duration-200 resize-none'
-                                        value={data.message}
-                                        onChange={(e) => setData('message', e.target.value)}
-                                    ></textarea>
-                                </div>
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className={`w-full text-gray-100 bg-gray-900 border-2 border-gray-400 rounded-md px-4 py-3 font-retro-pixel font-semibold tracking-wider transition-all duration-200 text-center ${processing ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-400'}`}
-                                >
-                                    <span className="flex items-center justify-center gap-2">
-                                        Send Message
-                                        <svg className="w-3 h-3 transform group-hover:translate-x-1 transition-transform duration-300 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                        </svg>
-                                    </span>
-                                </button>
-                            </div>
-                        </form>
+                        </AnimatedContent>
                     </div>
                 </div>
             </div>
         </section>
-    )
+    );
 }

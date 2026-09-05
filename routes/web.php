@@ -4,15 +4,22 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Portfolio\PortfolioController;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return redirect()->route('portfolio.index');
+// Primary Portfolio Routes
+Route::get('/', [PortfolioController::class, 'index'])->name('portfolio.index');
+Route::get('/projects', [PortfolioController::class, 'listProject'])->name('portfolio.projects');
+Route::get('/projects/{slug}', [PortfolioController::class, 'getProjectBySlug'])->name('portfolio.project');
+
+// Legacy redirects for /me and /v2
+Route::prefix('me')->group(function () {
+    Route::get('/', fn() => redirect()->route('portfolio.index'));
+    Route::get('/projects', fn() => redirect()->route('portfolio.projects'));
+    Route::get('/projects/{slug}', fn($slug) => redirect()->route('portfolio.project', ['slug' => $slug]));
 });
 
-Route::group(['prefix' => 'me'], function () {
-    Route::get('/', [PortfolioController::class, 'index'])->name('portfolio.index');
-    
-    Route::get('/projects', [PortfolioController::class, 'listProject'])->name('portfolio.projects');
-    Route::get('/projects/{slug}', [PortfolioController::class, 'getProjectBySlug'])->name('portfolio.project');
+Route::prefix('v2')->group(function () {
+    Route::get('/', fn() => redirect()->route('portfolio.index'));
+    Route::get('/projects', fn() => redirect()->route('portfolio.projects'));
+    Route::get('/projects/{slug}', fn($slug) => redirect()->route('portfolio.project', ['slug' => $slug]));
 });
 
 Route::post('/messageMe', [PortfolioController::class, 'sendMessage'])->name('portfolio.sendMessage');

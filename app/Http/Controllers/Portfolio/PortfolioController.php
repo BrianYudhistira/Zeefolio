@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portfolio;
 use App\Models\User;
 use App\Models\PortfolioUser;
 use App\Models\Project;
+use App\Models\TechStack;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -16,14 +17,44 @@ class PortfolioController
     public function index()
     {
         $user = User::findOrFail(1);
+        $portfolio = $user->portfolioUser()->with([
+            'home',
+            'projects.techStacks',
+            'contacts',
+            'experiences',
+            'userSkills.techStack'
+        ])->first();
+
+        if ($portfolio && $portfolio->experiences) {
+            $allTechStacks = TechStack::all()->keyBy(function ($item) {
+                return strtolower(trim($item->name));
+            });
+
+            foreach ($portfolio->experiences as $experience) {
+                $rawList = array_filter(array_map('trim', explode(',', $experience->tech_stack ?? '')));
+                $resolved = [];
+                foreach ($rawList as $techName) {
+                    $matched = $allTechStacks->get(strtolower($techName));
+                    $resolved[] = [
+                        'name' => $techName,
+                        'icon' => $matched ? $matched->icon : null,
+                    ];
+                }
+                $experience->tech_stacks = $resolved;
+            }
+        }
+
         return Inertia::render('Portfolio/Portfolio', [
-            'portfolio' => $user->portfolioUser()->with(['home', 'about', 'projects.techStacks', 'contacts', 'experiences', 'userSkills.techStack'])->first()
+            'portfolio' => $portfolio
         ]);
     }
 
     public function listProject()
     {
-        $projects = Project::with(['techStacks', 'images'])->get();
+        $projects = Project::with(['techStacks', 'images'])
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         if (! $projects) {
             abort(404, 'Projects not found');

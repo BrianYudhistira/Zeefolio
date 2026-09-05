@@ -1,146 +1,178 @@
 import AnimatedContent from "@/Components/Animations/UI/AnimatedContent";
+import { HiArrowUpRight, HiOutlineArrowRight } from "react-icons/hi2";
+import { FaGithub } from "react-icons/fa6";
 
 function getDeviconClass(icon) {
     if (!icon) return null;
-    if (icon.startsWith('devicon-')) return icon;
-    return `devicon-${icon}-plain`;
+    if (icon.startsWith('devicon-')) return `${icon} colored`;
+    return `devicon-${icon}-plain colored`;
+}
+
+function getProjectCover(project) {
+    if (project.image_url) return project.image_url;
+    if (project.images && project.images.length > 0) {
+        const firstImg = project.images[0];
+        if (firstImg.image_url) {
+            return Array.isArray(firstImg.image_url) ? firstImg.image_url[0] : firstImg.image_url;
+        }
+        if (firstImg.image_path) {
+            const p = Array.isArray(firstImg.image_path) ? firstImg.image_path[0] : firstImg.image_path;
+            return `/storage/${p.replace(/^\//, '')}`;
+        }
+    }
+    if (project.image_path) {
+        const p = Array.isArray(project.image_path) ? project.image_path[0] : project.image_path;
+        return `/storage/${p.replace(/^\//, '')}`;
+    }
+    return "/images/placeholder.png";
 }
 
 export default function ProjectSection({ projects }) {
+    const projectList = Array.isArray(projects) ? projects : [];
+
     return (
-        <section id="project" className='min-h-[90vh] h-auto w-full flex justify-center py-20 font-retro-mono scroll-mt-24 '>
-            <div className='max-w-[80%] 2xl:max-w-[85%] w-full'>
-                <div className='flex flex-col'>
+        <section id="project" className="relative w-full py-24 sm:py-32 scroll-mt-16">
+            <div className="max-w-[85%] 2xl:max-w-[80%] mx-auto w-full relative z-10">
+                {/* Section Header */}
+                <div className="mb-16 md:mb-20 text-center">
                     <AnimatedContent
-                        distance={50}
+                        distance={40}
                         direction="vertical"
                         reverse={true}
-                        duration={1.2}
+                        duration={1}
                         ease="power3.out"
                         initialOpacity={0}
                         animateOpacity
                         scale={1}
-                        threshold={0}
-                        delay={0.4}
+                        threshold={0.15}
+                        delay={0}
                     >
-                        <h2 className="text-4xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-700 text-center font-retro-pixel tracking-wider">Project</h2>
-                        <p className="text-center italic text-white/90 font-retro-mono">A showcase of my work and projects.</p>
+                        <span className="text-xs font-mono tracking-[0.25em] text-neutral-400 uppercase block mb-3">
+                            03 // PORTFOLIO
+                        </span>
+                        <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-4">
+                            Featured Projects
+                        </h2>
+                        <p className="text-neutral-400 text-sm sm:text-base max-w-xl mx-auto">
+                            A curated selection of systems, web applications, and digital solutions I have engineered.
+                        </p>
                     </AnimatedContent>
-                    <div className='relative w-full h-auto py-10'>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch'>
-                            {projects.slice(0, 6).map((project, index) => (
-                                <a href={`/me/projects/${project.slug}`} key={project.id || index} target="_blank" rel="noopener noreferrer" className="block h-full">
-                                    <AnimatedContent
-                                        distance={50}
-                                        direction="vertical"
-                                        reverse={false}
-                                        duration={1.2}
-                                        ease="power3.out"
-                                        initialOpacity={0}
-                                        animateOpacity
-                                        scale={1}
-                                        threshold={0}
-                                        delay={0 + (index % 3) * 0.2}
-                                        className="h-full"
-                                    >
-                                        <div className='group relative h-full overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/70 via-gray-800/50 to-gray-900/60 border border-gray-700/40 p-5 flex flex-col transition-all duration-500 hover:scale-[1.02] hover:border-cyan-400/40 hover:shadow-[0_0_25px_-5px_rgba(6,182,212,0.45)] cursor-pointer'>
-                                            {/* Glow / light layers */}
-                                            <div className='pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500'>
-                                                <div className='absolute -inset-px rounded-2xl bg-gradient-to-r from-cyan-500/25 via-blue-500/15 to-indigo-500/25 blur-xl'></div>
-                                                <div className='absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_25%_20%,rgba(6,182,212,0.3),transparent_60%),radial-gradient(circle_at_80%_75%,rgba(79,70,229,0.3),transparent_60%)] mix-blend-screen'></div>
-                                            </div>
-
-                                            {/* Image wrapper */}
-                                            <div className='relative mb-4'>
-                                                <div className='aspect-video w-full overflow-hidden rounded-xl ring-1 ring-gray-600/40 group-hover:ring-cyan-400/40 transition-all duration-500'>
-                                                    <img
-                                                        src={`/storage/${project.image_path}`}
-                                                        alt={project.title}
-                                                        width={600}
-                                                        height={400}
-                                                        className='h-full w-auto max-w-full object-contain mx-auto transition-transform duration-500 group-hover:scale-105'
-                                                    />
-                                                </div>
-                                                <div className='absolute inset-0 rounded-2xl bg-gradient-to-t from-gray-900/40 via-transparent to-transparent pointer-events-none'></div>
-                                            </div>
-
-                                            {/* Content */}
-                                            <h3 className='text-lg sm:text-xl font-semibold bg-gradient-to-r from-cyan-300 via-sky-300 to-blue-400 bg-clip-text text-transparent tracking-wide mb-2 font-retro-pixel'>
-                                                {project.title}
-                                            </h3>
-                                            <p className='text-gray-300 text-sm leading-relaxed flex-1 font-retro-mono line-clamp-3 mb-4'>
-                                                {project.description}
-                                            </p>
-                                            <div className='mt-auto flex flex-wrap gap-2'>
-                                                {(project.tech_stacks && project.tech_stacks.length > 0
-                                                    ? project.tech_stacks.map((ts, i) => (
-                                                        <span
-                                                            key={i}
-                                                            className='text-[10px] md:text-[11px] uppercase tracking-wide font-medium px-2 py-1 rounded-md text-cyan-200 bg-[#0a1b2e]/80 border-2 border-cyan-400 shadow-[4px_4px_0_0_#0e3a5b] transition-colors duration-300 font-retro-mono inline-flex items-center gap-1.5'
-                                                        >
-                                                            {ts.icon && <i className={`${getDeviconClass(ts.icon)} text-[12px]`} />}
-                                                            {ts.name}
-                                                        </span>
-                                                    ))
-                                                    : project.tech_stack?.map((tech, i) => (
-                                                        <span
-                                                            key={i}
-                                                            className='text-[10px] md:text-[11px] uppercase tracking-wide font-medium px-2 py-1 rounded-md text-cyan-200 bg-[#0a1b2e]/80 border-2 border-cyan-400 shadow-[4px_4px_0_0_#0e3a5b] transition-colors duration-300 font-retro-mono'
-                                                        >
-                                                            {tech}
-                                                        </span>
-                                                    ))
-                                                )}
-                                            </div>
-                                            <div className='mt-5 flex items-center justify-between text-xs'>
-                                                <div>
-                                                    {project.source_url && (
-                                                        <a
-                                                            href={project.source_url}
-                                                            target='_blank'
-                                                            rel='noopener noreferrer'
-                                                            className='inline-flex items-center gap-1 text-cyan-300 hover:text-cyan-200 transition-colors font-retro-mono'
-                                                        >
-                                                            <span>View Repo</span>
-                                                            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' className='w-4 h-4'>
-                                                                <path d='M7 17L17 7' />
-                                                                <path d='M7 7h10v10' />
-                                                            </svg>
-                                                        </a>
-                                                    )}
-                                                </div>
-                                                <a
-                                                    href={`/me/projects/${project.slug}`}
-                                                    target='_blank'
-                                                    rel='noopener noreferrer'>
-                                                    <span className='opacity-0 group-hover:opacity-100 text-cyan-300 transition-opacity duration-500 font-retro-mono'>Explore →</span>
-                                                </a>
-
-                                            </div>
-
-                                            {/* Foreground subtle overlay */}
-                                            <div className='absolute inset-0 rounded-3xl bg-gradient-to-br from-transparent via-gray-900/10 to-gray-900/40 pointer-events-none'></div>
-                                        </div>
-                                    </AnimatedContent>
-                                </a>
-                            ))}
-                        </div>
-                        {projects.length > 6 && (
-                            <div className="flex w-full justify-end mt-6">
-                                <a
-                                    href="/me/projects"
-                                    className="text-white/90 hover:text-cyan-400 transition-colors duration-300 font-retro-mono flex items-center gap-1"
-                                >
-                                    <span>View All Projects</span>
-                                    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' className='w-4 h-4'>
-                                        <path d='M5 12h14' />
-                                        <path d='M12 5l7 7-7 7' />
-                                    </svg>
-                                </a>
-                            </div>
-                        )}
-                    </div>
                 </div>
+
+                {projectList.length === 0 ? (
+                    <div className="text-center text-neutral-500 font-mono text-sm py-12">
+                        No projects currently available.
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+                        {projectList.slice(0, 6).map((project, index) => (
+                            <AnimatedContent
+                                key={project.id || index}
+                                distance={40}
+                                direction="vertical"
+                                reverse={false}
+                                duration={1}
+                                ease="power3.out"
+                                initialOpacity={0}
+                                animateOpacity
+                                scale={1}
+                                threshold={0.1}
+                                delay={(index % 3) * 0.15}
+                                className="h-full"
+                            >
+                                <div className="group relative h-full flex flex-col rounded-2xl bg-white/[0.02] border border-white/10 hover:border-white/25 p-5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+                                    {/* Image Preview */}
+                                    <a
+                                        href={`/projects/${project.slug}`}
+                                        className="relative aspect-video w-full overflow-hidden rounded-xl bg-neutral-950 border border-white/[0.08] mb-4 block cursor-pointer"
+                                    >
+                                        <img
+                                            src={getProjectCover(project)}
+                                            alt={project.title}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            loading="lazy"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                                    </a>
+
+                                    {/* Title & Description */}
+                                    <div className="flex-1 flex flex-col space-y-2 mb-4">
+                                        <a
+                                            href={`/projects/${project.slug}`}
+                                            className="text-lg font-bold tracking-tight text-white group-hover:text-neutral-200 transition-colors cursor-pointer"
+                                        >
+                                            {project.title}
+                                        </a>
+                                        <p className="text-xs sm:text-sm text-neutral-400 line-clamp-3 leading-relaxed">
+                                            {project.description}
+                                        </p>
+                                    </div>
+
+                                    {/* Tech Stack Chips */}
+                                    <div className="flex flex-wrap gap-1.5 mb-5 mt-auto pt-2">
+                                        {(project.tech_stacks && project.tech_stacks.length > 0
+                                            ? project.tech_stacks.map((ts, i) => (
+                                                <span
+                                                    key={i}
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono text-neutral-300 bg-white/[0.03] border border-white/[0.08] rounded-lg"
+                                                >
+                                                    {ts.icon && <i className={`${getDeviconClass(ts.icon)} text-[12px] text-neutral-400`} />}
+                                                    {ts.name}
+                                                </span>
+                                            ))
+                                            : project.tech_stack?.map((tech, i) => (
+                                                <span
+                                                    key={i}
+                                                    className="px-2.5 py-1 text-[11px] font-mono text-neutral-300 bg-white/[0.03] border border-white/[0.08] rounded-lg"
+                                                >
+                                                    {tech}
+                                                </span>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    {/* Card Footer Links */}
+                                    <div className="flex items-center justify-between pt-3 border-t border-white/[0.08] text-xs font-mono">
+                                        {project.source_url ? (
+                                            <a
+                                                href={project.source_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors"
+                                            >
+                                                <FaGithub className="w-3.5 h-3.5" />
+                                                <span>Repository</span>
+                                            </a>
+                                        ) : (
+                                            <span className="text-neutral-600">Confidential</span>
+                                        )}
+
+                                        <a
+                                            href={`/projects/${project.slug}`}
+                                            className="inline-flex items-center gap-1 text-white hover:text-neutral-300 transition-colors font-medium group/link"
+                                        >
+                                            <span>Details</span>
+                                            <HiArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                                        </a>
+                                    </div>
+                                </div>
+                            </AnimatedContent>
+                        ))}
+                    </div>
+                )}
+
+                {/* View All Button */}
+                {projectList.length > 6 && (
+                    <div className="mt-12 flex justify-center">
+                        <a
+                            href="/projects"
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-white border border-white/10 hover:border-white/25 text-sm font-mono tracking-wider transition-all duration-300 backdrop-blur-md group"
+                        >
+                            <span>View All Projects ({projectList.length})</span>
+                            <HiOutlineArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        </a>
+                    </div>
+                )}
             </div>
         </section>
     );

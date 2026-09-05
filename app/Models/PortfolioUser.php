@@ -41,17 +41,6 @@ class PortfolioUser extends Model
         return $this->hasOne(Home::class);
     }
 
-    /**
-     * Get the about data for the portfolio.
-     */
-    public function about(): HasOne
-    {
-        return $this->hasOne(About::class);
-    }
-
-    /**
-     * Get the contact data for the portfolio.
-     */
     public function contacts(): HasOne
     {
         return $this->hasOne(Contact::class);
