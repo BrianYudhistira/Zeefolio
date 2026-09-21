@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log as LaravelLog;
 
 class LogService
 {
@@ -44,15 +45,23 @@ class LogService
 
     private function createLog($type, $module, $message, $metadata = [])
     {
+        $requestMetadata = $this->getMetadata($metadata);
+        $userId = Auth::check() ? Auth::id() : null;
+
+        LaravelLog::log($type, $message, array_filter([
+            'module' => $module,
+            'user_id' => $userId,
+            ...$requestMetadata,
+        ], static fn ($value) => $value !== null));
 
         $logData = array_merge(
             [
                 'type' => $type,
                 'module' => $module,
                 'message' => $message,
-                'user_id' => Auth::check() ? Auth::id() : null,
+                'user_id' => $userId,
             ],
-            $this->getMetadata($metadata)
+            $requestMetadata
         );
 
         return Log::create($logData);

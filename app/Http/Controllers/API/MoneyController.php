@@ -18,13 +18,15 @@ class MoneyController
             ->paginate(50);
 
         return response()->json([
-            'status' => 'success',
-            'balance_tracks' => $balance_tracks->items(),
-            'pagination' => [
-                'current_page' => $balance_tracks->currentPage(),
-                'last_page' => $balance_tracks->lastPage(),
-                'per_page' => $balance_tracks->perPage(),
-                'total' => $balance_tracks->total(),
+            'message' => 'Balance tracked successfully',
+            'data' => [
+                'balance_tracks' => $balance_tracks->items(),
+                'pagination' => [
+                    'current_page' => $balance_tracks->currentPage(),
+                    'last_page' => $balance_tracks->lastPage(),
+                    'per_page' => $balance_tracks->perPage(),
+                    'total' => $balance_tracks->total(),
+                ],
             ],
         ], 200);
     }
@@ -48,21 +50,23 @@ class MoneyController
         }
         else{
             return response()->json([
-                'status' => 'error',
                 'message' => 'start_date and end_date are required for custom tracking.',
+                'data' => null,
             ], 400);
         }
 
         $balance_tracks = $query->orderBy('transaction_date', 'desc')->paginate(50);
 
         return response()->json([
-            'status' => 'success',
-            'balance_tracks' => $balance_tracks->items(),
-            'pagination' => [
-                'current_page' => $balance_tracks->currentPage(),
-                'last_page' => $balance_tracks->lastPage(),
-                'per_page' => $balance_tracks->perPage(),
-                'total' => $balance_tracks->total(),
+            'message' => 'Custom balance tracked successfully',
+            'data' => [
+                'balance_tracks' => $balance_tracks->items(),
+                'pagination' => [
+                    'current_page' => $balance_tracks->currentPage(),
+                    'last_page' => $balance_tracks->lastPage(),
+                    'per_page' => $balance_tracks->perPage(),
+                    'total' => $balance_tracks->total(),
+                ],
             ],
         ], 200);
     }
@@ -127,11 +131,13 @@ class MoneyController
         $total_balance = $total_pendapatan - $total_pengeluaran;
 
         return response()->json([
-            'status' => 'success',
-            'total_pengeluaran' => $total_pengeluaran,
-            'total_pendapatan' => $total_pendapatan,
-            'total_transfer' => $total_transfer,
-            'total_balance' => $total_balance,
+            'message' => 'Total balance retrieved successfully',
+            'data' => [
+                'total_pengeluaran' => $total_pengeluaran,
+                'total_pendapatan' => $total_pendapatan,
+                'total_transfer' => $total_transfer,
+                'total_balance' => $total_balance,
+            ],
         ]);
     }
 

@@ -11,11 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::create('tech_stack_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 50)->unique();
+            $table->timestamps();
+        });
+
         Schema::create('tech_stacks', function (Blueprint $table) {
             $table->id();
             $table->string('name', 100);
             $table->string('icon', 255)->nullable();
-            $table->string('category', 50)->default('other');
+            $table->foreignId('category_id')
+                ->nullable()
+                ->constrained('tech_stack_categories')
+                ->nullOnDelete();
             $table->timestamps();
         });
 
@@ -44,7 +53,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('project_tech_stack');
-        Schema::dropIfExists('tech_stacks');
         Schema::dropIfExists('user_skills');
+        Schema::dropIfExists('tech_stacks');
+        Schema::dropIfExists('tech_stack_categories');
     }
 };

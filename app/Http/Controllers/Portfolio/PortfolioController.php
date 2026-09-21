@@ -22,7 +22,7 @@ class PortfolioController
             'projects.techStacks',
             'contacts',
             'experiences',
-            'userSkills.techStack'
+            'userSkills.techStack.category'
         ])->first();
 
         if ($portfolio && $portfolio->experiences) {

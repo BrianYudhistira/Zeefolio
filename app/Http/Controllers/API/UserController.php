@@ -10,7 +10,7 @@ class UserController
         $user = $request->user();
 
         if(!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => 'User not found', 'data' => null], 404);
         }
 
         return response()->json([

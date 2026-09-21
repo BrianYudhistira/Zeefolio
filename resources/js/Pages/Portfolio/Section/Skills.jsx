@@ -1,45 +1,49 @@
 import AnimatedContent from "@/Components/Animations/UI/AnimatedContent";
 
-const categoryLabelMap = {
-    language: 'Languages',
-    framework: 'Frameworks & Architecture',
-    frontend: 'Frameworks & Architecture',
-    database: 'Databases & Infrastructure',
-    auth: 'Databases & Infrastructure',
-    tool: 'Databases & Infrastructure',
-    devops: 'Databases & Infrastructure',
-    other: 'Databases & Infrastructure',
-};
-
 function normalizeSkillsInput(userSkills) {
-    if (!Array.isArray(userSkills) || userSkills.length === 0) {
+    const skillsData = userSkills?.data ?? userSkills;
+
+    if (!skillsData || (Array.isArray(skillsData) && skillsData.length === 0)) {
         return [];
     }
 
     const groups = new Map();
 
-    userSkills.forEach((entry) => {
-        const techStack = entry?.tech_stack ?? entry?.techStack ?? null;
-        const category = techStack?.category ?? 'other';
-        const label = categoryLabelMap[category] ?? 'Databases & Infrastructure';
+    const addSkill = (category, value) => {
+        const techStack = typeof value === 'string' ? { name: value } : value;
+        const label = typeof category === 'object' ? category?.name : category;
         const name = techStack?.name ?? '';
 
-        if (!name) {
-            return;
-        }
+        if (!name || !label) return;
 
-        if (!groups.has(label)) {
-            groups.set(label, []);
-        }
+        if (!groups.has(label)) groups.set(label, []);
 
         groups.get(label).push({
             name,
             icon: techStack?.icon ?? null,
         });
-    });
+    };
+
+    if (Array.isArray(skillsData)) {
+        skillsData.forEach((entry) => {
+            const techStack = entry?.tech_stack ?? entry?.techStack ?? null;
+            addSkill(techStack?.category ?? 'database', techStack);
+        });
+    } else {
+        Object.entries(skillsData).forEach(([category, techStacks]) => {
+            if (Array.isArray(techStacks)) {
+                techStacks.forEach((techStack) => addSkill(category, techStack));
+            }
+        });
+    }
 
     return Array.from(groups.entries())
-        .map(([label, items]) => ({ label, items }))
+        .map(([label, items]) => ({
+            label,
+            items: items.filter((skill, index, all) =>
+                all.findIndex((item) => item.name === skill.name) === index
+            ),
+        }))
         .slice(0, 3);
 }
 
@@ -115,7 +119,7 @@ export default function SkillsSection({ skills }) {
                                 </div>
 
                                 {/* Skills list */}
-                                <div className="flex flex-wrap gap-2.5 mt-auto">
+                                <div className="flex flex-wrap gap-2.5">
                                     {category.items.map((skill, idx) => (
                                         <div
                                             key={`${skill.name}-${idx}`}

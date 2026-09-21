@@ -208,7 +208,7 @@ export default function Portfolio({ portfolio }) {
                 </main>
 
                 {/* ── Minimalist Elegant Footer ── */}
-                <footer className="w-full border-t border-white/[0.08] py-12 px-4 relative z-10 bg-black">
+                <footer className="w-full border-t border-white/[0.08] py-6 px-4 relative z-10 bg-black">
                     <div className="max-w-[85%] 2xl:max-w-[80%] mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-3">
                             <span className="text-white font-mono text-sm font-bold tracking-wider">
@@ -218,11 +218,10 @@ export default function Portfolio({ portfolio }) {
                                 / Software Engineer
                             </span>
                         </div>
-
-                        <p className="text-xs font-mono text-neutral-400 text-center">
-                            Designed with Minimalist Monochrome & Glassmorphism &copy; {new Date().getFullYear()}
-                        </p>
-
+                        <div className="text-neutral-400 text-xs font-mono">
+                            © {new Date().getFullYear()} {env.name}. All rights reserved.
+                        </div>
+                {/*                         
                         <button
                             type="button"
                             onClick={scrollToTop}
@@ -231,7 +230,7 @@ export default function Portfolio({ portfolio }) {
                         >
                             <span>Top</span>
                             <HiArrowUp className="w-3.5 h-3.5" />
-                        </button>
+                        </button> */}
                     </div>
                 </footer>
             </div>

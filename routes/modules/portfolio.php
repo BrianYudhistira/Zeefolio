@@ -9,8 +9,9 @@ Route::middleware(['throttle:60,1'])->group(function () {
     Route::get('/asset/logos', [PortfolioController::class, 'getLogo'])->name('asset.logo');
     Route::get('/portfolio/home', [PortfolioController::class, 'getPortfolioHome'])->name('portfolio.home');
     Route::get('/portfolio/about', [PortfolioController::class, 'getPortfolioAbout'])->name('portfolio.about');
+    Route::get('/portfolio/skills', [PortfolioController::class, 'getPortfolioSkills'])->name('portfolio.skills');
 
-    Route::post('/portfolio/update_home', [PortfolioController::class, 'editHome'])->name('portfolio.home.edit');
+    Route::post('/portfolio/update_home', [PortfolioController::class, 'editPortfolioHome'])->name('portfolio.home.edit');
     Route::post('/portfolio/update_about', [PortfolioController::class, 'editAbout'])->name('portfolio.about.edit');
     Route::post('/portfolio/update_projects/order', [PortfolioController::class, 'editProjectsOrder'])->name('portfolio.projects.edit');
     Route::post('/portfolio/update_contacts', [PortfolioController::class, 'editContacts'])->name('portfolio.contacts.edit');

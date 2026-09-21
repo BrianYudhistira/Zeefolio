@@ -13,7 +13,7 @@ class EmailVerificationController extends Controller
     public function send(Request $request){
         $user = $request->user();
         if (!$user) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
+            return response()->json(['message' => 'Unauthenticated', 'data' => null], 401);
         }
 
         $url = URL::temporarySignedRoute(
@@ -25,7 +25,7 @@ class EmailVerificationController extends Controller
 
         Mail::to($user->email)->send(new VerifyEmailLink($url, $name));
 
-        return response()->json(['message' => 'Verification email sent'], 200);
+        return response()->json(['message' => 'Verification email sent', 'data' => null], 200);
     }
 
     public function verify($id, $hash)
@@ -37,11 +37,11 @@ class EmailVerificationController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email already verified'], 200);
+            return response()->json(['message' => 'Email already verified', 'data' => null], 200);
         }
 
         $user->markEmailAsVerified();
 
-        return response()->json(['message' => 'Email verified successfully'], 200);
+        return response()->json(['message' => 'Email verified successfully', 'data' => null], 200);
     }
 }

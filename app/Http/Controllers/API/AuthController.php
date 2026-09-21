@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Services\LogService;
+use App\Helpers\ResponseHelper;
 use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
@@ -29,10 +30,6 @@ class AuthController extends Controller
             ]);
 
             if (!Auth::attempt($validated, false)) {
-                Log::warning('Failed login attempt', [
-                    'email' => $validated['email'],
-                    'local_check' => app()->isLocal(),
-                ]);
                 $this->logService->warningLog(
                     'Auth',
                     'Failed login attempt for email: ' . $validated['email']
@@ -48,27 +45,15 @@ class AuthController extends Controller
                 'Auth',
                 'Success: User logged in'
             );
-            Log::info('User logged in', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'local_check' => app()->isLocal(),
-            ]);
 
-            return response()->json([
-                'message' => 'Login successful',
-                'user' => $user,
-            ], 200);
+            return ResponseHelper::success('Login successful', ['user'=> $user]);
 
         } catch (\Exception $e) {
-            Log::error('Login error', [
-                'message' => $e->getMessage(),
-                'local_check' => app()->isLocal(),
-            ]);
             $this->logService->errorLog(
                 'Auth',
                 'Login error: ' . $e->getMessage()
             );
-            return response()->json(['message' => $e->getMessage()], 401);
+            return ResponseHelper::error('Login error: ' . $e->getMessage(), null, 401);
         }
     }
 
@@ -81,7 +66,6 @@ class AuthController extends Controller
             ]);
 
             if(!Auth::attempt($validated, true)) {
-                Log::warning('Failed remembered login attempt for email: ' . $validated['email']);
                 $this->logService->warningLog(
                     'Auth',
                     'Failed remembered login attempt for email: ' . $validated['email']
@@ -97,26 +81,13 @@ class AuthController extends Controller
                 'Auth',
                 'Success: User logged in with remember me'
             );
-            Log::info('User logged in with remember me', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'local_check' => app()->isLocal(),
-            ]);
-            return response()->json([
-                'message' => 'Login successful',
-                'user' => $user,
-            ], 200);
-
+            return ResponseHelper::success('Login successful', ['user'=> $user]);
         } catch(\Exception $e) {
-            Log::error('Remembered login error', [
-                'message' => $e->getMessage(),
-                'local_check' => app()->isLocal(),
-            ]);
             $this->logService->errorLog(
                 'Auth',
                 'Remembered login error: ' . $e->getMessage()
             );
-            return response()->json(['message' => $e->getMessage()], 401);
+            return ResponseHelper::error('Remembered login error: ' . $e->getMessage(), null, 401);
         }
     }
 
@@ -125,26 +96,20 @@ class AuthController extends Controller
         $user = $request->user();
 
         if (!$user) {
-            Log::warning('Logout attempted without authentication', [
-                'local_check' => app()->isLocal(),
-            ]);
-            return response()->json(['message' => 'Unauthenticated'], 401);
+            $this->logService->warningLog('Auth', 'Logout attempted without authentication');
+            return ResponseHelper::error('Unauthenticated', null, 401);
         }
 
         $this->logService->infoLog(
             'Auth',
             'Success: User logged out'
         );
-        Log::info('User logged out', [
-            'user_id' => $user->id,
-            'local_check' => app()->isLocal(),
-        ]);
 
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['message' => 'Logged out successfully'], 200);
+        return ResponseHelper::success('Logged out successfully', null);
     }
 
     public function logoutAll(Request $request)
@@ -152,20 +117,14 @@ class AuthController extends Controller
         $user = $request->user();
 
         if (!$user) {
-            Log::warning('Logout all attempted without authentication', [
-                'local_check' => app()->isLocal(),
-            ]);
-            return response()->json(['message' => 'Unauthenticated'], 401);
+            $this->logService->warningLog('Auth', 'Logout all attempted without authentication');
+            return ResponseHelper::error('Unauthenticated', null, 401);
         }
 
         $this->logService->infoLog(
             'Auth',
             'Success: User logged out from all devices'
         );
-        Log::info('User logged out from all devices', [
-            'user_id' => $user->id,
-            'local_check' => app()->isLocal(),
-        ]);
 
         DB::table('sessions')->where('user_id', $user->id)->delete();
         $user->setRememberToken(Str::random(60));
@@ -175,6 +134,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['message' => 'Logged out from all devices successfully'], 200);
+        return ResponseHelper::success('Logged out from all devices successfully', null);
     }
 }
