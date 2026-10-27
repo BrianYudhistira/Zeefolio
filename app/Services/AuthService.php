@@ -3,172 +3,142 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
     /**
-     * Authenticate user and generate token
+     * Authenticate user for SPA session.
+     *
+     * @param  array{email: string, password: string}  $credentials
+     *
+     * @throws AuthenticationException
      */
-    public function login(array $credentials, array $metadata = []): array
+    public function attemptLogin(array $credentials, bool $remember = false): User
     {
-        if (!Auth::attempt($credentials)) {
-            throw new \Exception('Invalid credentials', 401);
+        if (! Auth::guard('web')->attempt($credentials, $remember)) {
+            throw new AuthenticationException('Invalid credentials');
         }
 
-        $user = Auth::user();
+        /** @var User $user */
+        $user = Auth::guard('web')->user();
 
-        // Update login metadata
-        $user->update([
-            'last_login_at' => now(),
-            'ip_address' => $metadata['ip'] ?? null,
-            'location' => $metadata['location'] ?? 'Unknown',
-        ]);
-
-        // Create user log
-        $user->logs()->create([
-            'message' => 'Login successful',
-            'ip_address' => $metadata['ip'] ?? null,
-            'location' => $metadata['location'] ?? 'Unknown',
-            'user_agent' => $metadata['user_agent'] ?? null,
-        ]);
-        
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return [
-            'user' => $user->load('portfolioUser'),
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ];
+        return $user;
     }
 
     /**
-     * Register new user
+     * Register a new user and authenticate them into the SPA session.
      */
-    public function register(array $data, $photoFile = null): array
+    public function register(array $data, ?UploadedFile $photoFile = null): User
     {
-        // Check uniqueness
-        if (User::where('email', $data['email'])->exists()) {
-            throw new \Exception('Email already taken', 422);
-        }
-
-        if (User::where('name', $data['name'])->exists()) {
-            throw new \Exception('Name already taken', 422);
-        }
-
-        // Handle photo upload
         $photoPath = null;
+
         if ($photoFile) {
-            $filename = Str::uuid()->toString() . '.' . $photoFile->getClientOriginalExtension();
+            $filename = Str::uuid()->toString().'.'.$photoFile->getClientOriginalExtension();
             $photoPath = $photoFile->storeAs('users', $filename, 'public');
         }
 
-        // Create user
+        $username = $data['username'] ?? Str::slug($data['name']).'-'.Str::lower(Str::random(4));
+
         $user = User::create([
             'name' => $data['name'],
+            'username' => $username,
             'email' => $data['email'],
             'photo_path' => $photoPath,
             'password' => Hash::make($data['password']),
         ]);
 
-        // Generate token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        Auth::guard('web')->login($user);
 
-        return [
-            'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ];
+        return $user;
     }
 
     /**
-     * Logout user and revoke tokens
+     * Logout user from current session.
      */
-    public function logout(User $user): void
+    public function logout(): void
     {
+        Auth::guard('web')->logout();
+    }
+
+    /**
+     * Logout user from all devices and invalidate all database sessions & tokens.
+     */
+    public function logoutAll(User $user): void
+    {
+        DB::table('sessions')->where('user_id', $user->id)->delete();
+
+        $user->setRememberToken(Str::random(60));
+        $user->save();
+
         $user->tokens()->delete();
+
+        Auth::guard('web')->logout();
     }
 
     /**
-     * Update user profile
+     * Update authenticated user's profile.
+     *
+     * @throws ValidationException
      */
-    public function updateProfile(User $user, array $data, $photoFile = null): User
+    public function updateProfile(User $user, array $data, ?UploadedFile $photoFile = null): User
     {
-        // Verify password
-        if (!Hash::check($data['password'], $user->password)) {
-            throw new \Exception('Incorrect password', 422);
+        if (! Hash::check($data['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'password' => ['Incorrect password.'],
+            ]);
         }
 
-        // Check email uniqueness if changed
-        if (isset($data['email']) && $data['email'] !== $user->email) {
-            if (User::where('email', $data['email'])->exists()) {
-                throw new \Exception('Email already taken', 422);
-            }
-        }
-
-        // Check name uniqueness if changed
-        if (isset($data['name']) && $data['name'] !== $user->name) {
-            if (User::where('name', $data['name'])->exists()) {
-                throw new \Exception('Name already taken', 422);
-            }
-        }
-
-        // Handle photo upload
         if ($photoFile) {
-            // Delete old photo
             if ($user->photo_path) {
                 Storage::disk('public')->delete($user->photo_path);
             }
 
-            $filename = Str::uuid()->toString() . '.' . $photoFile->getClientOriginalExtension();
+            $filename = Str::uuid()->toString().'.'.$photoFile->getClientOriginalExtension();
             $data['photo_path'] = $photoFile->storeAs('users', $filename, 'public');
         }
 
-        // Remove password from update data
-        unset($data['password']);
+        unset($data['password'], $data['photo']);
 
-        // Update user
         $user->update($data);
 
-        // Invalidate user cache after update
         $this->clearUserCache($user->id);
 
         return $user->fresh();
     }
 
     /**
-     * Delete user account
+     * Delete user account and associated resources.
      */
     public function deleteAccount(User $user): void
     {
         $userId = $user->id;
 
-        // Delete photo if exists
         if ($user->photo_path) {
             Storage::disk('public')->delete($user->photo_path);
         }
 
-        // Revoke all tokens
+        DB::table('sessions')->where('user_id', $userId)->delete();
         $user->tokens()->delete();
-
-        // Delete user
         $user->delete();
 
-        // Invalidate cache
         $this->clearUserCache($userId);
     }
 
     /**
-     * Clear user cache for specific user
-     * Called after profile update or account deletion
+     * Clear user-related cache keys.
      */
     private function clearUserCache(int $userId): void
     {
         Cache::forget("user:{$userId}");
-        Cache::forget("portfolio:user:{$userId}"); // Also clear portfolio cache
+        Cache::forget("portfolio:user:{$userId}");
     }
 }

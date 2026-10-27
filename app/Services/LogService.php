@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Log;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log as LaravelLog;
 
 class LogService
@@ -30,7 +30,7 @@ class LogService
 
         try {
             $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}");
-            
+
             if ($response->successful()) {
                 $data = $response->json();
                 if ($data['status'] === 'success') {
@@ -67,7 +67,7 @@ class LogService
         return Log::create($logData);
     }
 
-    public function infoLog( $module = null, $message = null, $metadata = [])
+    public function infoLog($module = null, $message = null, $metadata = [])
     {
         return $this->createLog('info', $module, $message, $metadata);
     }
