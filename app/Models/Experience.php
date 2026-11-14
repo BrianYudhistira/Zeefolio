@@ -19,12 +19,15 @@ class Experience extends Model
         'start_date',
         'end_date',
         'description',
+        'certificate_path',
         'tech_stack',
+        'sort_order',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'sort_order' => 'integer',
     ];
 
     public function portfolioUser(): BelongsTo
