@@ -5,8 +5,8 @@ import {
     HiOutlineArrowTopRightOnSquare,
     HiOutlineSquares2X2,
     HiOutlineFolderOpen,
-    HiOutlineGlobeAlt,
     HiOutlineUserCircle,
+    HiOutlineBell,
     HiOutlineHome,
     HiOutlineCpuChip,
     HiOutlineBriefcase,
@@ -15,6 +15,7 @@ import {
     HiOutlineUsers,
     HiOutlineCog6Tooth,
     HiOutlineShieldCheck,
+    HiOutlineDocumentText,
     HiOutlineChevronUpDown,
     HiXMark,
 } from "react-icons/hi2";
@@ -133,6 +134,8 @@ export default function Sidebar({
                 perms.includes("permissions.manage");
             const canManageSettings =
                 isAdminOrSuper || perms.includes("settings.manage");
+            const canViewLogs =
+                user?.role === "superadmin" || perms.includes("logs.view");
 
             const adminItems = [
                 ...(canViewMembers
@@ -154,6 +157,16 @@ export default function Sidebar({
                                   route().current("admin.roles.*") ||
                                   route().current("admin.permissions.*"),
                               icon: HiOutlineShieldCheck,
+                          },
+                      ]
+                    : []),
+                ...(canViewLogs
+                    ? [
+                          {
+                              name: "Read Logs",
+                              href: route("admin.logs.index"),
+                              active: route().current("admin.logs.*"),
+                              icon: HiOutlineDocumentText,
                           },
                       ]
                     : []),
@@ -179,31 +192,19 @@ export default function Sidebar({
                 : [];
         })(),
         {
-            label: "Public View",
+            label: "User Settings",
             items: [
                 {
-                    name: "Live Portfolio",
-                    href: route("portfolio.index", {
-                        slug:
-                            user?.portfolio_slug ||
-                            user?.username ||
-                            "brian-yudhistira",
-                    }),
-                    active: false,
-                    icon: HiOutlineGlobeAlt,
-                    external: true,
+                    name: "Account Settings",
+                    href: route("admin.account.index"),
+                    active: route().current("admin.account.*"),
+                    icon: HiOutlineUserCircle,
                 },
                 {
-                    name: "Projects Archive",
-                    href: route("portfolio.projects", {
-                        slug:
-                            user?.portfolio_slug ||
-                            user?.username ||
-                            "brian-yudhistira",
-                    }),
-                    active: false,
-                    icon: HiOutlineFolderOpen,
-                    external: true,
+                    name: "Notifications",
+                    href: route("admin.notifications.index"),
+                    active: route().current("admin.notifications.*"),
+                    icon: HiOutlineBell,
                 },
             ],
         },

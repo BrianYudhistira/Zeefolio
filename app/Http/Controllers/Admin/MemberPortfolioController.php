@@ -322,7 +322,14 @@ class MemberPortfolioController extends Controller
         }
         $this->portfolioService->bumpCatalogVersion();
 
-        $this->logService->infoLog('Portfolio', "Promoted custom skill '{$techStack->name}' to global default");
+        $this->logService->infoLog(
+            'Portfolio',
+            "Promoted custom skill '{$techStack->name}' to global default",
+            array_filter([
+                'notify_user_id' => $originalUserId ? (int) $originalUserId : null,
+                'action_url' => '/admin/skills',
+            ])
+        );
 
         return redirect()->back()->with('success', "Skill \"{$techStack->name}\" promoted to Global Default.");
     }

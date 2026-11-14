@@ -1,9 +1,18 @@
 <?php
 
+use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\Admin\MemberPortfolioController;
 use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\Admin\SettingController;
 use Illuminate\Support\Facades\Route;
+
+// ── System & Activity Logs (permission: logs.view) ──
+Route::middleware('permission:logs.view')
+    ->prefix('logs')
+    ->name('logs.')
+    ->group(function () {
+        Route::get('/', [LogController::class, 'index'])->name('index');
+    });
 
 // ── Member Accounts & Portfolios ──
 Route::prefix('members')->name('members.')->group(function () {

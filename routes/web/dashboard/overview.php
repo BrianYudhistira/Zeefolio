@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 // ── Dashboard Overview ──
@@ -9,6 +10,17 @@ Route::get('/', fn () => redirect()->route('admin.dashboard'));
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware('permission:dashboard.view')
     ->name('dashboard');
+
+// ── User Notifications (Page, Read, Popup Dismiss, Soft Delete) ──
+Route::prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::put('/read-all', [NotificationController::class, 'markAllAsRead'])->name('read-all');
+    Route::put('/popup-clear', [NotificationController::class, 'dismissAllFromPopup'])->name('popup-clear');
+    Route::put('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('read');
+    Route::put('/{notification}/popup-dismiss', [NotificationController::class, 'dismissFromPopup'])->name('popup-dismiss');
+    Route::delete('/', [NotificationController::class, 'clearAll'])->name('clear');
+    Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+});
 
 // ── Personal Account Settings ──
 Route::prefix('account')->name('account.')->group(function () {

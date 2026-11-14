@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Models\Log;
 use App\Models\User;
+use App\Models\UserNotification;
+use App\Services\LogService;
 use App\Services\PortfolioService;
 use App\Services\RolePermissionService;
 use Closure;
@@ -120,14 +122,75 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'notifications' => fn () => $user
-                ? Log::with('user:id,name,username')
-                    ->whereIn('module', ['Skills', 'Portfolio', 'Users'])
-                    ->when(! $user->isAdminOrAbove(), fn ($q) => $q->where('user_id', $user->id))
-                    ->latest()
-                    ->limit(8)
-                    ->get(['id', 'user_id', 'module', 'type', 'message', 'created_at'])
+                ? $this->resolveUserNotifications($user)
                 : [],
         ];
+    }
+
+    /**
+     * Fetch user notifications from the dedicated `user_notifications` table.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function resolveUserNotifications(User $user): array
+    {
+        try {
+            $logService = app(LogService::class);
+
+            if (! UserNotification::where('user_id', $user->id)->exists()) {
+                $seedLogs = Log::query()
+                    ->whereIn('module', ['Skills', 'Portfolio', 'Users'])
+                    ->when(! $user->isAdminOrAbove(), fn ($q) => $q->where('user_id', $user->id))
+                    ->latest('id')
+                    ->limit(8)
+                    ->get();
+
+                foreach ($seedLogs->reverse() as $seedLog) {
+                    UserNotification::create([
+                        'user_id' => $user->id,
+                        'actor_id' => $seedLog->user_id,
+                        'module' => $seedLog->module,
+                        'type' => $seedLog->type ?: 'info',
+                        'title' => ($seedLog->module ?: 'System') . ' Activity',
+                        'message' => $seedLog->message,
+                        'action_url' => $logService->resolveActionUrl($seedLog->module, (string) $seedLog->message),
+                        'read_at' => null,
+                        'created_at' => $seedLog->created_at ?? now(),
+                        'updated_at' => $seedLog->created_at ?? now(),
+                    ]);
+                }
+            }
+
+            return UserNotification::with('actor:id,name,username')
+                ->where('user_id', $user->id)
+                ->where('is_popup_hidden', false)
+                ->latest('id')
+                ->limit(15)
+                ->get(['id', 'user_id', 'actor_id', 'module', 'type', 'title', 'message', 'action_url', 'is_popup_hidden', 'read_at', 'created_at'])
+                ->map(fn (UserNotification $n) => [
+                    'id' => $n->id,
+                    'user_id' => $n->user_id,
+                    'actor_id' => $n->actor_id,
+                    'module' => $n->module,
+                    'type' => $n->type,
+                    'title' => $n->title,
+                    'message' => $n->message,
+                    'action_url' => $n->action_url ?: $logService->resolveActionUrl($n->module, (string) $n->message),
+                    'is_popup_hidden' => (bool) $n->is_popup_hidden,
+                    'read_at' => $n->read_at?->toISOString(),
+                    'is_read' => $n->read_at !== null,
+                    'created_at' => $n->created_at?->toISOString(),
+                    'user' => $n->actor ? [
+                        'id' => $n->actor->id,
+                        'name' => $n->actor->name,
+                        'username' => $n->actor->username,
+                    ] : null,
+                ])
+                ->values()
+                ->all();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 }
 

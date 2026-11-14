@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\SendMailToMe;
 use App\Models\PortfolioUser;
 use App\Models\PortfolioView;
+use App\Services\LogService;
 use App\Services\PortfolioService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -175,6 +176,18 @@ class PortfolioController extends Controller
                 'sender_email' => $validated['email'],
                 'ip_address' => $request->ip(),
             ]);
+
+            if (! empty($portfolio?->user_id)) {
+                app(LogService::class)->dispatchNotification(
+                    recipientId: (int) $portfolio->user_id,
+                    actorId: $request->user()?->id,
+                    module: 'Portfolio',
+                    type: 'info',
+                    message: "New contact message from {$validated['name']} ({$validated['email']})",
+                    title: 'New Contact Message',
+                    actionUrl: '/admin/contacts'
+                );
+            }
 
             return redirect()->back()->with('success', 'Message sent successfully!');
         } catch (\Exception $e) {
