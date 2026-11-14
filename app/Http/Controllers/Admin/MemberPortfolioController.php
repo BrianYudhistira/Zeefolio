@@ -52,18 +52,23 @@ class MemberPortfolioController extends Controller
             ->get()
             ->groupBy('user_id');
 
-        $members = $users->map(function (User $member) use ($customTechStacksByUser, $actor) {
+        $actorCanEditMembers = $actor->hasAccessPermission('members.edit');
+        $actorCanDeleteMembers = $actor->hasAccessPermission('members.delete');
+
+        $members = $users->map(function (User $member) use ($customTechStacksByUser, $actor, $actorCanEditMembers, $actorCanDeleteMembers) {
             $portfolio = $member->portfolioUser;
             $customSkills = ($customTechStacksByUser->get($member->id) ?? collect())->values();
             $normalizedRole = $member->role === 'user' ? User::ROLE_MEMBER : $member->role;
 
-            $canEditAccount = $actor->isSuperAdmin()
+            $canEditAccount = $actorCanEditMembers && (
+                $actor->isSuperAdmin()
                 || ($actor->isAdmin() && $member->isMember())
-                || $actor->id === $member->id;
+                || $actor->id === $member->id
+            );
 
-            $canChangeRole = $actor->isSuperAdmin() && $actor->id !== $member->id;
+            $canChangeRole = $actorCanEditMembers && $actor->isSuperAdmin() && $actor->id !== $member->id;
 
-            $canDeleteAccount = $actor->id !== $member->id && (
+            $canDeleteAccount = $actorCanDeleteMembers && $actor->id !== $member->id && (
                 $actor->isSuperAdmin() || ($actor->isAdmin() && $member->isMember())
             );
 
@@ -77,6 +82,8 @@ class MemberPortfolioController extends Controller
                 'bio' => $member->bio,
                 'photo_url' => $member->photo_url,
                 'last_login_at' => $member->last_login_at,
+                'ip_address' => $member->ip_address,
+                'location' => $member->location,
                 'created_at' => $member->created_at,
                 'can_edit' => $canEditAccount,
                 'can_change_role' => $canChangeRole,
@@ -171,7 +178,7 @@ class MemberPortfolioController extends Controller
             return $user;
         });
 
-        $this->logService->infoLog('Users', "Created account @{$member->username} with role {$member->role}");
+        $this->logService->adminLog('Users', "Created account @{$member->username} with role {$member->role}");
 
         return redirect()->back()->with('success', "Account \"{$member->name}\" ({$member->role}) has been created.");
     }
@@ -208,6 +215,9 @@ class MemberPortfolioController extends Controller
             ]);
         }
 
+        $oldRole = $member->role === 'user' ? User::ROLE_MEMBER : $member->role;
+        $oldStatus = $member->status ?? 'active';
+
         $updatePayload = [
             'name' => trim($validated['name']),
             'username' => trim($validated['username']),
@@ -221,17 +231,44 @@ class MemberPortfolioController extends Controller
             $updatePayload['password'] = Hash::make($validated['password']);
         }
 
-        $member->update($updatePayload);
-        $member->syncUserRole($validated['role']);
+        DB::transaction(function () use ($member, $updatePayload, $validated) {
+            $member->update($updatePayload);
+            $member->syncUserRole($validated['role']);
 
-        if ($validated['status'] === 'banned') {
-            $member->forceFill(['remember_token' => Str::random(60)])->save();
-            DB::table('sessions')->where('user_id', $member->id)->delete();
+            if ($validated['status'] === 'banned') {
+                $member->forceFill(['remember_token' => Str::random(60)])->save();
+                DB::table('sessions')->where('user_id', $member->id)->delete();
+            }
+        });
+
+        if ($oldRole !== $member->role) {
+            $this->rolePermissionService->clearCache();
         }
 
         $this->portfolioService->forgetUserPortfolioCache($member->id);
 
-        $this->logService->infoLog(
+        if ($oldStatus !== $member->status) {
+            if ($member->status === 'banned') {
+                $this->logService->adminLog(
+                    'Security',
+                    "BANNED account @{$member->username} (ID: {$member->id}) from '{$oldStatus}' to 'banned' by @{$actor->username}"
+                );
+            } elseif ($oldStatus === 'banned') {
+                $this->logService->adminLog(
+                    'Security',
+                    "UNBANNED account @{$member->username} (ID: {$member->id}) from 'banned' to '{$member->status}' by @{$actor->username}"
+                );
+            }
+        }
+
+        if ($oldRole !== $member->role) {
+            $this->logService->adminLog(
+                'Security',
+                "Changed role for @{$member->username} (ID: {$member->id}) from '{$oldRole}' to '{$member->role}' by @{$actor->username}"
+            );
+        }
+
+        $this->logService->adminLog(
             'Users',
             "Updated account @{$member->username} (role: {$member->role}, status: {$member->status})"
         );
@@ -292,7 +329,10 @@ class MemberPortfolioController extends Controller
 
         $this->portfolioService->forgetUserPortfolioCache($member->id);
 
-        $this->logService->infoLog('Users', "Deleted account @{$username}");
+        $this->logService->adminLog(
+            'Security',
+            "Deleted account @{$username} by @{$actor->username}"
+        );
 
         return redirect()->back()->with('success', "Account \"{$name}\" has been deleted.");
     }
@@ -322,7 +362,7 @@ class MemberPortfolioController extends Controller
         }
         $this->portfolioService->bumpCatalogVersion();
 
-        $this->logService->infoLog(
+        $this->logService->adminLog(
             'Portfolio',
             "Promoted custom skill '{$techStack->name}' to global default",
             array_filter([

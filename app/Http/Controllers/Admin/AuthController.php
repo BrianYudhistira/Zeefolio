@@ -49,13 +49,21 @@ class AuthController extends Controller
 
             return redirect()->intended(route('admin.dashboard'));
         } catch (AuthenticationException $e) {
+            $isSuspended = $e->getMessage() === 'Your account has been suspended.';
+
             $this->logService->warningLog(
                 'Auth',
-                'Failed admin login attempt for email: '.$credentials['email'],
+                $isSuspended
+                    ? 'Suspended account login attempt for email: '.$credentials['email']
+                    : 'Failed admin login attempt for email: '.$credentials['email'],
             );
 
             return back()
-                ->withErrors(['email' => 'Invalid email or password.'])
+                ->withErrors([
+                    'email' => $isSuspended
+                        ? 'Your account has been suspended. Please contact an administrator.'
+                        : 'Invalid email or password.',
+                ])
                 ->onlyInput('email');
         }
     }

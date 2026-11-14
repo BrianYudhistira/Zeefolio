@@ -8,13 +8,16 @@ use App\Http\Controllers\Admin\SkillController;
 use App\Http\Controllers\Admin\TechStackController;
 use Illuminate\Support\Facades\Route;
 
-// ── Home Profile & Contact Channels (permission: profile.manage) ──
-Route::middleware('permission:profile.manage')->group(function () {
+// ── Home Profile (permission: home.manage) ─────────────────────────────
+Route::middleware('permission:home.manage')->group(function () {
     Route::prefix('home')->name('home.')->group(function () {
         Route::get('/', [HomeController::class, 'index'])->name('index');
         Route::post('/', [HomeController::class, 'update'])->name('update');
     });
+});
 
+// ── Contact Channels (permission: contacts.manage) ─────────────────────
+Route::middleware('permission:contacts.manage')->group(function () {
     Route::prefix('contacts')->name('contacts.')->group(function () {
         Route::get('/', [ContactController::class, 'index'])->name('index');
         Route::put('/', [ContactController::class, 'update'])->name('update');
@@ -35,7 +38,7 @@ Route::middleware('permission:projects.manage')
         Route::delete('/{project}', [ProjectController::class, 'destroy'])->name('destroy');
     });
 
-// ── Skills & Custom Tech Stacks (permission: skills.manage) ──
+// ── Skills (permission: skills.manage) ─────────────────────────────────
 Route::middleware('permission:skills.manage')->group(function () {
     Route::prefix('skills')->name('skills.')->group(function () {
         Route::get('/', [SkillController::class, 'index'])->name('index');
@@ -44,7 +47,10 @@ Route::middleware('permission:skills.manage')->group(function () {
         Route::put('/{skill}', [SkillController::class, 'update'])->name('update');
         Route::delete('/{skill}', [SkillController::class, 'destroy'])->name('destroy');
     });
+});
 
+// ── Custom Tech Stacks (permission: tech-stacks.manage) ────────────────
+Route::middleware('permission:tech-stacks.manage')->group(function () {
     Route::prefix('tech-stacks')->name('tech-stacks.')->group(function () {
         Route::get('/', [TechStackController::class, 'index'])->name('index');
         Route::post('/', [TechStackController::class, 'store'])->name('store');

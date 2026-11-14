@@ -233,6 +233,35 @@ export default function MemberDetailSlideOver({
                                                 : "—"}
                                         </span>
                                     </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-zinc-500">
+                                            Last Login
+                                        </span>
+                                        <span className="text-zinc-300 font-mono text-[11px]">
+                                            {selectedMember.last_login_at
+                                                ? new Date(
+                                                      selectedMember.last_login_at
+                                                  ).toLocaleString("en-GB", {
+                                                      day: "2-digit",
+                                                      month: "short",
+                                                      year: "numeric",
+                                                      hour: "2-digit",
+                                                      minute: "2-digit",
+                                                  })
+                                                : "Never"}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-zinc-500">
+                                            IP / Location
+                                        </span>
+                                        <span className="text-zinc-300 font-mono text-[11px]">
+                                            {selectedMember.ip_address || "—"}
+                                            {selectedMember.location
+                                                ? ` (${selectedMember.location})`
+                                                : ""}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 

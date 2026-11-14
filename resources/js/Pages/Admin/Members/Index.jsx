@@ -22,7 +22,6 @@ export default function MembersIndex({
     const [roleFilter, setRoleFilter] = useState("all");
     const [selectedId, setSelectedId] = useState(members[0]?.id || null);
     const [activeTab, setActiveTab] = useState("account");
-    const [showRoleGuide, setShowRoleGuide] = useState(false);
 
     const [modalOpen, setModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState(null);
@@ -172,26 +171,6 @@ export default function MembersIndex({
             title="Members & Accounts"
             headerActions={
                 <div className="flex items-center gap-2">
-                    {isSuperAdmin && (
-                        <Link
-                            href={route("admin.roles.index")}
-                            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-amber-300 border border-amber-500/25 font-medium text-xs transition-colors"
-                        >
-                            <HiOutlineShieldCheck className="w-4 h-4" />
-                            <span className="sm:hidden">Roles</span>
-                            <span className="hidden sm:inline">
-                                Roles & Permissions
-                            </span>
-                        </Link>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => setShowRoleGuide((prev) => !prev)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium text-xs transition-colors cursor-pointer"
-                    >
-                        <HiOutlineInformationCircle className="w-4 h-4" />
-                        <span className="hidden sm:inline">Role Guide</span>
-                    </button>
                     <button
                         type="button"
                         onClick={openCreateAccount}
@@ -212,8 +191,6 @@ export default function MembersIndex({
                     superAdminCount={superAdminCount}
                     adminCount={adminCount}
                     memberCount={memberCount}
-                    showRoleGuide={showRoleGuide}
-                    onCloseRoleGuide={() => setShowRoleGuide(false)}
                 />
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">

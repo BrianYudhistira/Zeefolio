@@ -3,7 +3,8 @@ import { Head, Link } from "@inertiajs/react";
 import ProjectDetailHero from "@/Components/Portfolio/Projects/ProjectDetailHero";
 import ProjectShowcaseGallery from "@/Components/Portfolio/Projects/ProjectShowcaseGallery";
 import ProjectLightboxModal from "@/Components/Portfolio/Projects/ProjectLightboxModal";
-import { HiOutlineArrowLeft, HiArrowUp } from "react-icons/hi2";
+import PortfolioFooter from "@/Components/Portfolio/PortfolioFooter";
+import { HiOutlineArrowLeft } from "react-icons/hi2";
 
 function resolveTechStack(project) {
     if (project.tech_stacks && project.tech_stacks.length > 0) {
@@ -85,10 +86,6 @@ export default function DetailProject({
 
     const techStack = resolveTechStack(project);
 
-    const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    };
-
     return (
         <>
             <Head title={`${project.title} - Project Details`} />
@@ -157,28 +154,7 @@ export default function DetailProject({
                 />
 
                 {/* ── Minimalist Monochrome Footer ── */}
-                <footer className="w-full border-t border-white/[0.08] py-12 px-4 relative z-10 bg-black mt-auto">
-                    <div className="max-w-[85%] 2xl:max-w-[80%] mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-3">
-                            <Link href={`/${portfolioSlug}`} className="text-white font-mono text-sm font-bold tracking-wider hover:text-neutral-300 transition-colors">
-                                {portfolioName.toUpperCase()}
-                            </Link>
-                            <span className="text-neutral-400 text-xs font-mono">
-                                / {project.title}
-                            </span>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={scrollToTop}
-                            className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-neutral-400 hover:text-white p-2 rounded-lg hover:bg-white/[0.05] transition-colors"
-                            aria-label="Back to Top"
-                        >
-                            <span>Top</span>
-                            <HiArrowUp className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-                </footer>
+                <PortfolioFooter />
             </div>
         </>
     );

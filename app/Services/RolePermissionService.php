@@ -13,7 +13,7 @@ use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionService
 {
-    public const CACHE_KEY = 'zeefolio_spatie_rbac_initialized_v1';
+    public const CACHE_KEY = 'zeefolio_spatie_rbac_initialized_v2';
 
     /**
      * System-protected core roles that cannot be deleted or renamed.
@@ -39,9 +39,9 @@ class RolePermissionService
                 'description' => 'Access dashboard overview and portfolio views analytics.',
             ],
             [
-                'name' => 'profile.manage',
+                'name' => 'home.manage',
                 'group' => 'Portfolio',
-                'description' => 'Manage home hero section, profile bio, and contact details.',
+                'description' => 'Manage home hero section, profile bio, and public availability.',
             ],
             [
                 'name' => 'projects.manage',
@@ -51,12 +51,22 @@ class RolePermissionService
             [
                 'name' => 'skills.manage',
                 'group' => 'Portfolio',
-                'description' => 'Manage portfolio skills and custom tech stack items.',
+                'description' => 'Manage portfolio skills and skill display categories.',
             ],
             [
                 'name' => 'experiences.manage',
                 'group' => 'Portfolio',
                 'description' => 'Create, update, reorder, and delete work experiences.',
+            ],
+            [
+                'name' => 'tech-stacks.manage',
+                'group' => 'Portfolio',
+                'description' => 'Manage custom tech stack items for portfolio.',
+            ],
+            [
+                'name' => 'contacts.manage',
+                'group' => 'Portfolio',
+                'description' => 'Manage portfolio contact details and social channels.',
             ],
 
             // Administration
@@ -73,7 +83,7 @@ class RolePermissionService
             [
                 'name' => 'members.edit',
                 'group' => 'Administration',
-                'description' => 'Edit member accounts and switch into member portfolios.',
+                'description' => 'Edit member accounts, roles, ban status, and switch into member portfolios.',
             ],
             [
                 'name' => 'members.delete',
@@ -84,6 +94,11 @@ class RolePermissionService
                 'name' => 'skills.promote',
                 'group' => 'Administration',
                 'description' => 'Promote member custom skills to the global skill catalog.',
+            ],
+            [
+                'name' => 'logs.view',
+                'group' => 'Administration',
+                'description' => 'View activity logs, security events, and admin access audit trail.',
             ],
             [
                 'name' => 'settings.manage',
@@ -276,15 +291,18 @@ class RolePermissionService
         if ($adminRole->permissions()->count() === 0) {
             $adminRole->syncPermissions([
                 'dashboard.view',
-                'profile.manage',
+                'home.manage',
                 'projects.manage',
                 'skills.manage',
                 'experiences.manage',
+                'tech-stacks.manage',
+                'contacts.manage',
                 'members.view',
                 'members.create',
                 'members.edit',
                 'members.delete',
                 'skills.promote',
+                'logs.view',
                 'settings.manage',
             ]);
         }
@@ -292,11 +310,26 @@ class RolePermissionService
         if ($memberRole->permissions()->count() === 0) {
             $memberRole->syncPermissions([
                 'dashboard.view',
-                'profile.manage',
+                'home.manage',
                 'projects.manage',
                 'skills.manage',
                 'experiences.manage',
+                'tech-stacks.manage',
+                'contacts.manage',
             ]);
+        }
+
+        // Backfill split per-menu permissions for existing v1 roles that already have permissions
+        foreach ([$adminRole, $memberRole] as $role) {
+            $role->load('permissions');
+            if ($role->permissions->isNotEmpty()) {
+                if ($role->permissions->contains('name', 'profile.manage')) {
+                    $role->givePermissionTo(['home.manage', 'contacts.manage']);
+                }
+                if ($role->permissions->contains('name', 'skills.manage') && ! $role->permissions->contains('name', 'tech-stacks.manage')) {
+                    $role->givePermissionTo('tech-stacks.manage');
+                }
+            }
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -306,14 +339,18 @@ class RolePermissionService
     {
         User::where('role', 'user')->update(['role' => User::ROLE_MEMBER]);
 
+        $existingRoles = Role::where('guard_name', 'web')->pluck('id', 'name')->all();
         $users = User::with('roles')->get();
+
         foreach ($users as $user) {
             $roleName = $user->role ?: User::ROLE_MEMBER;
 
-            // Ensure the role exists in Spatie roles table
-            Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+            if (! isset($existingRoles[$roleName])) {
+                $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+                $existingRoles[$roleName] = $role->id;
+            }
 
-            if ($user->roles->isEmpty() || ! $user->hasRole($roleName)) {
+            if ($user->roles->isEmpty() || ! $user->roles->contains('name', $roleName)) {
                 $user->syncRoles([$roleName]);
             }
         }

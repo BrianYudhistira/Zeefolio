@@ -2,9 +2,9 @@ import { useState, useMemo } from "react";
 import { Head, Link } from "@inertiajs/react";
 import AnimatedContent from "@/Components/Animations/UI/AnimatedContent";
 import ProjectArchiveCard from "@/Components/Portfolio/Projects/ProjectArchiveCard";
+import PortfolioFooter from "@/Components/Portfolio/PortfolioFooter";
 import {
     HiOutlineArrowLeft,
-    HiArrowUp,
     HiMagnifyingGlass,
     HiXMark,
     HiOutlineFolderOpen,
@@ -74,10 +74,6 @@ export default function ListProject({
             return titleMatch || descMatch || techMatch;
         });
     }, [projectList, activeCategory, searchQuery]);
-
-    const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    };
 
     return (
         <>
@@ -251,28 +247,7 @@ export default function ListProject({
                 </main>
 
                 {/* ── Minimalist Monochrome Footer ── */}
-                <footer className="w-full border-t border-white/[0.08] py-12 px-4 relative z-10 bg-black mt-auto">
-                    <div className="max-w-[85%] 2xl:max-w-[80%] mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-3">
-                            <Link href={`/${portfolioSlug}`} className="text-white font-mono text-sm font-bold tracking-wider hover:text-neutral-300 transition-colors">
-                                {portfolioName.toUpperCase()}
-                            </Link>
-                            <span className="text-neutral-400 text-xs font-mono">
-                                / Projects Archive
-                            </span>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={scrollToTop}
-                            className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-neutral-400 hover:text-white p-2 rounded-lg hover:bg-white/[0.05] transition-colors"
-                            aria-label="Back to Top"
-                        >
-                            <span>Top</span>
-                            <HiArrowUp className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-                </footer>
+                <PortfolioFooter />
             </div>
         </>
     );

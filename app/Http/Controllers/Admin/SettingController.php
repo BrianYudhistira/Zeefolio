@@ -79,7 +79,7 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->infoLog('Skills', "Added global skill: {$skill->name}");
+        $this->logService->adminLog('Settings', "Added global skill: {$skill->name}");
 
         return redirect()->back()->with('success', "Global skill \"{$skill->name}\" has been added.");
     }
@@ -106,7 +106,7 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->infoLog('Skills', "Updated global skill: {$techStack->name}");
+        $this->logService->adminLog('Settings', "Updated global skill: {$techStack->name}");
 
         return redirect()->back()->with('success', "Global skill \"{$techStack->name}\" has been updated.");
     }
@@ -122,7 +122,7 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->infoLog('Skills', "Deleted global skill: {$name}");
+        $this->logService->adminLog('Settings', "Deleted global skill: {$name}");
 
         return redirect()->back()->with('success', "Global skill \"{$name}\" has been deleted.");
     }
@@ -139,7 +139,7 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->infoLog('Skills', "Added skill category: {$category->name}");
+        $this->logService->adminLog('Settings', "Added skill category: {$category->name}");
 
         return redirect()->back()->with('success', "Skill category \"{$category->name}\" has been added.");
     }
@@ -161,7 +161,7 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->infoLog('Skills', "Updated skill category: {$category->name}");
+        $this->logService->adminLog('Settings', "Updated skill category: {$category->name}");
 
         return redirect()->back()->with('success', "Skill category \"{$category->name}\" has been updated.");
     }
@@ -173,7 +173,7 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->infoLog('Skills', "Deleted skill category: {$name}");
+        $this->logService->adminLog('Settings', "Deleted skill category: {$name}");
 
         return redirect()->back()->with('success', "Skill category \"{$name}\" has been deleted.");
     }
@@ -201,7 +201,7 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->infoLog('Portfolio', "Added global project category: {$category->name} ({$category->slug})");
+        $this->logService->adminLog('Settings', "Added global project category: {$category->name} ({$category->slug})");
 
         return redirect()->back()->with('success', "Global project category \"{$category->name}\" has been added.");
     }
@@ -238,7 +238,7 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->infoLog('Portfolio', "Updated global project category: {$projectCategory->name} ({$newSlug})");
+        $this->logService->adminLog('Settings', "Updated global project category: {$projectCategory->name} ({$newSlug})");
 
         return redirect()->back()->with('success', "Global project category \"{$projectCategory->name}\" has been updated.");
     }
@@ -255,7 +255,7 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->infoLog('Portfolio', "Deleted global project category: {$name} ({$slug})");
+        $this->logService->adminLog('Settings', "Deleted global project category: {$name} ({$slug})");
 
         return redirect()->back()->with('success', "Global project category \"{$name}\" has been deleted.");
     }

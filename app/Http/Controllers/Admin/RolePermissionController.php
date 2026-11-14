@@ -44,7 +44,7 @@ class RolePermissionController extends Controller
                     'description' => $role->description,
                     'guard_name' => $role->guard_name,
                     'is_system' => $isSystem,
-                    'users_count' => (int) ($userCountsByRole[$role->name] ?? $role->users()->count()),
+                    'users_count' => (int) ($userCountsByRole[$role->name] ?? 0),
                     'permissions' => $role->permissions->pluck('name')->values()->all(),
                     'created_at' => $role->created_at,
                 ];
@@ -114,12 +114,14 @@ class RolePermissionController extends Controller
             'description' => $validated['description'] ?? null,
         ]);
 
-        $role->syncPermissions($validated['permissions'] ?? []);
+        $assignedPermissions = $validated['permissions'] ?? [];
+        $role->syncPermissions($assignedPermissions);
         $this->rolePermissionService->clearCache();
 
-        $this->logService->infoLog(
-            'Users',
-            "Created role \"{$role->name}\" with " . count($validated['permissions'] ?? []) . ' permissions'
+        $permSummary = ! empty($assignedPermissions) ? implode(', ', $assignedPermissions) : 'none';
+        $this->logService->adminLog(
+            'Roles',
+            "Created role \"{$role->name}\" with permissions: [{$permSummary}]"
         );
 
         return redirect()->back()->with('success', "Role \"{$role->name}\" has been created.");
@@ -158,6 +160,8 @@ class RolePermissionController extends Controller
             }
         }
 
+        $oldPermissions = $role->permissions()->pluck('name')->values()->all();
+
         $role->update([
             'name' => $newName,
             'description' => $validated['description'] ?? $role->description,
@@ -169,16 +173,33 @@ class RolePermissionController extends Controller
 
         if ($role->name === User::ROLE_SUPERADMIN) {
             // Superadmin always retains all permissions
-            $role->syncPermissions(Permission::where('guard_name', 'web')->get());
+            $newPermissions = Permission::where('guard_name', 'web')->pluck('name')->values()->all();
+            $role->syncPermissions($newPermissions);
         } else {
-            $role->syncPermissions($validated['permissions'] ?? []);
+            $newPermissions = array_values($validated['permissions'] ?? []);
+            $role->syncPermissions($newPermissions);
         }
 
         $this->rolePermissionService->clearCache();
 
-        $this->logService->infoLog(
-            'Users',
-            "Updated role \"{$role->name}\" permissions (" . count($validated['permissions'] ?? []) . ' assigned)'
+        $added = array_values(array_diff($newPermissions, $oldPermissions));
+        $removed = array_values(array_diff($oldPermissions, $newPermissions));
+
+        $changes = [];
+        if (! $isSystem && $oldName !== $newName) {
+            $changes[] = "renamed: {$oldName} -> {$newName}";
+        }
+        if (! empty($added)) {
+            $changes[] = '+added: [' . implode(', ', $added) . ']';
+        }
+        if (! empty($removed)) {
+            $changes[] = '-removed: [' . implode(', ', $removed) . ']';
+        }
+        $changeDetail = ! empty($changes) ? implode(' | ', $changes) : 'no permission changes';
+
+        $this->logService->adminLog(
+            'Roles',
+            "Updated role \"{$role->name}\" ({$changeDetail})"
         );
 
         return redirect()->back()->with('success', "Role \"{$role->name}\" has been updated.");
@@ -201,7 +222,10 @@ class RolePermissionController extends Controller
         $role->delete();
         $this->rolePermissionService->clearCache();
 
-        $this->logService->infoLog('Users', "Deleted custom role \"{$roleName}\"");
+        $this->logService->adminLog(
+            'Roles',
+            "Deleted custom role \"{$roleName}\" (reassigned {$affectedUsers->count()} user(s) to member)"
+        );
 
         return redirect()->back()->with('success', "Role \"{$roleName}\" has been deleted.");
     }
@@ -245,7 +269,10 @@ class RolePermissionController extends Controller
 
         $this->rolePermissionService->clearCache();
 
-        $this->logService->infoLog('Users', "Created permission \"{$permission->name}\" in group \"{$groupName}\"");
+        $this->logService->adminLog(
+            'Permissions',
+            "Created permission \"{$permission->name}\" in group \"{$groupName}\" (roles: [" . implode(', ', $roleNames) . '])'
+        );
 
         return redirect()->back()->with('success', "Permission \"{$permission->name}\" has been created.");
     }
@@ -269,7 +296,15 @@ class RolePermissionController extends Controller
             'roles.*' => ['string', 'exists:roles,name'],
         ]);
 
-        $permName = strtolower(trim($validated['name']));
+        $systemPermissionNames = array_column(RolePermissionService::defaultPermissions(), 'name');
+        $isSystemPermission = in_array($permission->name, $systemPermissionNames, true);
+
+        $oldPermName = $permission->name;
+        $oldRoles = $permission->roles()->pluck('name')->values()->all();
+
+        $permName = $isSystemPermission
+            ? $permission->name
+            : strtolower(trim($validated['name']));
         $groupName = trim($validated['group'] ?? '') ?: Str::headline(explode('.', $permName)[0] ?? 'Custom');
 
         $permission->update([
@@ -278,6 +313,7 @@ class RolePermissionController extends Controller
             'description' => $validated['description'] ?? null,
         ]);
 
+        $roleDiffText = '';
         if ($request->has('roles')) {
             $roleNames = collect($validated['roles'] ?? [])
                 ->push(User::ROLE_SUPERADMIN)
@@ -287,23 +323,43 @@ class RolePermissionController extends Controller
 
             $roles = Role::whereIn('name', $roleNames)->where('guard_name', 'web')->get();
             $permission->syncRoles($roles);
+
+            $addedRoles = array_values(array_diff($roleNames, $oldRoles));
+            $removedRoles = array_values(array_diff($oldRoles, $roleNames));
+            $parts = [];
+            if (! empty($addedRoles)) {
+                $parts[] = '+roles: [' . implode(', ', $addedRoles) . ']';
+            }
+            if (! empty($removedRoles)) {
+                $parts[] = '-roles: [' . implode(', ', $removedRoles) . ']';
+            }
+            $roleDiffText = ! empty($parts) ? ' (' . implode(' | ', $parts) . ')' : '';
         }
 
         $this->rolePermissionService->clearCache();
 
-        $this->logService->infoLog('Users', "Updated permission \"{$permission->name}\"");
+        $renameNote = $oldPermName !== $permission->name ? " (renamed from \"{$oldPermName}\")" : '';
+        $this->logService->adminLog(
+            'Permissions',
+            "Updated permission \"{$permission->name}\"{$renameNote}{$roleDiffText}"
+        );
 
         return redirect()->back()->with('success', "Permission \"{$permission->name}\" has been updated.");
     }
 
     public function destroyPermission(Request $request, Permission $permission): RedirectResponse
     {
+        $systemPermissionNames = array_column(RolePermissionService::defaultPermissions(), 'name');
+        if (in_array($permission->name, $systemPermissionNames, true)) {
+            abort(403, 'Core system permissions cannot be deleted.');
+        }
+
         $permName = $permission->name;
         $permission->delete();
 
         $this->rolePermissionService->clearCache();
 
-        $this->logService->infoLog('Users', "Deleted permission \"{$permName}\"");
+        $this->logService->adminLog('Permissions', "Deleted permission \"{$permName}\"");
 
         return redirect()->back()->with('success', "Permission \"{$permName}\" has been deleted.");
     }

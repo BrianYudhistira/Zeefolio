@@ -6,6 +6,7 @@ import SkillsSection from "@/Components/Portfolio/Sections/Skills";
 import ExperienceSection from "@/Components/Portfolio/Sections/Experience";
 import ProjectsSection from "@/Components/Portfolio/Sections/Project";
 import ContactSection from "@/Components/Portfolio/Sections/Contact";
+import PortfolioFooter from "@/Components/Portfolio/PortfolioFooter";
 
 const navLinks = [
     { href: "#home", label: "Home" },
@@ -82,7 +83,7 @@ export default function Portfolio({
     return (
         <>
             <Head
-                title={`${portfolio.home?.name || "Developer"} - Portfolio`}
+                title={`${portfolio.home?.name || "Portfolio"}`}
             />
 
             <div className="w-full bg-black text-neutral-200 antialiased selection:bg-white selection:text-black min-h-screen relative font-sans">
@@ -107,8 +108,8 @@ export default function Portfolio({
                             selectedSkillCategories?.length
                                 ? selectedSkillCategories
                                 : portfolio.selected_skill_categories ||
-                                  portfolio.skill_categories ||
-                                  []
+                                portfolio.skill_categories ||
+                                []
                         }
                     />
                     <SectionDivider />
@@ -128,22 +129,7 @@ export default function Portfolio({
                     />
                 </main>
 
-                <footer className="w-full border-t border-white/[0.08] py-6 px-4 relative z-10 bg-black">
-                    <div className="max-w-[85%] 2xl:max-w-[80%] mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-3">
-                            <span className="text-white font-mono text-sm font-bold tracking-wider">
-                                {portfolio.home?.name || "PORTFOLIO"}
-                            </span>
-                            <span className="text-neutral-400 text-xs font-mono">
-                                / Software Engineer
-                            </span>
-                        </div>
-                        <div className="text-neutral-400 text-xs font-mono">
-                            © {new Date().getFullYear()} {appName}. All rights
-                            reserved.
-                        </div>
-                    </div>
-                </footer>
+                <PortfolioFooter appName={appName} />
             </div>
         </>
     );

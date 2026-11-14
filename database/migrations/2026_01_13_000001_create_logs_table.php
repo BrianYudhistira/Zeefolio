@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
-            $table->enum('type', ['info', 'warning', 'error'])->default('info');
+            $table->enum('type', ['info', 'warning', 'error', 'admin'])->default('info');
             $table->string('module');
             $table->text('message');
             $table->string('ip_address', 45)->nullable();

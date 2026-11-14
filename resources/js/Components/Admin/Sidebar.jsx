@@ -69,142 +69,151 @@ export default function Sidebar({
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const isSuperAdmin = user?.role === "superadmin";
+    const perms = Array.isArray(user?.permission_names)
+        ? user.permission_names
+        : [];
+    const hasPerm = (permission) => isSuperAdmin || perms.includes(permission);
+
     const navGroups = [
-        {
-            items: [
-                {
+        ...(() => {
+            const dashboardItems = [
+                hasPerm("dashboard.view") && {
                     name: "Dashboard",
                     href: route("admin.dashboard"),
                     active: route().current("admin.dashboard"),
                     icon: HiOutlineSquares2X2,
                 },
-            ],
-        },
-        {
-            label: "Content Management",
-            items: [
-                {
+            ].filter(Boolean);
+
+            return dashboardItems.length > 0
+                ? [{ items: dashboardItems }]
+                : [];
+        })(),
+        ...(() => {
+            const contentItems = [
+                hasPerm("home.manage") && {
                     name: "Home & Profile",
                     href: route("admin.home.index"),
                     active: route().current("admin.home.*"),
                     icon: HiOutlineHome,
                 },
-                {
+                hasPerm("projects.manage") && {
                     name: "Projects",
                     href: route("admin.projects.index"),
                     active: route().current("admin.projects.*"),
                     icon: HiOutlineFolderOpen,
                 },
-                {
+                hasPerm("skills.manage") && {
                     name: "Skills",
                     href: route("admin.skills.index"),
                     active: route().current("admin.skills.*"),
                     icon: HiOutlineCpuChip,
                 },
-                {
+                hasPerm("experiences.manage") && {
                     name: "Experiences",
                     href: route("admin.experiences.index"),
                     active: route().current("admin.experiences.*"),
                     icon: HiOutlineBriefcase,
                 },
-                {
+                hasPerm("tech-stacks.manage") && {
                     name: "Tech Stacks",
                     href: route("admin.tech-stacks.index"),
                     active: route().current("admin.tech-stacks.*"),
                     icon: HiOutlineCodeBracketSquare,
                 },
-                {
-                    name: "Contacts",
+                hasPerm("contacts.manage") && {
+                    name: "Contact Info",
                     href: route("admin.contacts.index"),
                     active: route().current("admin.contacts.*"),
                     icon: HiOutlineEnvelope,
                 },
-            ],
-        },
-        ...(() => {
-            const isAdminOrSuper = ["superadmin", "admin"].includes(user?.role);
-            const perms = Array.isArray(user?.permission_names)
-                ? user.permission_names
+            ].filter(Boolean);
+
+            return contentItems.length > 0
+                ? [
+                      {
+                          label: "Portfolio Content",
+                          items: contentItems,
+                      },
+                  ]
                 : [];
-            const canViewMembers =
-                isAdminOrSuper || perms.includes("members.view");
+        })(),
+        ...(() => {
+            const canViewMembers = hasPerm("members.view");
             const canManageRoles =
-                user?.role === "superadmin" ||
-                perms.includes("roles.manage") ||
-                perms.includes("permissions.manage");
-            const canManageSettings =
-                isAdminOrSuper || perms.includes("settings.manage");
-            const canViewLogs =
-                user?.role === "superadmin" || perms.includes("logs.view");
+                hasPerm("roles.manage") || hasPerm("permissions.manage");
+            const canManageSettings = hasPerm("settings.manage");
+            const canViewLogs = hasPerm("logs.view");
 
             const adminItems = [
                 ...(canViewMembers
                     ? [
-                          {
-                              name: "Members & Accounts",
-                              href: route("admin.members.index"),
-                              active: route().current("admin.members.*"),
-                              icon: HiOutlineUsers,
-                          },
-                      ]
+                        {
+                            name: "Members",
+                            href: route("admin.members.index"),
+                            active: route().current("admin.members.*"),
+                            icon: HiOutlineUsers,
+                        },
+                    ]
                     : []),
                 ...(canManageRoles
                     ? [
-                          {
-                              name: "Roles & Permissions",
-                              href: route("admin.roles.index"),
-                              active:
-                                  route().current("admin.roles.*") ||
-                                  route().current("admin.permissions.*"),
-                              icon: HiOutlineShieldCheck,
-                          },
-                      ]
+                        {
+                            name: "Roles & Permissions",
+                            href: route("admin.roles.index"),
+                            active:
+                                route().current("admin.roles.*") ||
+                                route().current("admin.permissions.*"),
+                            icon: HiOutlineShieldCheck,
+                        },
+                    ]
                     : []),
                 ...(canViewLogs
                     ? [
-                          {
-                              name: "Read Logs",
-                              href: route("admin.logs.index"),
-                              active: route().current("admin.logs.*"),
-                              icon: HiOutlineDocumentText,
-                          },
-                      ]
+                        {
+                            name: "Activity Logs",
+                            href: route("admin.logs.index"),
+                            active: route().current("admin.logs.*"),
+                            icon: HiOutlineDocumentText,
+                        },
+                    ]
                     : []),
                 ...(canManageSettings
                     ? [
-                          {
-                              name: "Settings",
-                              href: route("admin.settings.index"),
-                              active: route().current("admin.settings.*"),
-                              icon: HiOutlineCog6Tooth,
-                          },
-                      ]
+                        {
+                            name: "Platform Settings",
+                            href: route("admin.settings.index"),
+                            active: route().current("admin.settings.*"),
+                            icon: HiOutlineCog6Tooth,
+                        },
+                    ]
                     : []),
             ];
 
             return adminItems.length > 0
                 ? [
-                      {
-                          label: "Administration",
-                          items: adminItems,
-                      },
-                  ]
+                    {
+                        label: "Administration",
+                        items: adminItems,
+                    },
+                ]
                 : [];
         })(),
         {
-            label: "User Settings",
+            label: "Account",
             items: [
-                {
-                    name: "Account Settings",
-                    href: route("admin.account.index"),
-                    active: route().current("admin.account.*"),
-                    icon: HiOutlineUserCircle,
-                },
                 {
                     name: "Notifications",
                     href: route("admin.notifications.index"),
                     active: route().current("admin.notifications.*"),
                     icon: HiOutlineBell,
+                },
+                {
+                    name: "Account Settings",
+                    href: route("admin.account.index"),
+                    active: route().current("admin.account.*"),
+                    icon: HiOutlineUserCircle,
                 },
             ],
         },
@@ -242,10 +251,12 @@ export default function Sidebar({
             {/* Navigation Groups */}
             <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
                 {navGroups.map((group) => (
-                    <div key={group.label} className="space-y-0.5">
-                        <p className="px-3 pb-1 text-[11px] font-medium text-zinc-500">
-                            {group.label}
-                        </p>
+                    <div key={group.label || "overview"} className="space-y-0.5">
+                        {group.label && (
+                            <p className="px-3 pb-1 text-[11px] font-medium text-zinc-500">
+                                {group.label}
+                            </p>
+                        )}
                         {group.items.map((item) => {
                             const Icon = item.icon;
                             return (
@@ -254,15 +265,15 @@ export default function Sidebar({
                                     href={item.href}
                                     onClick={onNavigate}
                                     className={`group flex items-center justify-between px-3 py-1.5 rounded-lg text-[13px] transition-colors ${item.active
-                                            ? "bg-zinc-800/85 text-zinc-100 font-medium border border-zinc-700/70"
-                                            : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border border-transparent"
+                                        ? "bg-zinc-800/85 text-zinc-100 font-medium border border-zinc-700/70"
+                                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border border-transparent"
                                         }`}
                                 >
                                     <span className="flex items-center gap-2.5">
                                         <Icon
                                             className={`w-4 h-4 ${item.active
-                                                    ? "text-zinc-100"
-                                                    : "text-zinc-500 group-hover:text-zinc-300"
+                                                ? "text-zinc-100"
+                                                : "text-zinc-500 group-hover:text-zinc-300"
                                                 } transition-colors`}
                                         />
                                         <span>{item.name}</span>
@@ -291,8 +302,8 @@ export default function Sidebar({
                                 onNavigate?.();
                             }}
                             className={`flex items-center gap-2.5 px-3 py-2 text-xs transition-colors ${route().current("admin.account.*")
-                                    ? "bg-zinc-800 text-zinc-100 font-medium"
-                                    : "text-zinc-300 hover:bg-zinc-800/70 hover:text-zinc-100"
+                                ? "bg-zinc-800 text-zinc-100 font-medium"
+                                : "text-zinc-300 hover:bg-zinc-800/70 hover:text-zinc-100"
                                 }`}
                         >
                             <HiOutlineUserCircle className="w-4 h-4 text-zinc-400" />
@@ -318,8 +329,8 @@ export default function Sidebar({
                         type="button"
                         onClick={() => setUserMenuOpen((prev) => !prev)}
                         className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${userMenuOpen
-                                ? "bg-zinc-800/80 border border-zinc-700/70"
-                                : "hover:bg-zinc-800/50 border border-transparent"
+                            ? "bg-zinc-800/80 border border-zinc-700/70"
+                            : "hover:bg-zinc-800/50 border border-transparent"
                             }`}
                     >
                         {user.photo_url ? (

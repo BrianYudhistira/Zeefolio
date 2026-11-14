@@ -75,7 +75,7 @@ class User extends Authenticatable implements MustVerifyEmail
         try {
             return $this->hasPermissionTo($permission);
         } catch (\Throwable) {
-            return $this->isAdminOrAbove();
+            return false;
         }
     }
 

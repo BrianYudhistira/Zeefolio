@@ -29,6 +29,17 @@ class HandleInertiaRequests extends Middleware
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->user()?->status === 'banned') {
+            $bannedUser = $request->user();
+            try {
+                app(LogService::class)->warningLog(
+                    'Security',
+                    "Force-logged out banned user @{$bannedUser->username} (ID: {$bannedUser->id})",
+                    ['user_id' => $bannedUser->id]
+                );
+            } catch (\Throwable) {
+                // Ignore logging failure during forced logout
+            }
+
             Auth::guard('web')->logout();
 
             if ($request->hasSession()) {
@@ -105,6 +116,8 @@ class HandleInertiaRequests extends Middleware
                 'photo_url' => $user->photo_url,
                 'email_verified_at' => $user->email_verified_at,
                 'last_login_at' => $user->last_login_at,
+                'ip_address' => $user->ip_address,
+                'location' => $user->location,
                 'role_names' => $roleNames,
                 'permission_names' => $permissionNames,
                 'portfolio_slug' => $portfolioSlug,
@@ -137,16 +150,18 @@ class HandleInertiaRequests extends Middleware
         try {
             $logService = app(LogService::class);
 
-            if (! UserNotification::where('user_id', $user->id)->exists()) {
+            if (! UserNotification::withTrashed()->where('user_id', $user->id)->exists()) {
                 $seedLogs = Log::query()
+                    ->where('user_id', $user->id)
                     ->whereIn('module', ['Skills', 'Portfolio', 'Users'])
-                    ->when(! $user->isAdminOrAbove(), fn ($q) => $q->where('user_id', $user->id))
                     ->latest('id')
                     ->limit(8)
                     ->get();
 
+                $rows = [];
                 foreach ($seedLogs->reverse() as $seedLog) {
-                    UserNotification::create([
+                    $timestamp = $seedLog->created_at ?? now();
+                    $rows[] = [
                         'user_id' => $user->id,
                         'actor_id' => $seedLog->user_id,
                         'module' => $seedLog->module,
@@ -154,10 +169,15 @@ class HandleInertiaRequests extends Middleware
                         'title' => ($seedLog->module ?: 'System') . ' Activity',
                         'message' => $seedLog->message,
                         'action_url' => $logService->resolveActionUrl($seedLog->module, (string) $seedLog->message),
+                        'is_popup_hidden' => false,
                         'read_at' => null,
-                        'created_at' => $seedLog->created_at ?? now(),
-                        'updated_at' => $seedLog->created_at ?? now(),
-                    ]);
+                        'created_at' => $timestamp,
+                        'updated_at' => $timestamp,
+                    ];
+                }
+
+                if (! empty($rows)) {
+                    UserNotification::insert($rows);
                 }
             }
 

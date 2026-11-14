@@ -3,7 +3,6 @@ import AdminLayout from "@/Layouts/AdminLayout";
 import EmptyState from "@/Components/UI/EmptyState";
 import {
     HiOutlineBell,
-    HiOutlineCheckCircle,
     HiOutlinePlusCircle,
     HiOutlineTrash,
 } from "react-icons/hi2";
@@ -27,14 +26,6 @@ export default function NotificationsIndex({
             preserveScroll: true,
             replace: true,
         });
-    };
-
-    const handleMarkAllAsRead = () => {
-        router.put(
-            route("admin.notifications.read-all"),
-            {},
-            { preserveScroll: true }
-        );
     };
 
     const handleDeleteAll = () => {
@@ -88,16 +79,6 @@ export default function NotificationsIndex({
 
     const headerActions = (
         <div className="flex items-center gap-2">
-            {(stats.unread ?? 0) > 0 && (
-                <button
-                    type="button"
-                    onClick={handleMarkAllAsRead}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-400 text-xs font-medium transition-colors cursor-pointer"
-                >
-                    <HiOutlineCheckCircle className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Mark all read</span>
-                </button>
-            )}
             {(stats.total ?? 0) > 0 && (
                 <button
                     type="button"
@@ -116,34 +97,6 @@ export default function NotificationsIndex({
             <Head title="Notifications - Zeefolio" />
 
             <div className="space-y-5">
-                {/* Summary Stats */}
-                <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
-                        <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">
-                            Total
-                        </p>
-                        <p className="text-xl sm:text-2xl font-bold text-zinc-100 mt-1">
-                            {stats.total ?? 0}
-                        </p>
-                    </div>
-                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
-                        <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-400/80">
-                            Unread
-                        </p>
-                        <p className="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
-                            {stats.unread ?? 0}
-                        </p>
-                    </div>
-                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
-                        <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">
-                            Read
-                        </p>
-                        <p className="text-xl sm:text-2xl font-bold text-zinc-300 mt-1">
-                            {stats.read ?? 0}
-                        </p>
-                    </div>
-                </div>
-
                 {/* Filter Tabs */}
                 <div className="flex items-center gap-2">
                     {[
@@ -155,11 +108,10 @@ export default function NotificationsIndex({
                             key={tab.key}
                             type="button"
                             onClick={() => handleFilterChange(tab.key)}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-                                filter === tab.key
-                                    ? "bg-zinc-100 text-zinc-950 border-zinc-100"
-                                    : "bg-zinc-900/70 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800/60"
-                            }`}
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${filter === tab.key
+                                ? "bg-zinc-100 text-zinc-950 border-zinc-100"
+                                : "bg-zinc-900/70 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800/60"
+                                }`}
                         >
                             {tab.label}
                         </button>
@@ -208,20 +160,18 @@ export default function NotificationsIndex({
                                                 handleNotificationClick(item);
                                             }
                                         }}
-                                        className={`px-4 sm:px-5 py-3.5 transition-colors flex items-start gap-3.5 cursor-pointer ${
-                                            isRead
-                                                ? "bg-transparent opacity-65 hover:bg-zinc-800/30 hover:opacity-95"
-                                                : "bg-zinc-800/55 hover:bg-zinc-800/80"
-                                        }`}
+                                        className={`px-4 sm:px-5 py-3.5 transition-colors flex items-start gap-3.5 cursor-pointer ${isRead
+                                            ? "bg-transparent opacity-65 hover:bg-zinc-800/30 hover:opacity-95"
+                                            : "bg-zinc-800/55 hover:bg-zinc-800/80"
+                                            }`}
                                     >
                                         <div
-                                            className={`mt-0.5 w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${
-                                                isDelete
-                                                    ? "bg-red-500/10 border-red-500/20 text-red-400"
-                                                    : isAdd
-                                                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                                                      : "bg-zinc-800 border-zinc-700 text-zinc-300"
-                                            }`}
+                                            className={`mt-0.5 w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${isDelete
+                                                ? "bg-red-500/10 border-red-500/20 text-red-400"
+                                                : isAdd
+                                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                                    : "bg-zinc-800 border-zinc-700 text-zinc-300"
+                                                }`}
                                         >
                                             {isDelete ? (
                                                 <HiOutlineTrash className="w-4 h-4" />
@@ -232,11 +182,10 @@ export default function NotificationsIndex({
 
                                         <div className="min-w-0 flex-1">
                                             <p
-                                                className={`text-xs sm:text-sm leading-snug ${
-                                                    isRead
-                                                        ? "text-zinc-300"
-                                                        : "text-zinc-100 font-medium"
-                                                }`}
+                                                className={`text-xs sm:text-sm leading-snug ${isRead
+                                                    ? "text-zinc-300"
+                                                    : "text-zinc-100 font-medium"
+                                                    }`}
                                             >
                                                 {item.message}
                                             </p>
@@ -302,11 +251,10 @@ export default function NotificationsIndex({
                                         href={link.url}
                                         preserveScroll
                                         preserveState
-                                        className={`px-2.5 py-1 rounded-lg text-xs border transition-colors ${
-                                            link.active
-                                                ? "bg-zinc-100 text-zinc-950 border-zinc-100 font-semibold"
-                                                : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800"
-                                        }`}
+                                        className={`px-2.5 py-1 rounded-lg text-xs border transition-colors ${link.active
+                                            ? "bg-zinc-100 text-zinc-950 border-zinc-100 font-semibold"
+                                            : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800"
+                                            }`}
                                         dangerouslySetInnerHTML={{
                                             __html: label,
                                         }}

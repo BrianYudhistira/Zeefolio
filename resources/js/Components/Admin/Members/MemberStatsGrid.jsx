@@ -75,57 +75,9 @@ export default function MemberStatsGrid({
     superAdminCount = 0,
     adminCount = 0,
     memberCount = 0,
-    showRoleGuide = false,
-    onCloseRoleGuide,
 }) {
     return (
         <>
-            {showRoleGuide && (
-                <div className="rounded-xl bg-zinc-900/80 border border-zinc-800 p-4 sm:p-5 space-y-3.5 sm:space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-                                <HiOutlineShieldCheck className="w-4 h-4 text-zinc-300" />
-                                <span>Role & Permission Hierarchy (3 Roles)</span>
-                            </h2>
-                            <p className="hidden sm:block text-xs text-zinc-400 mt-0.5">
-                                Overview of access levels across Super Admin, Admin, and Member accounts.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={onCloseRoleGuide}
-                            className="text-zinc-500 hover:text-zinc-200 cursor-pointer"
-                        >
-                            <HiXMark className="w-4 h-4" />
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-                        {Object.entries(ROLE_CONFIG).map(([key, cfg]) => (
-                            <div
-                                key={key}
-                                className="p-3.5 sm:p-4 rounded-lg bg-zinc-950 border border-zinc-800 space-y-1.5 sm:space-y-2"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span
-                                        className={`px-2 py-0.5 rounded border text-[11px] font-medium ${cfg.badgeClass}`}
-                                    >
-                                        {cfg.label}
-                                    </span>
-                                    <span className="text-[11px] font-mono text-zinc-500">
-                                        role: {key}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-zinc-400 leading-relaxed">
-                                    {cfg.description}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
                 <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3 sm:p-4 flex items-center justify-between">
                     <div>

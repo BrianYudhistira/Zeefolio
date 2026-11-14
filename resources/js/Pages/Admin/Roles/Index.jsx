@@ -59,10 +59,12 @@ export default function RolesPermissionsIndex({
             description: "",
             permissions: [
                 "dashboard.view",
-                "profile.manage",
+                "home.manage",
                 "projects.manage",
                 "skills.manage",
                 "experiences.manage",
+                "tech-stacks.manage",
+                "contacts.manage",
             ],
         });
         setRoleModalOpen(true);
@@ -251,11 +253,10 @@ export default function RolesPermissionsIndex({
                         <button
                             type="button"
                             onClick={() => setActiveSection("roles")}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                                activeSection === "roles"
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${activeSection === "roles"
                                     ? "bg-zinc-800 text-zinc-100 border border-zinc-700"
                                     : "text-zinc-400 hover:text-zinc-200 border border-transparent"
-                            }`}
+                                }`}
                         >
                             <HiOutlineShieldCheck className="w-4 h-4" />
                             <span>Roles & Matrix ({roles.length})</span>
@@ -263,14 +264,13 @@ export default function RolesPermissionsIndex({
                         <button
                             type="button"
                             onClick={() => setActiveSection("permissions")}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                                activeSection === "permissions"
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${activeSection === "permissions"
                                     ? "bg-zinc-800 text-zinc-100 border border-zinc-700"
                                     : "text-zinc-400 hover:text-zinc-200 border border-transparent"
-                            }`}
+                                }`}
                         >
                             <HiOutlineKey className="w-4 h-4" />
-                            <span>Permissions CRUD ({permissions.length})</span>
+                            <span>Permissions ({permissions.length})</span>
                         </button>
                     </div>
                 </div>

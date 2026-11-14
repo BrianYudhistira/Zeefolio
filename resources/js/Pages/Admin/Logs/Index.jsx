@@ -11,10 +11,17 @@ import {
     HiOutlineUser,
     HiOutlineGlobeAlt,
     HiOutlineFunnel,
+    HiOutlineShieldCheck,
 } from "react-icons/hi2";
 
 function getTypeStyle(type) {
     switch (String(type || "info").toLowerCase()) {
+        case "admin":
+            return {
+                label: "admin",
+                badge: "bg-purple-500/10 border-purple-500/25 text-purple-300",
+                icon: HiOutlineShieldCheck,
+            };
         case "error":
         case "critical":
         case "emergency":
@@ -106,18 +113,26 @@ export default function LogsIndex({
     };
 
     return (
-        <AdminLayout title="Read Logs">
-            <Head title="System Activity Logs - Zeefolio" />
+        <AdminLayout title="Activity Logs">
+            <Head title="Activity Logs - Zeefolio" />
 
             <div className="space-y-5">
                 {/* Summary Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
                         <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">
                             Total Logs
                         </p>
                         <p className="text-xl sm:text-2xl font-bold text-zinc-100 mt-1">
                             {stats.total ?? 0}
+                        </p>
+                    </div>
+                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
+                        <p className="text-[11px] font-mono uppercase tracking-wider text-purple-300/80">
+                            Admin Access
+                        </p>
+                        <p className="text-xl sm:text-2xl font-bold text-purple-300 mt-1">
+                            {stats.admin ?? 0}
                         </p>
                     </div>
                     <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
@@ -176,9 +191,10 @@ export default function LogsIndex({
                         <select
                             value={typeFilter}
                             onChange={handleTypeChange}
-                            className="flex-1 sm:flex-initial sm:w-36 px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:border-zinc-600 focus:outline-none"
+                            className="flex-1 sm:flex-initial sm:w-40 px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:border-zinc-600 focus:outline-none"
                         >
                             <option value="all">All Levels</option>
+                            <option value="admin">Admin Access</option>
                             <option value="info">Info</option>
                             <option value="warning">Warning</option>
                             <option value="error">Error</option>

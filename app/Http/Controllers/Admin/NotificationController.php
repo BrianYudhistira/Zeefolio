@@ -51,11 +51,19 @@ class NotificationController extends Controller
             ]
         );
 
-        $baseQuery = UserNotification::where('user_id', $user->id);
+        $rawStats = UserNotification::query()
+            ->where('user_id', $user->id)
+            ->selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN read_at IS NULL THEN 1 ELSE 0 END) as unread_count,
+                SUM(CASE WHEN read_at IS NOT NULL THEN 1 ELSE 0 END) as read_count
+            ')
+            ->first();
+
         $stats = [
-            'total' => (clone $baseQuery)->count(),
-            'unread' => (clone $baseQuery)->whereNull('read_at')->count(),
-            'read' => (clone $baseQuery)->whereNotNull('read_at')->count(),
+            'total' => (int) ($rawStats->total ?? 0),
+            'unread' => (int) ($rawStats->unread_count ?? 0),
+            'read' => (int) ($rawStats->read_count ?? 0),
         ];
 
         return Inertia::render('Admin/Notifications/Index', [

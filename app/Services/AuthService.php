@@ -34,6 +34,13 @@ class AuthService
             throw new AuthenticationException('Your account has been suspended.');
         }
 
+        $ipAddress = request()->ip();
+        $user->forceFill([
+            'last_login_at' => now(),
+            'ip_address' => $ipAddress,
+            'location' => app(LogService::class)->resolveClientLocation($ipAddress),
+        ])->save();
+
         return $user;
     }
 
@@ -62,6 +69,7 @@ class AuthService
                 $username = $baseUsername.'_'.Str::lower(Str::random(4));
             }
 
+            $ipAddress = request()->ip();
             $user = User::create([
                 'name' => trim($data['name']),
                 'username' => $username,
@@ -69,6 +77,9 @@ class AuthService
                 'photo_path' => $photoPath,
                 'role' => User::ROLE_MEMBER,
                 'status' => 'active',
+                'last_login_at' => now(),
+                'ip_address' => $ipAddress,
+                'location' => app(LogService::class)->resolveClientLocation($ipAddress),
                 'password' => Hash::make($data['password']),
             ]);
 

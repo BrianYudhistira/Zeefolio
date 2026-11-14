@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Log;
-use App\Models\User;
 use App\Models\UserNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -21,24 +20,13 @@ class LogService
         'Settings',
     ];
 
-    private function getMetadata(array $customMetadata = []): array
-    {
-        $ipAddress = $customMetadata['ip_address'] ?? request()->ip();
-        $userAgent = $customMetadata['user_agent'] ?? request()->userAgent();
-        $location = $customMetadata['location'] ?? $this->getLocationFromIp($ipAddress);
-
-        return [
-            'ip_address' => $ipAddress,
-            'user_agent' => is_string($userAgent) ? substr($userAgent, 0, 255) : null,
-            'location' => $location,
-        ];
-    }
-
     /**
      * Resolve client location without blocking HTTP requests or leaking IPs over cleartext HTTP.
      */
-    private function getLocationFromIp(?string $ip): string
+    public function resolveClientLocation(?string $ip = null): string
     {
+        $ip ??= request()->ip();
+
         if (
             ! $ip ||
             $ip === '127.0.0.1' ||
@@ -54,14 +42,34 @@ class LogService
         }
 
         $request = request();
-        foreach (['CF-IPCountry', 'CloudFront-Viewer-Country', 'X-Vercel-IP-Country', 'X-Country-Code'] as $header) {
-            $country = strtoupper(trim((string) $request->header($header)));
-            if ($country !== '' && $country !== 'XX' && $country !== 'T1' && strlen($country) <= 64) {
-                return $country;
+        if ($request->isFromTrustedProxy()) {
+            foreach (['CF-IPCountry', 'CloudFront-Viewer-Country', 'X-Vercel-IP-Country', 'X-Country-Code'] as $header) {
+                $country = strtoupper(trim((string) $request->header($header)));
+                if (
+                    $country !== '' &&
+                    $country !== 'XX' &&
+                    $country !== 'T1' &&
+                    preg_match('/^[A-Z]{2}$/', $country) === 1
+                ) {
+                    return $country;
+                }
             }
         }
 
         return 'Unknown';
+    }
+
+    private function getMetadata(array $customMetadata = []): array
+    {
+        $ipAddress = $customMetadata['ip_address'] ?? request()->ip();
+        $userAgent = $customMetadata['user_agent'] ?? request()->userAgent();
+        $location = $customMetadata['location'] ?? $this->resolveClientLocation($ipAddress);
+
+        return [
+            'ip_address' => $ipAddress,
+            'user_agent' => is_string($userAgent) ? substr($userAgent, 0, 255) : null,
+            'location' => $location,
+        ];
     }
 
     /**
@@ -99,13 +107,16 @@ class LogService
         $requestMetadata = $this->getMetadata($metadata);
         $userId = $metadata['user_id'] ?? (Auth::check() ? Auth::id() : null);
 
-        $level = in_array($type, ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'], true)
-            ? $type
-            : 'info';
+        $level = match ($type) {
+            'emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug' => $type,
+            'admin' => 'notice',
+            default => 'info',
+        };
         $prefix = $module ? "[{$module}] " : '';
 
         LaravelLog::log($level, $prefix . $message, array_filter([
             'module' => $module,
+            'log_type' => $type,
             'user_id' => $userId,
             ...$requestMetadata,
         ], static fn ($value) => $value !== null));
@@ -152,37 +163,17 @@ class LogService
     ): ?UserNotification {
         try {
             $resolvedActionUrl = $this->resolveActionUrl($module, $message, $actionUrl);
-            $recipients = [$recipientId];
 
-            if (in_array($module, ['Skills', 'Portfolio', 'Users'], true)) {
-                $adminIds = User::query()
-                    ->whereIn('role', [User::ROLE_SUPERADMIN, User::ROLE_ADMIN])
-                    ->pluck('id')
-                    ->map(fn ($id) => (int) $id)
-                    ->all();
-
-                $recipients = array_values(array_unique(array_merge($recipients, $adminIds)));
-            }
-
-            $created = null;
-            foreach ($recipients as $targetUserId) {
-                $notif = UserNotification::create([
-                    'user_id' => $targetUserId,
-                    'actor_id' => $actorId,
-                    'module' => $module,
-                    'type' => $type,
-                    'title' => $title ?: "{$module} Update",
-                    'message' => $message,
-                    'action_url' => $resolvedActionUrl,
-                    'read_at' => null,
-                ]);
-
-                if ($targetUserId === $recipientId) {
-                    $created = $notif;
-                }
-            }
-
-            return $created;
+            return UserNotification::create([
+                'user_id' => $recipientId,
+                'actor_id' => $actorId,
+                'module' => $module,
+                'type' => $type,
+                'title' => $title ?: "{$module} Update",
+                'message' => $message,
+                'action_url' => $resolvedActionUrl,
+                'read_at' => null,
+            ]);
         } catch (\Throwable $e) {
             LaravelLog::warning('Failed to dispatch user notification: ' . $e->getMessage());
 
@@ -193,6 +184,11 @@ class LogService
     public function infoLog($module = null, $message = null, $metadata = [])
     {
         return $this->createLog('info', $module, $message, $metadata);
+    }
+
+    public function adminLog($module = null, $message = null, $metadata = [])
+    {
+        return $this->createLog('admin', $module, $message, $metadata);
     }
 
     public function warningLog($module = null, $message = null, $metadata = [])
