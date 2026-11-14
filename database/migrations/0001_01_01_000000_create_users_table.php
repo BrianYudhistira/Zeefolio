@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('bio')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('role', 50)->default('user');
+            $table->string('role', 50)->default('member');
             $table->enum('status', ['active', 'dnd', 'banned'])->default('active');
             $table->timestamp('last_login_at')->nullable();
             $table->string('ip_address', 45)->nullable();
@@ -50,9 +50,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('userlogs');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

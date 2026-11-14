@@ -48,7 +48,12 @@ class LogService
         $requestMetadata = $this->getMetadata($metadata);
         $userId = Auth::check() ? Auth::id() : null;
 
-        LaravelLog::log($type, $message, array_filter([
+        $level = in_array($type, ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'], true)
+            ? $type
+            : 'info';
+        $prefix = $module ? "[{$module}] " : '';
+
+        LaravelLog::log($level, $prefix . $message, array_filter([
             'module' => $module,
             'user_id' => $userId,
             ...$requestMetadata,

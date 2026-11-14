@@ -4,14 +4,13 @@ namespace App\Services;
 
 use App\Models\Contact;
 use App\Models\Home;
-use App\Models\PortfolioSetting;
 use App\Models\PortfolioUser;
 use App\Models\Project;
 use App\Models\TechStack;
+use App\Models\TechStackCategory;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -32,6 +31,7 @@ class PortfolioService
                     'home',
                     'userSkills.techStack.category',
                     'projects.techStacks',
+                    'projects.images',
                     'contacts',
                     'experiences',
                 ])
@@ -40,13 +40,39 @@ class PortfolioService
     }
 
     /**
-     * Get public portfolio with resolved experience tech stacks.
+     * Get public portfolio with resolved experience tech stacks by user ID.
      */
     public function getPublicPortfolio(int $userId = 1): ?PortfolioUser
     {
         $user = User::findOrFail($userId);
         $portfolio = $this->getPortfolio($user);
 
+        return $this->hydrateExperienceTechStacks($portfolio);
+    }
+
+    /**
+     * Get public portfolio by portfolio slug (or fallback to user username).
+     */
+    public function getPublicPortfolioBySlug(string $slug): ?PortfolioUser
+    {
+        $portfolioRecord = PortfolioUser::where('slug', $slug)->first();
+
+        if (! $portfolioRecord) {
+            $user = User::where('username', $slug)->first();
+            if (! $user) {
+                return null;
+            }
+            $portfolioRecord = $user->portfolioUser()->first() ?? $this->createDefaultPortfolio($user);
+        }
+
+        return $this->getPublicPortfolio($portfolioRecord->user_id);
+    }
+
+    /**
+     * Resolve experience tech stack icons on a portfolio instance.
+     */
+    protected function hydrateExperienceTechStacks(?PortfolioUser $portfolio): ?PortfolioUser
+    {
         if ($portfolio && $portfolio->experiences) {
             $allTechStacks = TechStack::all()->keyBy(
                 fn (TechStack $item) => Str::lower(trim($item->name))
@@ -68,15 +94,53 @@ class PortfolioService
             }
         }
 
+        if ($portfolio) {
+            $rawCategories = PortfolioUser::whereKey($portfolio->id)->value('skill_categories')
+                ?? $portfolio->skill_categories;
+
+            if (is_string($rawCategories)) {
+                $rawCategories = json_decode($rawCategories, true);
+            }
+
+            $savedCategoryIds = is_array($rawCategories)
+                ? array_values(array_filter(array_map('intval', $rawCategories)))
+                : [];
+
+            $portfolio->skill_categories = $savedCategoryIds;
+
+            if (! empty($savedCategoryIds)) {
+                $categoriesById = TechStackCategory::whereIn('id', $savedCategoryIds)
+                    ->get()
+                    ->keyBy('id');
+
+                $portfolio->selected_skill_categories = collect($savedCategoryIds)
+                    ->map(fn (int $id) => $categoriesById->get($id))
+                    ->filter()
+                    ->take(4)
+                    ->map(fn (TechStackCategory $cat) => [
+                        'id' => $cat->id,
+                        'name' => $cat->name,
+                    ])
+                    ->values()
+                    ->all();
+            } else {
+                $portfolio->selected_skill_categories = [];
+            }
+        }
+
         return $portfolio;
     }
 
     /**
-     * List all projects ordered deterministically.
+     * List projects ordered deterministically (scoped to a portfolio when provided).
      */
-    public function listProjects(): Collection
+    public function listProjects(?PortfolioUser $portfolio = null): Collection
     {
-        return Project::with(['techStacks', 'images'])
+        $query = $portfolio
+            ? $portfolio->projects()
+            : Project::query();
+
+        return $query->with(['techStacks', 'images'])
             ->orderBy('sort_order', 'asc')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -84,58 +148,17 @@ class PortfolioService
     }
 
     /**
-     * Get single project by slug.
+     * Get single project by slug (scoped to a portfolio when provided).
      */
-    public function getProjectBySlug(string $slug): ?Project
+    public function getProjectBySlug(string $slug, ?PortfolioUser $portfolio = null): ?Project
     {
-        return Project::with(['techStacks', 'images'])
+        $query = $portfolio
+            ? $portfolio->projects()
+            : Project::query();
+
+        return $query->with(['techStacks', 'images', 'portfolioUser'])
             ->where('slug', $slug)
             ->first();
-    }
-
-    /**
-     * Get the home section for the user's portfolio.
-     */
-    public function getHomeSection(User $user): ?Home
-    {
-        return $this->getPortfolio($user)?->home;
-    }
-
-    /**
-     * Get the about / profile info from the home section (since `about` table was merged into `home`).
-     */
-    public function getAboutSection(User $user): ?Home
-    {
-        return $this->getPortfolio($user)?->home;
-    }
-
-    /**
-     * Get skills section grouped by category name.
-     */
-    public function getSkillsSection(User $user): ?SupportCollection
-    {
-        $portfolio = $this->getPortfolio($user);
-
-        if (! $portfolio) {
-            return null;
-        }
-
-        return $portfolio->userSkills
-            ->filter(fn ($skill) => $skill->techStack?->name !== null)
-            ->groupBy(fn ($skill) => $skill->techStack->category?->name ?? 'database')
-            ->map(fn ($skills) => $skills
-                ->map(fn ($skill) => $skill->techStack->name)
-                ->unique()
-                ->values()
-            );
-    }
-
-    /**
-     * Get logo setting from settings table.
-     */
-    public function getLogoSetting(): ?PortfolioSetting
-    {
-        return PortfolioSetting::where('name', 'logo')->first();
     }
 
     /**
@@ -144,10 +167,15 @@ class PortfolioService
     public function createDefaultPortfolio(User $user): PortfolioUser
     {
         return DB::transaction(function () use ($user) {
+            $baseSlug = Str::slug($user->username ?: $user->name) ?: 'user-'.$user->id;
+            $slug = PortfolioUser::where('slug', $baseSlug)->exists()
+                ? $baseSlug.'-'.Str::lower(Str::random(4))
+                : $baseSlug;
+
             $portfolio = $user->portfolioUser()->create([
                 'sections' => ['home', 'about', 'projects', 'contact'],
                 'theme' => 'default',
-                'slug' => Str::slug($user->name).'-'.Str::lower(Str::random(5)),
+                'slug' => $slug,
                 'is_active' => true,
             ]);
 
@@ -211,7 +239,7 @@ class PortfolioService
                 }
 
                 $column = $fileConfig['column'];
-                $oldFiles[] = $homeSection->{$column};
+                $oldFiles[] = $homeSection->getRawOriginal($column) ?? $homeSection->{$column};
                 $newPath = $data[$input]->store($fileConfig['directory'], 'public');
 
                 if (! $newPath) {
@@ -235,7 +263,7 @@ class PortfolioService
         }
 
         foreach ($oldFiles as $oldFile) {
-            if ($oldFile) {
+            if ($oldFile && is_string($oldFile) && ! str_starts_with($oldFile, 'http')) {
                 $disk->delete($oldFile);
             }
         }
@@ -256,10 +284,19 @@ class PortfolioService
             return null;
         }
 
-        $contact = $portfolio->contacts()->updateOrCreate(
-            ['portfolio_user_id' => $portfolio->id],
-            collect($data)->only(['email', 'phone', 'address'])->all()
-        );
+        DB::beginTransaction();
+
+        try {
+            $contact = $portfolio->contacts()->updateOrCreate(
+                ['portfolio_user_id' => $portfolio->id],
+                collect($data)->only(['email', 'phone', 'address'])->all()
+            );
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
 
         $this->clearPortfolioCache($user->id);
 
@@ -267,267 +304,78 @@ class PortfolioService
     }
 
     /**
-     * Update project sort order and featured status.
+     * Collect all storage file paths associated with a portfolio (home, projects, showcases).
      *
-     * @return array<int>
+     * @return list<string>
      */
-    public function updateProjectsOrder(User $user, array $projects): ?array
+    public function collectPortfolioFilePaths(PortfolioUser $portfolio): array
     {
-        $portfolio = $user->portfolioUser()->first();
+        $paths = [];
 
-        if (! $portfolio) {
-            return null;
-        }
-
-        $updatedIds = [];
-
-        DB::transaction(function () use ($portfolio, $projects, &$updatedIds) {
-            foreach ($projects as $projectData) {
-                $existingProject = $portfolio->projects()->where('id', $projectData['id'])->first();
-
-                if ($existingProject) {
-                    $existingProject->update([
-                        'sort_order' => $projectData['sort_order'] ?? 999,
-                        'is_featured' => $projectData['is_featured'] ?? false,
-                    ]);
-
-                    $updatedIds[] = $existingProject->id;
+        if ($portfolio->home) {
+            foreach (['logo_path', 'image_path', 'cv_path'] as $column) {
+                $rawPath = $portfolio->home->getRawOriginal($column) ?? $portfolio->home->{$column};
+                if ($rawPath && is_string($rawPath) && ! str_starts_with($rawPath, 'http')) {
+                    $paths[] = $rawPath;
                 }
             }
-        });
+        }
 
-        $this->clearPortfolioCache($user->id);
+        $projects = $portfolio->relationLoaded('projects')
+            ? $portfolio->projects
+            : $portfolio->projects()->with('images')->get();
 
-        return $updatedIds;
-    }
-
-    /**
-     * Create or update complete portfolio (supports both JSON and multipart form-data).
-     */
-    public function createOrUpdatePortfolio(User $user, array $data, array $files = []): PortfolioUser
-    {
-        return DB::transaction(function () use ($user, $data, $files) {
-            if (isset($files['about_image']) && $files['about_image'] instanceof UploadedFile) {
-                $data['home']['image_path'] = $files['about_image']->store('portfolios/images', 'public');
+        foreach ($projects as $project) {
+            $rawCover = $project->getRawOriginal('image_path') ?? $project->image_path;
+            foreach ((array) $rawCover as $path) {
+                if ($path && is_string($path) && ! str_starts_with($path, 'http')) {
+                    $paths[] = $path;
+                }
             }
 
-            if (isset($files['about_cv']) && $files['about_cv'] instanceof UploadedFile) {
-                $data['home']['cv_path'] = $files['about_cv']->store('portfolios/cvs', 'public');
-            }
-
-            if (isset($files['home_logo']) && $files['home_logo'] instanceof UploadedFile) {
-                $data['home']['logo_path'] = $files['home_logo']->store('portfolios/logos', 'public');
-            }
-
-            if (isset($files['project_images']) && is_array($files['project_images'])) {
-                foreach ($files['project_images'] as $index => $projectImage) {
-                    if ($projectImage instanceof UploadedFile && isset($data['projects'][$index])) {
-                        $data['projects'][$index]['image_path'] = $projectImage->store('portfolios/project_images', 'public');
+            $images = $project->relationLoaded('images') ? $project->images : $project->images()->get();
+            foreach ($images as $showcase) {
+                foreach ((array) $showcase->image_path as $path) {
+                    if ($path && is_string($path) && ! str_starts_with($path, 'http')) {
+                        $paths[] = $path;
                     }
                 }
             }
+        }
 
-            $portfolio = $user->portfolioUser()->first();
-
-            if (! $portfolio) {
-                $portfolio = $this->createPortfolio($user, $data);
-            } else {
-                $portfolio = $this->updatePortfolio($portfolio, $data);
-            }
-
-            $this->clearPortfolioCache($user->id);
-
-            return $portfolio->load(['home', 'projects', 'contacts']);
-        });
+        return array_values(array_unique($paths));
     }
 
     /**
-     * Delete portfolio and all related files in public storage.
+     * Delete only the portfolio SQL records (used inside an outer transaction before file cleanup).
+     */
+    public function deletePortfolioRecordOnly(PortfolioUser $portfolio): void
+    {
+        $userId = $portfolio->user_id;
+        $portfolio->delete();
+        $this->clearPortfolioCache($userId);
+    }
+
+    /**
+     * Delete portfolio in SQL first inside a transaction, then remove files from public storage.
      */
     public function deletePortfolio(PortfolioUser $portfolio): void
     {
-        DB::transaction(function () use ($portfolio) {
-            $disk = Storage::disk('public');
+        $filesToDelete = $this->collectPortfolioFilePaths($portfolio);
 
-            if ($portfolio->home) {
-                foreach (['logo_path', 'image_path', 'cv_path'] as $column) {
-                    if ($portfolio->home->{$column}) {
-                        $disk->delete($portfolio->home->{$column});
-                    }
-                }
-            }
+        DB::beginTransaction();
 
-            foreach ($portfolio->projects as $project) {
-                if (! empty($project->image_path)) {
-                    foreach ((array) $project->image_path as $path) {
-                        if ($path) {
-                            $disk->delete($path);
-                        }
-                    }
-                }
-            }
-
-            $userId = $portfolio->user_id;
-            $portfolio->delete();
-
-            $this->clearPortfolioCache($userId);
-        });
-    }
-
-    private function createPortfolio(User $user, array $data): PortfolioUser
-    {
-        $portfolio = $user->portfolioUser()->create([
-            'sections' => $data['sections'] ?? ['home', 'about', 'projects', 'contact'],
-            'theme' => $data['theme'] ?? 'default',
-            'slug' => $data['slug'] ?? Str::slug($user->name).'-'.Str::lower(Str::random(5)),
-            'is_active' => $data['is_active'] ?? true,
-        ]);
-
-        $portfolio->home()->create([
-            'greeting' => $data['home']['greeting'] ?? 'Hello, I am',
-            'name' => $data['home']['name'] ?? $user->name,
-            'passions' => $data['home']['passions'] ?? [],
-            'description' => $data['home']['description'] ?? '',
-            'logo_path' => $data['home']['logo_path'] ?? null,
-            'image_path' => $data['home']['image_path'] ?? $data['about']['image_path'] ?? null,
-            'cv_path' => $data['home']['cv_path'] ?? $data['about']['cv_path'] ?? null,
-            'social_media_links' => $data['home']['social_media_links'] ?? [],
-        ]);
-
-        $portfolio->contacts()->create([
-            'email' => $data['contacts']['email'] ?? $user->email,
-            'phone' => $data['contacts']['phone'] ?? null,
-            'address' => $data['contacts']['address'] ?? null,
-        ]);
-
-        if (isset($data['projects']) && is_array($data['projects'])) {
-            foreach ($data['projects'] as $projectData) {
-                if (! empty($projectData['title'])) {
-                    $portfolio->projects()->create([
-                        'title' => $projectData['title'],
-                        'slug' => $projectData['slug'] ?? Str::slug($projectData['title']).'-'.Str::lower(Str::random(4)),
-                        'description' => $projectData['description'] ?? '',
-                        'tech_stack' => $projectData['tech_stack'] ?? [],
-                        'image_path' => $projectData['image_path'] ?? null,
-                        'demo_url' => $projectData['demo_url'] ?? null,
-                        'source_url' => $projectData['source_url'] ?? null,
-                        'is_featured' => $projectData['is_featured'] ?? false,
-                        'sort_order' => $projectData['sort_order'] ?? 999,
-                    ]);
-                }
-            }
+        try {
+            $this->deletePortfolioRecordOnly($portfolio);
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
         }
 
-        return $portfolio;
-    }
-
-    private function updatePortfolio(PortfolioUser $portfolio, array $data): PortfolioUser
-    {
-        $portfolio->update([
-            'sections' => $data['sections'] ?? $portfolio->sections,
-            'theme' => $data['theme'] ?? $portfolio->theme,
-            'slug' => $data['slug'] ?? $portfolio->slug,
-            'is_active' => $data['is_active'] ?? $portfolio->is_active,
-        ]);
-
-        if (isset($data['home']) && $portfolio->home) {
-            $portfolio->home->update($data['home']);
-        }
-
-        if (isset($data['about']) && $portfolio->home) {
-            $disk = Storage::disk('public');
-            $homeUpdate = [];
-
-            if (isset($data['about']['image_path'])) {
-                if ($portfolio->home->image_path) {
-                    $disk->delete($portfolio->home->image_path);
-                }
-                $homeUpdate['image_path'] = $data['about']['image_path'];
-            }
-
-            if (isset($data['about']['cv_path'])) {
-                if ($portfolio->home->cv_path) {
-                    $disk->delete($portfolio->home->cv_path);
-                }
-                $homeUpdate['cv_path'] = $data['about']['cv_path'];
-            }
-
-            if (! empty($homeUpdate)) {
-                $portfolio->home->update($homeUpdate);
-            }
-        }
-
-        if (isset($data['contacts']) && $portfolio->contacts) {
-            $portfolio->contacts->update(collect($data['contacts'])->only(['email', 'phone', 'address'])->all());
-        }
-
-        if (isset($data['projects']) && is_array($data['projects'])) {
-            $this->syncProjects($portfolio, $data['projects']);
-        }
-
-        return $portfolio;
-    }
-
-    private function syncProjects(PortfolioUser $portfolio, array $projects): void
-    {
         $disk = Storage::disk('public');
-        $projectIds = [];
-
-        foreach ($projects as $projectData) {
-            if (! empty($projectData['id'])) {
-                $project = $portfolio->projects()->find($projectData['id']);
-
-                if ($project) {
-                    if (isset($projectData['image_path']) && $project->image_path) {
-                        foreach ((array) $project->image_path as $oldPath) {
-                            if ($oldPath) {
-                                $disk->delete($oldPath);
-                            }
-                        }
-                    }
-
-                    $project->update([
-                        'title' => $projectData['title'] ?? $project->title,
-                        'description' => $projectData['description'] ?? $project->description,
-                        'tech_stack' => $projectData['tech_stack'] ?? $project->tech_stack,
-                        'image_path' => $projectData['image_path'] ?? $project->image_path,
-                        'demo_url' => $projectData['demo_url'] ?? $project->demo_url,
-                        'source_url' => $projectData['source_url'] ?? $project->source_url,
-                        'is_featured' => $projectData['is_featured'] ?? $project->is_featured,
-                        'sort_order' => $projectData['sort_order'] ?? $project->sort_order,
-                    ]);
-
-                    $projectIds[] = $project->id;
-                }
-            } elseif (! empty($projectData['title'])) {
-                $newProject = $portfolio->projects()->create([
-                    'title' => $projectData['title'],
-                    'slug' => $projectData['slug'] ?? Str::slug($projectData['title']).'-'.Str::lower(Str::random(4)),
-                    'description' => $projectData['description'] ?? '',
-                    'tech_stack' => $projectData['tech_stack'] ?? [],
-                    'image_path' => $projectData['image_path'] ?? null,
-                    'demo_url' => $projectData['demo_url'] ?? null,
-                    'source_url' => $projectData['source_url'] ?? null,
-                    'is_featured' => $projectData['is_featured'] ?? false,
-                    'sort_order' => $projectData['sort_order'] ?? 999,
-                ]);
-
-                $projectIds[] = $newProject->id;
-            }
-        }
-
-        $deletedProjects = $portfolio->projects()->whereNotIn('id', $projectIds)->get();
-
-        foreach ($deletedProjects as $project) {
-            if (! empty($project->image_path)) {
-                foreach ((array) $project->image_path as $path) {
-                    if ($path) {
-                        $disk->delete($path);
-                    }
-                }
-            }
-
-            $project->delete();
+        foreach ($filesToDelete as $path) {
+            $disk->delete($path);
         }
     }
 

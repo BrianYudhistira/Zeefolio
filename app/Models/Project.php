@@ -16,6 +16,8 @@ class Project extends Model
         'portfolio_user_id',
         'type',
         'title',
+        'slug',
+        'project_type',
         'description',
         'image_path',
         'demo_url',
@@ -23,6 +25,7 @@ class Project extends Model
         'tech_stack',
         'sort_order',
         'is_featured',
+        'is_active',
     ];
 
     protected $casts = [

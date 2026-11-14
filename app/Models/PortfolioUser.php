@@ -15,6 +15,7 @@ class PortfolioUser extends Model
     protected $fillable = [
         'user_id',
         'sections',
+        'skill_categories',
         'theme',
         'slug',
         'is_active',
@@ -22,6 +23,7 @@ class PortfolioUser extends Model
 
     protected $casts = [
         'sections' => 'array',
+        'skill_categories' => 'array',
         'is_active' => 'boolean',
     ];
 
@@ -59,7 +61,9 @@ class PortfolioUser extends Model
      */
     public function experiences(): HasMany
     {
-        return $this->hasMany(Experience::class);
+        return $this->hasMany(Experience::class)
+            ->orderBy('sort_order')
+            ->orderByDesc('start_date');
     }
 
     /**
@@ -76,6 +80,14 @@ class PortfolioUser extends Model
     public function featuredProjects(): HasMany
     {
         return $this->hasMany(Project::class)->where('is_featured', true)->orderBy('sort_order');
+    }
+
+    /**
+     * Get recorded portfolio page views.
+     */
+    public function views(): HasMany
+    {
+        return $this->hasMany(PortfolioView::class);
     }
 
     /**

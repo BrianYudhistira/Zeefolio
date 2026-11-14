@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Portfolio;
 
 use App\Http\Controllers\Controller;
 use App\Mail\SendMailToMe;
+use App\Models\PortfolioUser;
+use App\Models\PortfolioView;
 use App\Services\PortfolioService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,49 +20,143 @@ class PortfolioController extends Controller
         protected PortfolioService $portfolioService,
     ) {}
 
-    public function index(): Response
+    public function index(Request $request, string $slug): Response
     {
-        $portfolio = $this->portfolioService->getPublicPortfolio(1);
+        $portfolio = $this->resolveVisiblePortfolio($request, $slug);
+
+        $this->recordView($request, $portfolio->id, 'home');
 
         return Inertia::render('Portfolio/Portfolio', [
             'portfolio' => $portfolio,
+            'portfolioSlug' => $portfolio->slug,
+            'selectedSkillCategories' => $portfolio->selected_skill_categories ?? [],
         ]);
     }
 
-    public function listProject(): Response
+    public function listProject(Request $request, string $slug): Response
     {
-        $projects = $this->portfolioService->listProjects();
+        $portfolio = $this->resolveVisiblePortfolio($request, $slug);
+        $projects = $this->portfolioService->listProjects($portfolio);
+
+        $this->recordView($request, $portfolio->id, 'projects');
 
         return Inertia::render('Portfolio/Projects/ListProject', [
             'projects' => $projects,
+            'portfolioSlug' => $portfolio->slug,
+            'portfolioName' => $portfolio->home?->name ?? 'Portfolio',
         ]);
     }
 
-    public function getProjectBySlug(string $slug): Response
+    public function getProjectBySlug(Request $request, string $slug, string $projectSlug): Response
     {
-        $project = $this->portfolioService->getProjectBySlug($slug);
+        $portfolio = $this->resolveVisiblePortfolio($request, $slug);
+        $project = $this->portfolioService->getProjectBySlug($projectSlug, $portfolio);
 
         if (! $project) {
             abort(404, 'Project not found');
         }
 
+        $this->recordView($request, $portfolio->id, 'project', $project->id);
+
         return Inertia::render('Portfolio/Projects/DetailProject', [
             'project' => $project,
+            'portfolioSlug' => $portfolio->slug,
+            'portfolioName' => $portfolio->home?->name ?? 'Portfolio',
         ]);
     }
 
-    public function sendMessage(Request $request): RedirectResponse
+    public function redirectLegacyProjects(): RedirectResponse
+    {
+        $defaultSlug = PortfolioUser::orderBy('id')->value('slug') ?? 'brian-yudhistira';
+
+        return redirect()->route('portfolio.projects', ['slug' => $defaultSlug]);
+    }
+
+    public function redirectLegacyProjectDetail(string $projectSlug): RedirectResponse
+    {
+        $project = $this->portfolioService->getProjectBySlug($projectSlug);
+
+        if (! $project) {
+            abort(404, 'Project not found');
+        }
+
+        $portfolioSlug = $project->portfolioUser?->slug
+            ?? PortfolioUser::orderBy('id')->value('slug')
+            ?? 'brian-yudhistira';
+
+        return redirect()->route('portfolio.project', [
+            'slug' => $portfolioSlug,
+            'projectSlug' => $project->slug,
+        ]);
+    }
+
+    protected function resolveVisiblePortfolio(Request $request, string $slug): PortfolioUser
+    {
+        $portfolio = $this->portfolioService->getPublicPortfolioBySlug($slug);
+
+        if (! $portfolio) {
+            abort(404, 'Portfolio not found.');
+        }
+
+        $viewer = $request->user();
+        $canBypassDraft = $viewer && ($viewer->id === $portfolio->user_id || $viewer->isAdminOrAbove());
+
+        if (! $portfolio->is_active && ! $canBypassDraft) {
+            abort(404, 'This portfolio is currently private.');
+        }
+
+        return $portfolio;
+    }
+
+    protected function recordView(Request $request, int $portfolioUserId, string $page, ?int $projectId = null): void
+    {
+        try {
+            $ip = $request->ip() ?? 'unknown';
+            $userAgent = substr((string) $request->userAgent(), 0, 255);
+
+            PortfolioView::create([
+                'portfolio_user_id' => $portfolioUserId,
+                'page' => $page,
+                'project_id' => $projectId,
+                'ip_hash' => hash('sha256', $ip . '|' . config('app.key')),
+                'user_agent' => $userAgent ?: null,
+                'viewed_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to record portfolio view: ' . $e->getMessage());
+        }
+    }
+
+    public function sendMessage(Request $request, ?string $slug = null): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'message' => ['required', 'string'],
+            'portfolio_slug' => ['nullable', 'string', 'max:100'],
         ]);
 
+        $targetSlug = $slug ?? ($validated['portfolio_slug'] ?? null);
+        $recipientEmail = config('mail.to.address');
+
+        if ($targetSlug) {
+            $portfolio = $this->portfolioService->getPublicPortfolioBySlug($targetSlug);
+            $recipientEmail = $portfolio?->contacts?->email
+                ?: ($portfolio?->user?->email ?: $recipientEmail);
+        }
+
         try {
-            Mail::to(config('mail.to.address'))->send(
+            Mail::to($recipientEmail)->send(
                 new SendMailToMe($validated['name'], $validated['email'], $validated['message'])
             );
+
+            Log::info('[Portfolio] Contact message sent', [
+                'portfolio_slug' => $targetSlug,
+                'recipient_email' => $recipientEmail,
+                'sender_name' => $validated['name'],
+                'sender_email' => $validated['email'],
+                'ip_address' => $request->ip(),
+            ]);
 
             return redirect()->back()->with('success', 'Message sent successfully!');
         } catch (\Exception $e) {

@@ -8,12 +8,90 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory, Notifiable, HasRoles;
+
+    public const ROLE_SUPERADMIN = 'superadmin';
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_MEMBER = 'member';
+
+    public function isSuperAdmin(): bool
+    {
+        if ($this->role === self::ROLE_SUPERADMIN) {
+            return true;
+        }
+
+        try {
+            return $this->hasRole(self::ROLE_SUPERADMIN);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function isAdmin(): bool
+    {
+        if ($this->role === self::ROLE_ADMIN) {
+            return true;
+        }
+
+        try {
+            return $this->hasRole(self::ROLE_ADMIN);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function isAdminOrAbove(): bool
+    {
+        if (in_array($this->role, [self::ROLE_SUPERADMIN, self::ROLE_ADMIN], true)) {
+            return true;
+        }
+
+        try {
+            return $this->hasAnyRole([self::ROLE_SUPERADMIN, self::ROLE_ADMIN]);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function isMember(): bool
+    {
+        return ! $this->isAdminOrAbove();
+    }
+
+    /**
+     * Check if the user has a specific Spatie permission (or is superadmin).
+     */
+    public function hasAccessPermission(string $permission): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        try {
+            return $this->hasPermissionTo($permission);
+        } catch (\Throwable) {
+            return $this->isAdminOrAbove();
+        }
+    }
+
+    /**
+     * Sync Spatie role and keep the `role` column in sync.
+     */
+    public function syncUserRole(string $roleName): void
+    {
+        $this->update(['role' => $roleName]);
+
+        try {
+            $this->syncRoles([$roleName]);
+        } catch (\Throwable) {
+            // Ignore if tables not yet created
+        }
+    }
 
     /**
      * The attributes that are mass assignable.
