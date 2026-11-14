@@ -11,187 +11,69 @@
 [![Spatie Permission](https://img.shields.io/badge/Spatie_RBAC-8.x-10B981?style=for-the-badge&logo=php&logoColor=white)](https://spatie.be/docs/laravel-permission)
 [![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
 
-*ZeeFolio is a multi-user developer portfolio platform built with **Laravel 13**, **Inertia.js v2**, and **React 18**. It enables each user to manage and publish their own portfolio under a custom slug (`/{slug}`), complete with **Role-Based Access Control (RBAC)** powered by Spatie Permission, portfolio view analytics, and a modular content management dashboard.*
-
-[Key Features](#key-features) •
-[Architecture & System Flow](#architecture--system-flow) •
-[Directory Structure](#directory-structure) •
-[Installation & Setup](#installation--setup) •
-[Routes Overview](#routes-overview) •
-[Access Control (RBAC)](#access-control-rbac)
+*A multi-user developer portfolio platform built with **Laravel 13**, **Inertia.js v2**, and **React 18**. Each user gets a customizable public portfolio under `/{slug}`, view analytics, and a role-based management dashboard.*
 
 </div>
 
 ---
 
-## Key Features
+## Features
 
-### 1. Public Portfolio (`/{slug}`)
-- **Dynamic Multi-Tenant URLs**: Each user gets a dedicated public portfolio page by unique slug (e.g., `/brian-yudhistira`), an archive page (`/{slug}/projects`), and project detail pages (`/{slug}/projects/{projectSlug}`).
-- **Customizable Skill Display Categories**: Users can select and order **1 to 4 priority skill categories** (`01`–`04`) from the dashboard to dynamically control which categories appear on their public portfolio.
-- **Interactive Futuristic UI**: Built with smooth animations powered by **GSAP**, **Framer Motion**, and **OGL (WebGL)** across the Hero, Skills, Experience Timeline, Project Showcase, and Contact sections.
-- **Draft & Privacy Control**: Portfolios marked as inactive (`Draft`) are hidden from the public while remaining accessible for preview by the owner and Admin/Superadmin users.
-- **Direct Contact Mailer**: Visitors can send messages directly through the contact form, routed to the portfolio owner's configured contact email.
-
-### 2. Admin & Member Dashboard (`/admin/*`)
-- **Analytics & Overview Dashboard**: Displays portfolio view statistics (`PortfolioView`), project/skill/experience counts, and recent activity logs.
-- **Home & Profile Builder**: Manage the hero section, passions/roles, short bio, profile photo, logo, CV (PDF) upload, and social media links.
-- **Project & Showcase Manager**: Full project CRUD with cover image upload, multi-image showcase gallery, tech stack tags, custom sort order, and per-user project categories.
-- **Skills & Custom Tech Stack**: Pick from the global skill catalog or create custom skills with **Devicon** icons and proficiency levels (`1`–`5`).
-- **Career & Education Experience**: Manage work and education history with certificate uploads, used tech stacks, and ordering (`move up/down`).
-- **Personal Account Settings**: Update account profile details, username, profile photo, password, signed email verification, and self-service account deletion.
-
-### 3. Administration & RBAC (`Spatie Laravel Permission`)
-- **Role & Permission Management**: Manage roles (`superadmin`, `admin`, `member`, or custom roles) and granular permissions directly from the dashboard, enforced via Spatie's built-in `permission` middleware.
-- **Member & Portfolio Management**: Admins can manage member accounts, preview member portfolios, and promote member-created custom skills into the global catalog.
-- **Global Platform Settings**: Centralized management for Global Tech Stacks, Skill Categories, and Global Project Categories.
-- **Transactional SQL & File Safety**: All file upload and deletion flows run inside `DB::beginTransaction()` — SQL changes are committed first before old files are removed from storage, with automatic rollback and cleanup of newly uploaded files if an error occurs.
+- **Multi-Tenant Public Portfolio (`/{slug}`)**: Dedicated landing page, projects archive (`/{slug}/projects`), and project detail gallery (`/{slug}/projects/{projectSlug}`) with draft/privacy mode and direct contact mailer.
+- **Portfolio Builder (`/admin/*`)**: Manage hero profile, CV upload, 1–4 prioritized skill categories, custom tech stacks with Devicon icons, career/education timeline, and projects.
+- **Analytics & Audit Logs**: Tracks portfolio views (`PortfolioView`) and administrative/security actions (`LogService`).
+- **RBAC & Member Management**: Powered by **Spatie Laravel Permission** (`superadmin`, `admin`, `member`, and custom roles) with member management, portfolio preview, and global catalog promotion.
+- **Transactional File Safety**: File uploads and old-asset cleanup run inside database transactions to prevent orphaned or broken storage states.
 
 ---
 
-## Architecture & System Flow
-
-```mermaid
-flowchart TD
-    Visitor["Visitor / Public User"] -->|"GET /{slug}"| PortfolioCtrl["PortfolioController"]
-    Visitor -->|"GET /"| RootRedirect["Redirect to /admin/login or /admin/dashboard"]
-
-    subgraph Backend ["Laravel 13 Backend"]
-        PortfolioCtrl --> PortfolioSvc["PortfolioService (Cache + Eloquent)"]
-        AdminRoutes["/admin/* Routes + Spatie Middleware"] --> AdminCtrls["Admin Controllers"]
-        AdminCtrls --> Services["PortfolioService / AuthService / RolePermissionService / LogService"]
-        Services --> DB[("MySQL Database")]
-        Services --> Storage[("Public Disk Storage")]
-    end
-
-    subgraph Frontend ["React 18 + Inertia.js v2"]
-        PortfolioCtrl -->|"Inertia::render"| PublicPages["Pages/Portfolio/*"]
-        AdminCtrls -->|"Inertia::render"| AdminPages["Pages/Admin/*"]
-    end
-```
-
-### Core Workflow
-1. **Routing & Entry Point**:
-   - Visiting `/` checks authentication state: guests are redirected to `/admin/login`, while authenticated users are redirected to `/admin/dashboard`.
-   - Public routes under `/{slug}` resolve the target user's portfolio by `portfolio_users.slug` (falling back to `users.username`).
-2. **State Sharing (Inertia Middleware)**:
-   - `HandleInertiaRequests` shares authenticated user data (`role_names`, `permission_names`, `portfolio_slug`), flash messages, and recent activity notifications as a clean array without mutating the underlying Eloquent `$request->user()` model.
-3. **Caching & Performance**:
-   - Portfolio data is cached per user (`portfolio:user:{id}`) via `PortfolioService` and automatically invalidated whenever profile, projects, skills, skill categories, experiences, or contacts are updated.
-4. **File Management & Database Transactions**:
-   - Newly uploaded files are stored on the `public` disk, database updates run inside `DB::beginTransaction()`, and old files are deleted only after `DB::commit()` succeeds.
-
----
-
-## Directory Structure
-
-```text
-zeefolio/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Admin/               # Dashboard, Content, Account, Members, RBAC, Settings controllers
-│   │   │   └── Portfolio/           # PortfolioController for public /{slug} routes
-│   │   ├── Middleware/              # HandleInertiaRequests & application middleware
-│   │   └── Requests/                # FormRequest validation classes
-│   ├── Mail/                        # Mailable classes for contact & email verification
-│   ├── Models/                      # Eloquent models (User, PortfolioUser, Project, TechStack, etc.)
-│   └── Services/                    # Business logic (PortfolioService, AuthService, RolePermissionService, LogService)
-├── database/
-│   ├── migrations/                  # Database schema migrations
-│   └── seeders/                     # Default users, tech stacks, & sample portfolio seeders
-├── resources/
-│   └── js/
-│       ├── Components/
-│       │   ├── Admin/               # Modular dashboard components (Skills, Projects, Members, etc.)
-│       │   ├── Animations/          # GSAP / WebGL animation components
-│       │   ├── Portfolio/           # Public portfolio sections (Home, Skills, Experience, Project, Contact)
-│       │   └── Shared/              # Reusable UI components (Modal, SearchInput, EmptyState, DeviconIcon)
-│       ├── Layouts/                 # AdminLayout (Sidebar, Topbar, Notification Popover)
-│       ├── Pages/
-│       │   ├── Admin/               # Inertia dashboard pages (/admin/*)
-│       │   └── Portfolio/           # Inertia public portfolio pages (/{slug}/*)
-│       └── Utils/                   # Frontend helpers & utilities
-└── routes/
-    ├── web.php                      # Main route entry point
-    └── web/
-        ├── auth.php                 # Authentication routes (/admin/login, /admin/register, /admin/logout)
-        ├── portfolio.php            # Public portfolio routes (/{slug}, /{slug}/projects, etc.)
-        └── dashboard/
-            ├── overview.php         # Dashboard & personal account settings routes
-            ├── content.php          # Content management routes (home, contacts, projects, skills, experiences)
-            └── administration.php   # Administration routes (members, roles, permissions, global settings)
-```
-
----
-
-## Installation & Setup
+## Quick Start
 
 ### Prerequisites
-- **PHP** >= 8.3 (with `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `gd` extensions)
+- **PHP** >= 8.3 (`pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `gd`)
 - **Composer** >= 2.x
 - **Node.js** >= 20.x & **NPM**
 - **MySQL** / **MariaDB**
 
-### Local Setup
+### Installation
 
-1. **Clone the repository**
+1. **Clone & install dependencies**
    ```bash
-   git clone https://github.com/username/zeefolio.git
-   cd zeefolio
-   ```
-
-2. **Install PHP & JavaScript dependencies**
-   ```bash
+   git clone https://github.com/BrianYudhistira/Zeee-Hub.git
+   cd Zeee-Hub
    composer install
    npm install
    ```
 
-3. **Configure environment variables**
+2. **Configure environment**
    ```bash
    cp .env.example .env
    php artisan key:generate
    ```
-   Update your database and app settings in `.env`:
-   ```env
-   APP_NAME="ZeeFolio"
-   APP_URL=http://127.0.0.1:8000
+   Update `DB_*`, `APP_NAME="ZeeFolio"`, and `APP_URL` in `.env` as needed.
 
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=zeee_hub
-   DB_USERNAME=root
-   DB_PASSWORD=
-   ```
-
-4. **Run migrations, seeders, and create the storage symlink**
+3. **Migrate, seed, and link storage**
    ```bash
    php artisan migrate --seed
    php artisan storage:link
    ```
 
-5. **Start the development server**
-   You can run all services (Laravel server, Vite HMR, Queue listener, and Pail logs) with a single command:
+4. **Start development server**
    ```bash
    composer run dev
    ```
-   Or run them in separate terminals:
-   ```bash
-   # Terminal 1 - Vite Dev Server
-   npm run dev
+   *(Runs `php artisan serve`, queue listener, Pail logs, and Vite HMR concurrently. Alternatively, run `php artisan serve` and `npm run dev` separately.)*
 
-   # Terminal 2 - Laravel HTTP Server
-   php artisan serve
-   ```
-
-6. **Build for production**
+5. **Production build**
    ```bash
    npm run build
    php artisan optimize
    ```
 
-### Default Seeded Accounts
+---
+
+## Default Seeded Accounts
+
 | Role | Email | Password | Portfolio Slug |
 | :--- | :--- | :--- | :--- |
 | **Superadmin** | `brianyudhistira1@gmail.com` | `password` | `/brian-yudhistira` |
@@ -199,61 +81,39 @@ zeefolio/
 
 ---
 
-## Routes Overview
+## Project Structure
 
-### Public Portfolio Routes
-| Method | URI | Route Name | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/` | `root` | Redirects to `/admin/dashboard` or `/admin/login` |
-| `GET` | `/{slug}` | `portfolio.index` | User's public portfolio landing page |
-| `GET` | `/{slug}/projects` | `portfolio.projects` | User's full projects archive page |
-| `GET` | `/{slug}/projects/{projectSlug}` | `portfolio.project` | Project detail & showcase gallery page |
-| `POST` | `/{slug}/messageMe` | `portfolio.user.sendMessage` | Sends contact form email to the portfolio owner |
-
-### Admin & Dashboard Routes (`/admin/*`)
-| Group | URI Prefix | Permission Middleware | Description |
-| :--- | :--- | :--- | :--- |
-| **Auth** | `/admin/login`, `/admin/register` | `guest` | Login & member registration |
-| **Dashboard** | `/admin/dashboard` | `permission:dashboard.view` | Analytics & portfolio metrics |
-| **Account** | `/admin/account/*` | `auth` | Profile, photo, password, & email verification |
-| **Home & Contact** | `/admin/home`, `/admin/contacts` | `permission:profile.manage` | Hero section, CV, & contact details |
-| **Projects** | `/admin/projects/*` | `permission:projects.manage` | Projects, showcase images, & custom categories |
-| **Skills** | `/admin/skills/*`, `/admin/tech-stacks/*` | `permission:skills.manage` | Active skills, 1–4 display categories, & custom tech stacks |
-| **Experiences** | `/admin/experiences/*` | `permission:experiences.manage` | Work/education experiences & display ordering |
-| **Members** | `/admin/members/*` | `permission:members.view\|create\|edit\|delete` | Member management, portfolio preview, & skill promotion |
-| **Roles & RBAC** | `/admin/roles/*`, `/admin/permissions/*` | `permission:roles.manage\|permissions.manage` | Spatie role & permission matrix management |
-| **Settings** | `/admin/settings/*` | `permission:settings.manage` | Global skills & platform categories |
+```text
+├── app/
+│   ├── Http/Controllers/   # Admin & Portfolio Inertia controllers
+│   ├── Http/Middleware/     # HandleInertiaRequests & auth/permission middleware
+│   ├── Models/             # Eloquent models
+│   └── Services/           # PortfolioService (caching), AuthService, RolePermissionService, LogService
+├── database/               # Migrations & seeders
+├── resources/js/
+│   ├── Components/         # Admin, Portfolio, Animations, & Shared UI components
+│   ├── Layouts/            # AdminLayout
+│   └── Pages/              # Inertia pages (Admin/*, Portfolio/*)
+└── routes/web/             # Modular route files (auth, portfolio, dashboard/*)
+```
 
 ---
 
-## Access Control (RBAC)
+## Routes & Access Control
 
-ZeeFolio uses **Spatie Laravel Permission** with automatic bootstrapping via `RolePermissionService` and a `Gate::before` bypass for `superadmin`.
-
-| Permission | Group | Superadmin | Admin | Member |
-| :--- | :--- | :---: | :---: | :---: |
-| `dashboard.view` | Portfolio | Yes | Yes | Yes |
-| `profile.manage` | Portfolio | Yes | Yes | Yes |
-| `projects.manage` | Portfolio | Yes | Yes | Yes |
-| `skills.manage` | Portfolio | Yes | Yes | Yes |
-| `experiences.manage` | Portfolio | Yes | Yes | Yes |
-| `members.view` | Administration | Yes | Yes | — |
-| `members.create` | Administration | Yes | Yes | — |
-| `members.edit` | Administration | Yes | Yes | — |
-| `members.delete` | Administration | Yes | Yes | — |
-| `skills.promote` | Administration | Yes | Yes | — |
-| `settings.manage` | Administration | Yes | Yes | — |
-| `roles.manage` | Access Control | Yes | — | — |
-| `permissions.manage` | Access Control | Yes | — | — |
+- **Public**: `/{slug}`, `/{slug}/projects`, `/{slug}/projects/{projectSlug}`, `POST /{slug}/messageMe`
+- **Dashboard (`/admin/*`)**: Protected by `auth` and Spatie `permission:*` middleware (`dashboard.view`, `profile.manage`, `projects.manage`, `skills.manage`, `experiences.manage`, `members.*`, `roles.manage`, `permissions.manage`, `settings.manage`).
 
 ---
 
-## Troubleshooting
+## Testing & Troubleshooting
 
-- **Images or CV files return `403` / `404` under `/storage/...`**:
-  Ensure the storage symlink exists by running `php artisan storage:link` and verify `storage/app/public` has readable permissions.
-- **Permission changes do not take effect immediately**:
-  Clear Spatie's permission cache and the Laravel application cache:
+- **Run test suite**:
+  ```bash
+  composer test
+  ```
+- **Broken `/storage/...` images/CVs**: Run `php artisan storage:link` and check `storage/app/public` permissions.
+- **Stale RBAC permissions**:
   ```bash
   php artisan permission:cache-reset
   php artisan optimize:clear
@@ -263,4 +123,4 @@ ZeeFolio uses **Spatie Laravel Permission** with automatic bootstrapping via `Ro
 
 ## License
 
-**ZeeFolio** is open-sourced software licensed under the [MIT License](https://opensource.org/licenses/MIT).
+Licensed under the [MIT License](https://opensource.org/licenses/MIT).
