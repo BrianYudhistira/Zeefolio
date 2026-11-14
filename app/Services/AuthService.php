@@ -49,21 +49,34 @@ class AuthService
 
         try {
             if ($photoFile) {
-                $filename = Str::uuid()->toString().'.'.$photoFile->getClientOriginalExtension();
-                $photoPath = $photoFile->storeAs('users', $filename, 'public');
+                // SEC-08: Use server-detected MIME extension via store() instead of getClientOriginalExtension()
+                $photoPath = $photoFile->store('users/photos', 'public');
             }
 
-            $username = $data['username'] ?? Str::slug($data['name']).'-'.Str::lower(Str::random(4));
+            $baseUsername = ! empty($data['username'])
+                ? Str::slug($data['username'], '_')
+                : (Str::slug($data['name']) ?: 'user');
+
+            $username = $baseUsername;
+            while (User::where('username', $username)->exists()) {
+                $username = $baseUsername.'_'.Str::lower(Str::random(4));
+            }
 
             $user = User::create([
-                'name' => $data['name'],
+                'name' => trim($data['name']),
                 'username' => $username,
-                'email' => $data['email'],
+                'email' => trim($data['email']),
                 'photo_path' => $photoPath,
                 'role' => User::ROLE_MEMBER,
                 'status' => 'active',
                 'password' => Hash::make($data['password']),
             ]);
+
+            app(RolePermissionService::class)->ensureBootstrapped();
+            $user->syncUserRole(User::ROLE_MEMBER);
+
+            // SEC-11: Initialize default portfolio during registration instead of mutating state on GET requests
+            app(PortfolioService::class)->createDefaultPortfolio($user);
 
             DB::commit();
         } catch (\Throwable $e) {

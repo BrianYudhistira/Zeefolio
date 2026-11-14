@@ -195,21 +195,36 @@ class ProjectController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $portfolio = $this->resolvePortfolio($request, $this->portfolioService);
+        $user = $request->user();
+
+        if ($request->filled('slug')) {
+            $request->merge([
+                'slug' => Str::slug((string) $request->input('slug')),
+            ]);
+        }
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:projects,slug'],
+            'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', Rule::unique('projects', 'slug')],
             'type' => ['nullable', 'string', 'max:50'],
             'project_type' => ['nullable', 'string', 'max:100'],
             'custom_project_type' => ['nullable', 'string', 'max:50'],
             'description' => ['required', 'string'],
-            'demo_url' => ['nullable', 'url', 'max:255'],
-            'source_url' => ['nullable', 'url', 'max:255'],
+            'demo_url' => ['nullable', 'url:http,https', 'max:255'],
+            'source_url' => ['nullable', 'url:http,https', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_featured' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
             'tech_stack_ids' => ['nullable', 'array'],
-            'tech_stack_ids.*' => ['integer', 'exists:tech_stacks,id'],
+            'tech_stack_ids.*' => [
+                'integer',
+                Rule::exists('tech_stacks', 'id')->where(function ($query) use ($user) {
+                    $query->where('is_global', true);
+                    if ($user) {
+                        $query->orWhere('user_id', $user->id);
+                    }
+                }),
+            ],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
             'showcases' => ['nullable', 'array'],
             'showcases.*.title' => ['nullable', 'string', 'max:255'],
@@ -221,6 +236,10 @@ class ProjectController extends Controller
         $slug = ! empty($validated['slug'])
             ? Str::slug($validated['slug'])
             : Str::slug($validated['title']).'-'.Str::lower(Str::random(4));
+
+        while (Project::where('slug', $slug)->exists()) {
+            $slug = Str::slug($validated['title']).'-'.Str::lower(Str::random(5));
+        }
 
         $disk = Storage::disk('public');
         $newFiles = [];
@@ -237,8 +256,20 @@ class ProjectController extends Controller
                 }
             }
 
-            $techStackIds = $validated['tech_stack_ids'] ?? [];
-            $techStackNames = TechStack::whereIn('id', $techStackIds)->pluck('name')->values()->all();
+            $requestedTechStackIds = $validated['tech_stack_ids'] ?? [];
+            $validTechStacks = TechStack::availableFor($user)
+                ->whereIn('id', $requestedTechStackIds)
+                ->get(['id', 'name'])
+                ->keyBy('id');
+
+            $techStackIds = array_values(array_filter(
+                $requestedTechStackIds,
+                fn ($id) => $validTechStacks->has((int) $id)
+            ));
+            $techStackNames = array_values(array_map(
+                fn ($id) => $validTechStacks->get((int) $id)->name,
+                $techStackIds
+            ));
 
             $resolvedProjectType = $this->resolveProjectType(
                 $request,
@@ -294,25 +325,40 @@ class ProjectController extends Controller
     public function update(Request $request, Project $project): RedirectResponse
     {
         $portfolio = $this->resolvePortfolio($request, $this->portfolioService);
+        $user = $request->user();
 
         if ($project->portfolio_user_id !== $portfolio->id) {
             abort(403);
         }
 
+        if ($request->filled('slug')) {
+            $request->merge([
+                'slug' => Str::slug((string) $request->input('slug')),
+            ]);
+        }
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('projects', 'slug')->ignore($project->id)],
+            'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', Rule::unique('projects', 'slug')->ignore($project->id)],
             'type' => ['nullable', 'string', 'max:50'],
             'project_type' => ['nullable', 'string', 'max:100'],
             'custom_project_type' => ['nullable', 'string', 'max:50'],
             'description' => ['required', 'string'],
-            'demo_url' => ['nullable', 'url', 'max:255'],
-            'source_url' => ['nullable', 'url', 'max:255'],
+            'demo_url' => ['nullable', 'url:http,https', 'max:255'],
+            'source_url' => ['nullable', 'url:http,https', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_featured' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
             'tech_stack_ids' => ['nullable', 'array'],
-            'tech_stack_ids.*' => ['integer', 'exists:tech_stacks,id'],
+            'tech_stack_ids.*' => [
+                'integer',
+                Rule::exists('tech_stacks', 'id')->where(function ($query) use ($user) {
+                    $query->where('is_global', true);
+                    if ($user) {
+                        $query->orWhere('user_id', $user->id);
+                    }
+                }),
+            ],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
             'showcases' => ['nullable', 'array'],
             'showcases.*.id' => ['nullable', 'integer'],
@@ -335,7 +381,7 @@ class ProjectController extends Controller
         DB::beginTransaction();
 
         try {
-            $oldImagePath = $project->getRawOriginal('image_path');
+            $oldImagePath = $project->image_path;
             $imagePath = $oldImagePath;
 
             if ($request->hasFile('image')) {
@@ -351,8 +397,20 @@ class ProjectController extends Controller
                 $imagePath = $uploadedCover;
             }
 
-            $techStackIds = $validated['tech_stack_ids'] ?? [];
-            $techStackNames = TechStack::whereIn('id', $techStackIds)->pluck('name')->values()->all();
+            $requestedTechStackIds = $validated['tech_stack_ids'] ?? [];
+            $validTechStacks = TechStack::availableFor($user)
+                ->whereIn('id', $requestedTechStackIds)
+                ->get(['id', 'name'])
+                ->keyBy('id');
+
+            $techStackIds = array_values(array_filter(
+                $requestedTechStackIds,
+                fn ($id) => $validTechStacks->has((int) $id)
+            ));
+            $techStackNames = array_values(array_map(
+                fn ($id) => $validTechStacks->get((int) $id)->name,
+                $techStackIds
+            ));
 
             $resolvedProjectType = $this->resolveProjectType(
                 $request,
@@ -417,9 +475,9 @@ class ProjectController extends Controller
 
         $oldFilesToDelete = [];
 
-        $rawImage = $project->getRawOriginal('image_path');
-        if ($rawImage && is_string($rawImage) && ! str_starts_with($rawImage, 'http')) {
-            $oldFilesToDelete[] = $rawImage;
+        $coverImage = $project->image_path;
+        if ($coverImage && is_string($coverImage) && ! str_starts_with($coverImage, 'http')) {
+            $oldFilesToDelete[] = $coverImage;
         }
 
         foreach ($project->images as $showcase) {
@@ -469,12 +527,26 @@ class ProjectController extends Controller
             $submittedShowcases = [];
         }
 
+        // Security (SEC-01): Whitelist only image paths that already belong to this project's showcases
+        $ownedPaths = $existingShowcases
+            ->flatMap(fn ($sc) => (array) $sc->image_path)
+            ->filter(fn ($p) => is_string($p) && trim($p) !== '')
+            ->map(fn ($p) => trim($p))
+            ->unique()
+            ->values()
+            ->all();
+
         $keptIds = [];
 
         foreach ($submittedShowcases as $index => $item) {
-            $existingPaths = isset($item['existing_images']) && is_array($item['existing_images'])
-                ? array_values(array_filter($item['existing_images'], fn ($p) => is_string($p) && trim($p) !== ''))
+            $requestedExisting = isset($item['existing_images']) && is_array($item['existing_images'])
+                ? array_values(array_filter(
+                    array_map(fn ($p) => is_string($p) ? trim($p) : '', $item['existing_images']),
+                    fn ($p) => $p !== ''
+                ))
                 : [];
+
+            $existingPaths = array_values(array_intersect($requestedExisting, $ownedPaths));
 
             $uploadedFiles = $request->file("showcases.{$index}.new_images", []);
             $newPaths = [];

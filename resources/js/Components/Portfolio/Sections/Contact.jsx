@@ -3,6 +3,12 @@ import { useForm } from "@inertiajs/react";
 import { HiOutlineEnvelope, HiOutlinePhone, HiPaperAirplane, HiCheckCircle } from "react-icons/hi2";
 import { FaLinkedinIn, FaGithub, FaInstagram } from "react-icons/fa6";
 
+const sanitizeExternalUrl = (url) => {
+    if (typeof url !== "string") return null;
+    const trimmed = url.trim();
+    return /^https?:\/\//i.test(trimmed) ? trimmed : null;
+};
+
 export default function ContactSection({
     contacts,
     sosmedLinks,
@@ -24,6 +30,9 @@ export default function ContactSection({
     };
 
     const socialLinks = sosmedLinks || {};
+    const linkedinUrl = sanitizeExternalUrl(socialLinks.linkedin);
+    const githubUrl = sanitizeExternalUrl(socialLinks.github);
+    const instagramUrl = sanitizeExternalUrl(socialLinks.instagram);
 
     return (
         <section id="contact" className="relative w-full py-24 sm:py-32 scroll-mt-16">
@@ -125,9 +134,9 @@ export default function ContactSection({
                                     Social Networks
                                 </span>
                                 <div className="flex items-center gap-3">
-                                    {socialLinks.linkedin && (
+                                    {linkedinUrl && (
                                         <a
-                                            href={socialLinks.linkedin}
+                                            href={linkedinUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/30 text-neutral-400 hover:text-white transition-all duration-300 backdrop-blur-md hover:scale-105"
@@ -136,9 +145,9 @@ export default function ContactSection({
                                             <FaLinkedinIn className="w-4 h-4" />
                                         </a>
                                     )}
-                                    {socialLinks.github && (
+                                    {githubUrl && (
                                         <a
-                                            href={socialLinks.github}
+                                            href={githubUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/30 text-neutral-400 hover:text-white transition-all duration-300 backdrop-blur-md hover:scale-105"
@@ -147,9 +156,9 @@ export default function ContactSection({
                                             <FaGithub className="w-4 h-4" />
                                         </a>
                                     )}
-                                    {socialLinks.instagram && (
+                                    {instagramUrl && (
                                         <a
-                                            href={socialLinks.instagram}
+                                            href={instagramUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/30 text-neutral-400 hover:text-white transition-all duration-300 backdrop-blur-md hover:scale-105"

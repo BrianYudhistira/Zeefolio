@@ -4,12 +4,12 @@ namespace App\Services;
 
 use App\Models\Log;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log as LaravelLog;
 
 class LogService
 {
-    private function getMetadata($customMetadata = [])
+    private function getMetadata(array $customMetadata = []): array
     {
         $ipAddress = $customMetadata['ip_address'] ?? request()->ip();
         $userAgent = $customMetadata['user_agent'] ?? request()->userAgent();
@@ -17,27 +17,36 @@ class LogService
 
         return [
             'ip_address' => $ipAddress,
-            'user_agent' => $userAgent,
+            'user_agent' => is_string($userAgent) ? substr($userAgent, 0, 255) : null,
             'location' => $location,
         ];
     }
 
-    private function getLocationFromIp($ip)
+    /**
+     * Resolve client location without blocking HTTP requests or leaking IPs over cleartext HTTP.
+     */
+    private function getLocationFromIp(?string $ip): string
     {
-        if ($ip === '127.0.0.1' || $ip === '::1' || str_starts_with($ip, '192.168.')) {
+        if (
+            ! $ip ||
+            $ip === '127.0.0.1' ||
+            $ip === '::1' ||
+            filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false
+        ) {
             return 'Local';
         }
 
-        try {
-            $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}");
+        $cached = Cache::get("geoip:{$ip}");
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
 
-            if ($response->successful()) {
-                $data = $response->json();
-                if ($data['status'] === 'success') {
-                    return "{$data['city']}, {$data['country']}";
-                }
+        $request = request();
+        foreach (['CF-IPCountry', 'CloudFront-Viewer-Country', 'X-Vercel-IP-Country', 'X-Country-Code'] as $header) {
+            $country = strtoupper(trim((string) $request->header($header)));
+            if ($country !== '' && $country !== 'XX' && $country !== 'T1' && strlen($country) <= 64) {
+                return $country;
             }
-        } catch (\Exception $e) {
         }
 
         return 'Unknown';

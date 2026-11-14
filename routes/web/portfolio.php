@@ -10,8 +10,10 @@ Route::get('/verify-email/{id}/{hash}', [AccountController::class, 'verifyEmail'
     ->middleware('signed')
     ->name('verification.verify');
 
-// ── Contact Form Submission ──
-Route::post('/messageMe', [PortfolioController::class, 'sendMessage'])->name('portfolio.sendMessage');
+// ── Contact Form Submission (Rate Limited: SEC-10) ──
+Route::post('/messageMe', [PortfolioController::class, 'sendMessage'])
+    ->middleware('throttle:5,1')
+    ->name('portfolio.sendMessage');
 
 // ── Legacy Project & Portfolio Redirects ──
 Route::get('/projects', [PortfolioController::class, 'redirectLegacyProjects'])->name('portfolio.projects.legacy');
@@ -38,5 +40,7 @@ Route::prefix('{slug}')
         Route::get('/', [PortfolioController::class, 'index'])->name('portfolio.index');
         Route::get('/projects', [PortfolioController::class, 'listProject'])->name('portfolio.projects');
         Route::get('/projects/{projectSlug}', [PortfolioController::class, 'getProjectBySlug'])->name('portfolio.project');
-        Route::post('/messageMe', [PortfolioController::class, 'sendMessage'])->name('portfolio.user.sendMessage');
+        Route::post('/messageMe', [PortfolioController::class, 'sendMessage'])
+            ->middleware('throttle:5,1')
+            ->name('portfolio.user.sendMessage');
     });

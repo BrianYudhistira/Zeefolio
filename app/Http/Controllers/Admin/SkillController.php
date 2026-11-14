@@ -12,8 +12,6 @@ use App\Services\PortfolioService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,8 +26,6 @@ class SkillController extends Controller
 
     public function index(Request $request): Response
     {
-        $this->ensureSkillCategoriesColumn();
-
         $user = $request->user();
         $portfolio = $this->resolvePortfolio($request, $this->portfolioService);
 
@@ -77,8 +73,6 @@ class SkillController extends Controller
 
     public function updateCategories(Request $request): RedirectResponse
     {
-        $this->ensureSkillCategoriesColumn();
-
         $portfolio = $this->resolvePortfolio($request, $this->portfolioService);
 
         $validated = $request->validate([
@@ -106,15 +100,6 @@ class SkillController extends Controller
         $this->logService->infoLog('Skills', "Updated portfolio skill display categories: {$categoryNames}");
 
         return redirect()->back()->with('success', 'Portfolio skill categories updated successfully.');
-    }
-
-    protected function ensureSkillCategoriesColumn(): void
-    {
-        if (! Schema::hasColumn('portfolio_users', 'skill_categories')) {
-            Schema::table('portfolio_users', function (Blueprint $table) {
-                $table->json('skill_categories')->nullable()->after('sections');
-            });
-        }
     }
 
     public function store(Request $request): RedirectResponse

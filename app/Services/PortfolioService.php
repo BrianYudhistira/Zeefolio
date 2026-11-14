@@ -18,24 +18,80 @@ use Illuminate\Support\Str;
 
 class PortfolioService
 {
+    public const CATALOG_VERSION_KEY = 'portfolio:catalog_version';
+
     /**
-     * Get portfolio by user ID (cached for 1 hour to reduce DB queries).
+     * Get the current global catalog cache version.
+     */
+    public function getCatalogVersion(): int
+    {
+        return (int) Cache::rememberForever(self::CATALOG_VERSION_KEY, static fn () => 1);
+    }
+
+    /**
+     * Increment the global catalog version to invalidate cached portfolios in O(1) without Cache::flush().
+     */
+    public function bumpCatalogVersion(): void
+    {
+        $next = $this->getCatalogVersion() + 1;
+        Cache::forever(self::CATALOG_VERSION_KEY, $next);
+    }
+
+    /**
+     * Build the versioned cache key for a user's portfolio.
+     */
+    protected function getUserCacheKey(int $userId): string
+    {
+        $version = $this->getCatalogVersion();
+
+        return "portfolio:v{$version}:user:{$userId}";
+    }
+
+    /**
+     * Get the cached portfolio slug for a user (used by HandleInertiaRequests).
+     */
+    public function getUserPortfolioSlug(User $user): string
+    {
+        return Cache::remember(
+            "portfolio:slug_by_user:{$user->id}",
+            3600,
+            fn () => $user->portfolioUser()->value('slug') ?: ($user->username ?: 'brian-yudhistira')
+        );
+    }
+
+    /**
+     * Get portfolio by user model (cached for 1 hour with hydrated experience tech stacks).
      */
     public function getPortfolio(User $user): ?PortfolioUser
     {
-        $cacheKey = "portfolio:user:{$user->id}";
+        return $this->getPortfolioByUserId($user->id);
+    }
 
-        return Cache::remember($cacheKey, 3600, function () use ($user) {
-            return $user->portfolioUser()
+    /**
+     * Get portfolio by user ID (cached for 1 hour, 0 DB queries on cache hit).
+     */
+    public function getPortfolioByUserId(int $userId): ?PortfolioUser
+    {
+        $cacheKey = $this->getUserCacheKey($userId);
+
+        return Cache::remember($cacheKey, 3600, function () use ($userId) {
+            $portfolio = PortfolioUser::where('user_id', $userId)
                 ->with([
                     'home',
                     'userSkills.techStack.category',
+                    'projects' => fn ($query) => $query
+                        ->where('is_active', true)
+                        ->orderBy('sort_order', 'asc')
+                        ->orderByDesc('created_at')
+                        ->orderByDesc('id'),
                     'projects.techStacks',
                     'projects.images',
                     'contacts',
                     'experiences',
                 ])
                 ->first();
+
+            return $this->hydrateExperienceTechStacks($portfolio);
         });
     }
 
@@ -44,10 +100,7 @@ class PortfolioService
      */
     public function getPublicPortfolio(int $userId = 1): ?PortfolioUser
     {
-        $user = User::findOrFail($userId);
-        $portfolio = $this->getPortfolio($user);
-
-        return $this->hydrateExperienceTechStacks($portfolio);
+        return $this->getPortfolioByUserId($userId);
     }
 
     /**
@@ -55,28 +108,60 @@ class PortfolioService
      */
     public function getPublicPortfolioBySlug(string $slug): ?PortfolioUser
     {
-        $portfolioRecord = PortfolioUser::where('slug', $slug)->first();
+        $slugCacheKey = 'portfolio:user_id_by_slug:' . Str::lower($slug);
 
-        if (! $portfolioRecord) {
+        $userId = Cache::remember($slugCacheKey, 3600, function () use ($slug) {
+            $portfolioUserId = PortfolioUser::where('slug', $slug)->value('user_id');
+            if ($portfolioUserId) {
+                return (int) $portfolioUserId;
+            }
+
             $user = User::where('username', $slug)->first();
             if (! $user) {
                 return null;
             }
-            $portfolioRecord = $user->portfolioUser()->first() ?? $this->createDefaultPortfolio($user);
+
+            $existingPortfolio = $user->portfolioUser()->first();
+            if ($existingPortfolio) {
+                return (int) $existingPortfolio->user_id;
+            }
+
+            return null;
+        });
+
+        if (! $userId) {
+            return null;
         }
 
-        return $this->getPublicPortfolio($portfolioRecord->user_id);
+        return $this->getPublicPortfolio((int) $userId);
     }
 
     /**
-     * Resolve experience tech stack icons on a portfolio instance.
+     * Resolve experience tech stack icons and selected skill categories on a portfolio instance.
      */
     protected function hydrateExperienceTechStacks(?PortfolioUser $portfolio): ?PortfolioUser
     {
-        if ($portfolio && $portfolio->experiences) {
-            $allTechStacks = TechStack::all()->keyBy(
-                fn (TechStack $item) => Str::lower(trim($item->name))
-            );
+        if (! $portfolio) {
+            return null;
+        }
+
+        if ($portfolio->experiences && $portfolio->experiences->isNotEmpty()) {
+            $neededNames = $portfolio->experiences
+                ->flatMap(fn ($exp) => array_filter(array_map('trim', explode(',', $exp->tech_stack ?? ''))))
+                ->map(fn (string $name) => Str::lower($name))
+                ->unique()
+                ->values()
+                ->all();
+
+            $allTechStacks = ! empty($neededNames)
+                ? TechStack::query()
+                    ->where(function ($query) use ($portfolio) {
+                        $query->where('is_global', true)
+                            ->orWhere('user_id', $portfolio->user_id);
+                    })
+                    ->get(['id', 'name', 'icon'])
+                    ->keyBy(fn (TechStack $item) => Str::lower(trim($item->name)))
+                : collect();
 
             foreach ($portfolio->experiences as $experience) {
                 $rawList = array_filter(array_map('trim', explode(',', $experience->tech_stack ?? '')));
@@ -94,38 +179,35 @@ class PortfolioService
             }
         }
 
-        if ($portfolio) {
-            $rawCategories = PortfolioUser::whereKey($portfolio->id)->value('skill_categories')
-                ?? $portfolio->skill_categories;
+        $rawCategories = $portfolio->skill_categories;
 
-            if (is_string($rawCategories)) {
-                $rawCategories = json_decode($rawCategories, true);
-            }
+        if (is_string($rawCategories)) {
+            $rawCategories = json_decode($rawCategories, true);
+        }
 
-            $savedCategoryIds = is_array($rawCategories)
-                ? array_values(array_filter(array_map('intval', $rawCategories)))
-                : [];
+        $savedCategoryIds = is_array($rawCategories)
+            ? array_values(array_filter(array_map('intval', $rawCategories)))
+            : [];
 
-            $portfolio->skill_categories = $savedCategoryIds;
+        $portfolio->skill_categories = $savedCategoryIds;
 
-            if (! empty($savedCategoryIds)) {
-                $categoriesById = TechStackCategory::whereIn('id', $savedCategoryIds)
-                    ->get()
-                    ->keyBy('id');
+        if (! empty($savedCategoryIds)) {
+            $categoriesById = TechStackCategory::whereIn('id', $savedCategoryIds)
+                ->get(['id', 'name'])
+                ->keyBy('id');
 
-                $portfolio->selected_skill_categories = collect($savedCategoryIds)
-                    ->map(fn (int $id) => $categoriesById->get($id))
-                    ->filter()
-                    ->take(4)
-                    ->map(fn (TechStackCategory $cat) => [
-                        'id' => $cat->id,
-                        'name' => $cat->name,
-                    ])
-                    ->values()
-                    ->all();
-            } else {
-                $portfolio->selected_skill_categories = [];
-            }
+            $portfolio->selected_skill_categories = collect($savedCategoryIds)
+                ->map(fn (int $id) => $categoriesById->get($id))
+                ->filter()
+                ->take(4)
+                ->map(fn (TechStackCategory $cat) => [
+                    'id' => $cat->id,
+                    'name' => $cat->name,
+                ])
+                ->values()
+                ->all();
+        } else {
+            $portfolio->selected_skill_categories = [];
         }
 
         return $portfolio;
@@ -134,13 +216,15 @@ class PortfolioService
     /**
      * List projects ordered deterministically (scoped to a portfolio when provided).
      */
-    public function listProjects(?PortfolioUser $portfolio = null): Collection
+    public function listProjects(?PortfolioUser $portfolio = null, bool $onlyActive = true): Collection
     {
         $query = $portfolio
             ? $portfolio->projects()
             : Project::query();
 
-        return $query->with(['techStacks', 'images'])
+        return $query
+            ->when($onlyActive, fn ($q) => $q->where('is_active', true))
+            ->with(['techStacks', 'images'])
             ->orderBy('sort_order', 'asc')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -150,13 +234,15 @@ class PortfolioService
     /**
      * Get single project by slug (scoped to a portfolio when provided).
      */
-    public function getProjectBySlug(string $slug, ?PortfolioUser $portfolio = null): ?Project
+    public function getProjectBySlug(string $slug, ?PortfolioUser $portfolio = null, bool $onlyActive = true): ?Project
     {
         $query = $portfolio
             ? $portfolio->projects()
             : Project::query();
 
-        return $query->with(['techStacks', 'images', 'portfolioUser'])
+        return $query
+            ->when($onlyActive, fn ($q) => $q->where('is_active', true))
+            ->with(['techStacks', 'images', 'portfolioUser'])
             ->where('slug', $slug)
             ->first();
     }
@@ -326,11 +412,9 @@ class PortfolioService
             : $portfolio->projects()->with('images')->get();
 
         foreach ($projects as $project) {
-            $rawCover = $project->getRawOriginal('image_path') ?? $project->image_path;
-            foreach ((array) $rawCover as $path) {
-                if ($path && is_string($path) && ! str_starts_with($path, 'http')) {
-                    $paths[] = $path;
-                }
+            $coverPath = $project->image_path;
+            if ($coverPath && is_string($coverPath) && ! str_starts_with($coverPath, 'http')) {
+                $paths[] = $coverPath;
             }
 
             $images = $project->relationLoaded('images') ? $project->images : $project->images()->get();
@@ -352,7 +436,9 @@ class PortfolioService
     public function deletePortfolioRecordOnly(PortfolioUser $portfolio): void
     {
         $userId = $portfolio->user_id;
+        $slug = $portfolio->slug;
         $portfolio->delete();
+        $this->forgetSlugCache($slug);
         $this->clearPortfolioCache($userId);
     }
 
@@ -380,10 +466,30 @@ class PortfolioService
     }
 
     /**
+     * Forget cached slug-to-user mapping.
+     */
+    public function forgetSlugCache(?string $slug): void
+    {
+        if ($slug) {
+            Cache::forget('portfolio:user_id_by_slug:' . Str::lower($slug));
+        }
+    }
+
+    /**
+     * Public helper to clear portfolio cache for a specific user ID.
+     */
+    public function forgetUserPortfolioCache(int $userId): void
+    {
+        $this->clearPortfolioCache($userId);
+    }
+
+    /**
      * Clear portfolio cache for a specific user.
      */
     private function clearPortfolioCache(int $userId): void
     {
         Cache::forget("portfolio:user:{$userId}");
+        Cache::forget($this->getUserCacheKey($userId));
+        Cache::forget("portfolio:slug_by_user:{$userId}");
     }
 }

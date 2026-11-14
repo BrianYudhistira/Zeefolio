@@ -106,7 +106,7 @@ class RolePermissionService
     }
 
     /**
-     * Ensure Spatie tables, default permissions, default roles, and existing user role assignments exist.
+     * Ensure default permissions, default roles, and existing user role assignments exist.
      */
     public function ensureBootstrapped(): void
     {
@@ -114,7 +114,6 @@ class RolePermissionService
             return;
         }
 
-        $this->ensureTablesExist();
         $this->seedDefaults();
         $this->syncExistingUsers();
 
@@ -122,12 +121,11 @@ class RolePermissionService
     }
 
     /**
-     * Clear both Spatie's internal permission cache and our bootstrap cache.
+     * Clear Spatie's internal permission cache without triggering full schema/user resync.
      */
     public function clearCache(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
-        Cache::forget(self::CACHE_KEY);
     }
 
     protected function ensureTablesExist(): void
@@ -311,11 +309,6 @@ class RolePermissionService
         $users = User::with('roles')->get();
         foreach ($users as $user) {
             $roleName = $user->role ?: User::ROLE_MEMBER;
-
-            if (($user->id === 1 || $user->email === 'brianyudhistira1@gmail.com') && $roleName !== User::ROLE_SUPERADMIN) {
-                $roleName = User::ROLE_SUPERADMIN;
-                $user->update(['role' => User::ROLE_SUPERADMIN]);
-            }
 
             // Ensure the role exists in Spatie roles table
             Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);

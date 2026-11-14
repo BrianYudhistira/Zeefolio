@@ -4,11 +4,23 @@ import FuturisticBackground from "@/Components/Animations/Background/FuturisticB
 
 export default function ErrorPage({ status }) {
     const errorDetails = {
+        403: {
+            title: '403',
+            name: 'Access Denied',
+            description: 'You do not have permission to access this resource.',
+            image: '/images/asset/404.svg'
+        },
         404: {
             title: '404',
             name: 'Page Not Found',
             description: 'Sorry, the page you are looking for could not be found.',
             image: '/images/asset/404.svg'
+        },
+        419: {
+            title: '419',
+            name: 'Page Expired',
+            description: 'Your session has expired. Please refresh and try again.',
+            image: '/images/asset/500.svg'
         },
         500: {
             title: '500',

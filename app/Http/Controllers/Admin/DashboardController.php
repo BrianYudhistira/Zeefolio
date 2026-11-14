@@ -98,24 +98,39 @@ class DashboardController extends Controller
             ->where('portfolio_user_id', $portfolioUserId)
             ->count();
 
-        $rows = PortfolioView::query()
+        $summary = PortfolioView::query()
             ->where('portfolio_user_id', $portfolioUserId)
             ->where('viewed_at', '>=', $startAt)
-            ->get(['viewed_at', 'ip_hash']);
+            ->toBase()
+            ->selectRaw('COUNT(*) as range_views, COUNT(DISTINCT ip_hash) as unique_visitors')
+            ->first();
+
+        $rangeViews = (int) ($summary->range_views ?? 0);
+        $uniqueVisitors = (int) ($summary->unique_visitors ?? 0);
 
         $counts = array_fill(0, count($buckets), 0);
-        $uniqueHashes = [];
 
-        foreach ($rows as $row) {
-            if ($row->ip_hash) {
-                $uniqueHashes[$row->ip_hash] = true;
-            }
+        if ($rangeViews > 0) {
+            $rawTimestamps = PortfolioView::query()
+                ->where('portfolio_user_id', $portfolioUserId)
+                ->where('viewed_at', '>=', $startAt)
+                ->toBase()
+                ->pluck('viewed_at');
 
-            $timestamp = $row->viewed_at->getTimestamp();
-            foreach ($buckets as $index => $bucket) {
-                if ($timestamp >= $bucket['startTs'] && $timestamp < $bucket['endTs']) {
-                    $counts[$index]++;
-                    break;
+            foreach ($rawTimestamps as $rawViewedAt) {
+                $timestamp = is_numeric($rawViewedAt)
+                    ? (int) $rawViewedAt
+                    : strtotime((string) $rawViewedAt);
+
+                if ($timestamp === false) {
+                    continue;
+                }
+
+                foreach ($buckets as $index => $bucket) {
+                    if ($timestamp >= $bucket['startTs'] && $timestamp < $bucket['endTs']) {
+                        $counts[$index]++;
+                        break;
+                    }
                 }
             }
         }
@@ -138,8 +153,8 @@ class DashboardController extends Controller
         return [
             'range' => $range,
             'totalViews' => $totalViews,
-            'rangeViews' => $rows->count(),
-            'uniqueVisitors' => count($uniqueHashes),
+            'rangeViews' => $rangeViews,
+            'uniqueVisitors' => $uniqueVisitors,
             'peakViews' => $peakViews,
             'series' => $series,
         ];

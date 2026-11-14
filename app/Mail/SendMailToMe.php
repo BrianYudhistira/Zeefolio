@@ -9,9 +9,14 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class SendMailToMe extends Mailable
+class SendMailToMe extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
+
+    public int $tries = 3;
+
+    /** @var list<int> */
+    public array $backoff = [10, 30, 60];
 
     public $name;
     public $email;
@@ -33,7 +38,7 @@ class SendMailToMe extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'New Contact Message - ZeeeHub',
+            subject: 'New Contact Message - ZeeFolio',
         );
     }
 

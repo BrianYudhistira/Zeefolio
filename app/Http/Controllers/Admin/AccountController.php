@@ -147,14 +147,21 @@ class AccountController extends Controller
         DB::beginTransaction();
 
         try {
-            $user->update([
+            $user->forceFill([
                 'password' => Hash::make($validated['password']),
-            ]);
+                'remember_token' => \Illuminate\Support\Str::random(60),
+            ])->save();
 
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
             throw $e;
+        }
+
+        try {
+            Auth::logoutOtherDevices($validated['password']);
+        } catch (\Throwable) {
+            // Ignore if session guard does not support logoutOtherDevices in current test context
         }
 
         $this->logService->infoLog('Users', 'Updated account password');
@@ -242,6 +249,12 @@ class AccountController extends Controller
             ? $this->portfolioService->collectPortfolioFilePaths($portfolio)
             : [];
 
+        Auth::guard('web')->logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
         DB::beginTransaction();
 
         try {
@@ -273,10 +286,6 @@ class AccountController extends Controller
             'role' => $user->role,
             'ip_address' => $request->ip(),
         ]);
-
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
 
         return redirect()->route('admin.login')->with('success', 'Your account has been permanently deleted.');
     }

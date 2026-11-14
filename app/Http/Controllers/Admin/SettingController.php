@@ -9,6 +9,7 @@ use App\Models\ProjectCategory;
 use App\Models\TechStack;
 use App\Models\TechStackCategory;
 use App\Services\LogService;
+use App\Services\PortfolioService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -22,6 +23,7 @@ class SettingController extends Controller
 
     public function __construct(
         protected LogService $logService,
+        protected PortfolioService $portfolioService,
     ) {}
 
     public function index(Request $request): Response
@@ -75,6 +77,7 @@ class SettingController extends Controller
             'user_id' => null,
         ]);
 
+        $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
         $this->logService->infoLog('Skills', "Added global skill: {$skill->name}");
 
@@ -83,6 +86,10 @@ class SettingController extends Controller
 
     public function updateGlobalSkill(Request $request, TechStack $techStack): RedirectResponse
     {
+        if (! $techStack->is_global) {
+            abort(403, 'Only global skills can be edited here.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'icon' => ['nullable', 'string', 'max:255'],
@@ -97,6 +104,7 @@ class SettingController extends Controller
             'user_id' => null,
         ]);
 
+        $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
         $this->logService->infoLog('Skills', "Updated global skill: {$techStack->name}");
 
@@ -105,9 +113,14 @@ class SettingController extends Controller
 
     public function destroyGlobalSkill(Request $request, TechStack $techStack): RedirectResponse
     {
+        if (! $techStack->is_global) {
+            abort(403, 'Only global skills can be deleted here.');
+        }
+
         $name = $techStack->name;
         $techStack->delete();
 
+        $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
         $this->logService->infoLog('Skills', "Deleted global skill: {$name}");
 
@@ -124,6 +137,7 @@ class SettingController extends Controller
             'name' => trim($validated['name']),
         ]);
 
+        $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
         $this->logService->infoLog('Skills', "Added skill category: {$category->name}");
 
@@ -145,6 +159,7 @@ class SettingController extends Controller
             'name' => trim($validated['name']),
         ]);
 
+        $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
         $this->logService->infoLog('Skills', "Updated skill category: {$category->name}");
 
@@ -156,6 +171,7 @@ class SettingController extends Controller
         $name = $category->name;
         $category->delete();
 
+        $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
         $this->logService->infoLog('Skills', "Deleted skill category: {$name}");
 
@@ -183,6 +199,7 @@ class SettingController extends Controller
             'user_id' => null,
         ]);
 
+        $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
         $this->logService->infoLog('Portfolio', "Added global project category: {$category->name} ({$category->slug})");
 
@@ -219,6 +236,7 @@ class SettingController extends Controller
             Project::where('project_type', $oldSlug)->update(['project_type' => $newSlug]);
         }
 
+        $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
         $this->logService->infoLog('Portfolio', "Updated global project category: {$projectCategory->name} ({$newSlug})");
 
@@ -235,6 +253,7 @@ class SettingController extends Controller
         $slug = $projectCategory->slug;
         $projectCategory->delete();
 
+        $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
         $this->logService->infoLog('Portfolio', "Deleted global project category: {$name} ({$slug})");
 

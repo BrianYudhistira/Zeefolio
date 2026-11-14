@@ -17,9 +17,6 @@ class Contact extends Model
         'email',
         'phone',
         'address',
-        'linkedin_url',
-        'github_url',
-        'website_url',
     ];
 
     /**
@@ -28,17 +25,5 @@ class Contact extends Model
     public function portfolioUser(): BelongsTo
     {
         return $this->belongsTo(PortfolioUser::class);
-    }
-
-    /**
-     * Get all social media links as an array.
-     */
-    public function getSocialLinksAttribute(): array
-    {
-        return array_filter([
-            'linkedin' => $this->linkedin_url,
-            'github' => $this->github_url,
-            'website' => $this->website_url,
-        ]);
     }
 }

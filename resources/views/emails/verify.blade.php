@@ -103,7 +103,7 @@
         <div class="card">
             
             <div class="header">
-                <img src="{{ asset('Images/web_icon.png') }}" alt="Zeee-Hub Logo">
+                <img src="{{ asset('images/web_icon.png') }}" alt="Zeee-Hub Logo">
                 <h1>Email Verification</h1>
             </div>
 

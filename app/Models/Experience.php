@@ -19,6 +19,7 @@ class Experience extends Model
         'start_date',
         'end_date',
         'description',
+        'certificate_path',
         'tech_stack',
         'sort_order',
     ];

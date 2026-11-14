@@ -8,13 +8,13 @@ use App\Models\User;
 use App\Services\LogService;
 use App\Services\PortfolioService;
 use App\Services\RolePermissionService;
-use Database\Seeders\DummyMemberPortfolioSeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -31,13 +31,6 @@ class MemberPortfolioController extends Controller
     public function index(Request $request): Response
     {
         $this->rolePermissionService->ensureBootstrapped();
-
-        User::where('role', 'user')->update(['role' => User::ROLE_MEMBER]);
-
-        if (! User::where('email', 'alex.admin@zeefolio.dev')->exists()) {
-            app(DummyMemberPortfolioSeeder::class)->run();
-            $this->rolePermissionService->syncExistingUsers();
-        }
 
         $actor = $request->user();
 
@@ -232,11 +225,11 @@ class MemberPortfolioController extends Controller
         $member->syncUserRole($validated['role']);
 
         if ($validated['status'] === 'banned') {
+            $member->forceFill(['remember_token' => Str::random(60)])->save();
             DB::table('sessions')->where('user_id', $member->id)->delete();
         }
 
-        Cache::forget("user:{$member->id}");
-        Cache::forget("portfolio:user:{$member->id}");
+        $this->portfolioService->forgetUserPortfolioCache($member->id);
 
         $this->logService->infoLog(
             'Users',
@@ -297,7 +290,7 @@ class MemberPortfolioController extends Controller
             $disk->delete($filePath);
         }
 
-        Cache::forget("user:{$member->id}");
+        $this->portfolioService->forgetUserPortfolioCache($member->id);
 
         $this->logService->infoLog('Users', "Deleted account @{$username}");
 
@@ -317,12 +310,18 @@ class MemberPortfolioController extends Controller
 
     public function promoteSkill(Request $request, TechStack $techStack): RedirectResponse
     {
+        $originalUserId = $techStack->user_id;
+
         $techStack->update([
             'is_global' => true,
             'user_id' => null,
         ]);
 
-        Cache::flush();
+        if ($originalUserId) {
+            $this->portfolioService->forgetUserPortfolioCache((int) $originalUserId);
+        }
+        $this->portfolioService->bumpCatalogVersion();
+
         $this->logService->infoLog('Portfolio', "Promoted custom skill '{$techStack->name}' to global default");
 
         return redirect()->back()->with('success', "Skill \"{$techStack->name}\" promoted to Global Default.");

@@ -28,16 +28,67 @@ class Project extends Model
         'is_active',
     ];
 
+    protected $attributes = [
+        'tech_stack' => '[]',
+    ];
+
     protected $casts = [
-        'image_path' => 'array',
         'tech_stack' => 'array',
         'is_featured' => 'boolean',
+        'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
 
     protected $appends = [
         'image_url',
     ];
+
+    /**
+     * Normalize a raw or legacy JSON-encoded image_path into a clean string path.
+     */
+    public static function normalizeImagePath(mixed $value): ?string
+    {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                if (is_string($item) && trim($item) !== '') {
+                    return trim($item);
+                }
+            }
+
+            return null;
+        }
+
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        $guard = 0;
+        while (
+            $guard++ < 5 &&
+            ((str_starts_with($trimmed, '"') && str_ends_with($trimmed, '"')) ||
+             (str_starts_with($trimmed, '[') && str_ends_with($trimmed, ']')))
+        ) {
+            $decoded = json_decode($trimmed, true);
+            if (is_string($decoded)) {
+                $trimmed = trim($decoded);
+            } elseif (is_array($decoded)) {
+                $first = collect($decoded)->first(fn ($p) => is_string($p) && trim($p) !== '');
+                $trimmed = is_string($first) ? trim($first) : '';
+                break;
+            } else {
+                break;
+            }
+        }
+
+        return $trimmed !== '' ? $trimmed : null;
+    }
+
+    public function getImagePathAttribute(mixed $value): ?string
+    {
+        return self::normalizeImagePath($value);
+    }
 
     /**
      * Get the portfolio user that owns the project.
@@ -65,22 +116,14 @@ class Project extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        if (empty($this->image_path)) {
-            return null;
-        }
-
         $imagePath = $this->image_path;
-        if (is_array($imagePath)) {
-            foreach ($imagePath as $path) {
-                if (!empty($path)) {
-                    $imagePath = $path;
-                    break;
-                }
-            }
+
+        if (! $imagePath) {
+            return null;
         }
 
-        if (empty($imagePath) || is_array($imagePath)) {
-            return null;
+        if (str_starts_with($imagePath, 'http://') || str_starts_with($imagePath, 'https://')) {
+            return $imagePath;
         }
 
         return asset('storage/' . ltrim($imagePath, '/'));

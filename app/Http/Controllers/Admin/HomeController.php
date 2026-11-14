@@ -40,11 +40,21 @@ class HomeController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $portfolio = $this->resolvePortfolio($request, $this->portfolioService);
+        $oldSlug = $portfolio->slug;
 
         if ($request->filled('slug')) {
             $request->merge([
                 'slug' => Str::slug($request->input('slug')),
             ]);
+        }
+
+        if (is_array($request->input('social_media_links'))) {
+            $normalizedLinks = [];
+            foreach ($request->input('social_media_links', []) as $key => $val) {
+                $trimmed = is_string($val) ? trim($val) : null;
+                $normalizedLinks[$key] = $trimmed !== '' ? $trimmed : null;
+            }
+            $request->merge(['social_media_links' => $normalizedLinks]);
         }
 
         $validated = $request->validate([
@@ -63,13 +73,13 @@ class HomeController extends Controller
             'passions.*' => ['string', 'max:100'],
             'description' => ['required', 'string'],
             'social_media_links' => ['nullable', 'array'],
-            'social_media_links.github' => ['nullable', 'string', 'max:255'],
-            'social_media_links.linkedin' => ['nullable', 'string', 'max:255'],
-            'social_media_links.instagram' => ['nullable', 'string', 'max:255'],
-            'social_media_links.website' => ['nullable', 'string', 'max:255'],
+            'social_media_links.github' => ['nullable', 'url:http,https', 'max:255'],
+            'social_media_links.linkedin' => ['nullable', 'url:http,https', 'max:255'],
+            'social_media_links.instagram' => ['nullable', 'url:http,https', 'max:255'],
+            'social_media_links.website' => ['nullable', 'url:http,https', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
-            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,svg', 'max:2048'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'cv' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
         ]);
 
@@ -82,6 +92,8 @@ class HomeController extends Controller
         }
         if (! empty($portfolioUpdates)) {
             $portfolio->update($portfolioUpdates);
+            $this->portfolioService->forgetSlugCache($oldSlug);
+            $this->portfolioService->forgetSlugCache($portfolio->slug);
             $this->clearPortfolioCache($request);
         }
 

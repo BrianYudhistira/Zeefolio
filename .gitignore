@@ -1,7 +1,10 @@
 *.log
 .DS_Store
 .env
-docs
+/docs
+/docs/*
+AUDIT_REPORT.md
+IMPROVEMENT_REPORT.md
 .env.backup
 .env.production
 .phpactor.json

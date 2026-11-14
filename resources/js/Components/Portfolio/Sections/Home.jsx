@@ -4,7 +4,16 @@ import Magnet from "@/Components/Animations/UI/Magnet";
 import { FaLinkedinIn, FaGithub, FaInstagram } from "react-icons/fa6";
 import { HiArrowUpRight, HiOutlineDocumentArrowDown } from "react-icons/hi2";
 
+const sanitizeExternalUrl = (url) => {
+    if (typeof url !== "string") return null;
+    const trimmed = url.trim();
+    return /^https?:\/\//i.test(trimmed) ? trimmed : null;
+};
+
 export default function HomeSection({ home }) {
+    const linkedinUrl = sanitizeExternalUrl(home?.social_media_links?.linkedin);
+    const githubUrl = sanitizeExternalUrl(home?.social_media_links?.github);
+    const instagramUrl = sanitizeExternalUrl(home?.social_media_links?.instagram);
     // Profile image: uses home.image_path (merged from former About table)
     const photoSrc = home?.image_path
         ? `/storage/${home.image_path}`
@@ -148,9 +157,9 @@ export default function HomeSection({ home }) {
 
                                 {/* Social Links */}
                                 <div className="flex items-center gap-2">
-                                    {home.social_media_links?.linkedin && (
+                                    {linkedinUrl && (
                                         <a
-                                            href={home.social_media_links.linkedin}
+                                            href={linkedinUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/30 text-neutral-400 hover:text-white transition-all duration-300 backdrop-blur-md hover:scale-105"
@@ -160,9 +169,9 @@ export default function HomeSection({ home }) {
                                         </a>
                                     )}
 
-                                    {home.social_media_links?.github && (
+                                    {githubUrl && (
                                         <a
-                                            href={home.social_media_links.github}
+                                            href={githubUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/30 text-neutral-400 hover:text-white transition-all duration-300 backdrop-blur-md hover:scale-105"
@@ -172,9 +181,9 @@ export default function HomeSection({ home }) {
                                         </a>
                                     )}
 
-                                    {home.social_media_links?.instagram && (
+                                    {instagramUrl && (
                                         <a
-                                            href={home.social_media_links.instagram}
+                                            href={instagramUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/30 text-neutral-400 hover:text-white transition-all duration-300 backdrop-blur-md hover:scale-105"

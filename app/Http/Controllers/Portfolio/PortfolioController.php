@@ -9,6 +9,7 @@ use App\Models\PortfolioView;
 use App\Services\PortfolioService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
@@ -36,7 +37,7 @@ class PortfolioController extends Controller
     public function listProject(Request $request, string $slug): Response
     {
         $portfolio = $this->resolveVisiblePortfolio($request, $slug);
-        $projects = $this->portfolioService->listProjects($portfolio);
+        $projects = $this->portfolioService->listProjects($portfolio, onlyActive: true);
 
         $this->recordView($request, $portfolio->id, 'projects');
 
@@ -50,7 +51,7 @@ class PortfolioController extends Controller
     public function getProjectBySlug(Request $request, string $slug, string $projectSlug): Response
     {
         $portfolio = $this->resolveVisiblePortfolio($request, $slug);
-        $project = $this->portfolioService->getProjectBySlug($projectSlug, $portfolio);
+        $project = $this->portfolioService->getProjectBySlug($projectSlug, $portfolio, onlyActive: true);
 
         if (! $project) {
             abort(404, 'Project not found');
@@ -110,15 +111,32 @@ class PortfolioController extends Controller
 
     protected function recordView(Request $request, int $portfolioUserId, string $page, ?int $projectId = null): void
     {
+        // PERF-03: Skip background link prefetch requests triggered by Vite/Inertia
+        if (
+            str_contains(strtolower((string) $request->header('Purpose')), 'prefetch') ||
+            str_contains(strtolower((string) $request->header('Sec-Purpose')), 'prefetch') ||
+            str_contains(strtolower((string) $request->header('X-Purpose')), 'prefetch') ||
+            strtolower((string) $request->header('X-Moz')) === 'prefetch'
+        ) {
+            return;
+        }
+
         try {
             $ip = $request->ip() ?? 'unknown';
+            $ipHash = hash('sha256', $ip . '|' . config('app.key'));
+            $dedupeKey = "portfolio_view_dedupe:{$portfolioUserId}:{$page}:" . ($projectId ?? 0) . ":{$ipHash}";
+
+            if (! Cache::add($dedupeKey, 1, now()->addMinutes(10))) {
+                return;
+            }
+
             $userAgent = substr((string) $request->userAgent(), 0, 255);
 
             PortfolioView::create([
                 'portfolio_user_id' => $portfolioUserId,
                 'page' => $page,
                 'project_id' => $projectId,
-                'ip_hash' => hash('sha256', $ip . '|' . config('app.key')),
+                'ip_hash' => $ipHash,
                 'user_agent' => $userAgent ?: null,
                 'viewed_at' => now(),
             ]);
@@ -132,7 +150,7 @@ class PortfolioController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
-            'message' => ['required', 'string'],
+            'message' => ['required', 'string', 'max:5000'],
             'portfolio_slug' => ['nullable', 'string', 'max:100'],
         ]);
 
