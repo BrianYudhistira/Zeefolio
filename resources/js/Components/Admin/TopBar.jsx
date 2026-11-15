@@ -37,7 +37,10 @@ export default function TopBar({
         router.put(
             route("admin.notifications.read-all"),
             {},
-            { preserveScroll: true }
+            {
+                preserveScroll: true,
+                showProgress: false
+            }
         );
     };
 
@@ -54,7 +57,10 @@ export default function TopBar({
         router.put(
             route("admin.notifications.popup-clear"),
             {},
-            { preserveScroll: true }
+            {
+                preserveScroll: true,
+                showProgress: false
+            }
         );
     };
 
@@ -201,20 +207,18 @@ export default function TopBar({
                                                         );
                                                     }
                                                 }}
-                                                className={`px-4 py-3 transition-colors flex items-start gap-3 cursor-pointer ${
-                                                    isRead
-                                                        ? "bg-transparent opacity-60 hover:bg-zinc-800/30 hover:opacity-90"
-                                                        : "bg-zinc-800/60 hover:bg-zinc-800/85"
-                                                }`}
+                                                className={`px-4 py-3 transition-colors flex items-start gap-3 cursor-pointer ${isRead
+                                                    ? "bg-transparent opacity-60 hover:bg-zinc-800/30 hover:opacity-90"
+                                                    : "bg-zinc-800/60 hover:bg-zinc-800/85"
+                                                    }`}
                                             >
                                                 <div
-                                                    className={`mt-0.5 w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${
-                                                        isDelete
-                                                            ? "bg-red-500/10 border-red-500/20 text-red-400"
-                                                            : isAdd
-                                                              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                                                              : "bg-zinc-800 border-zinc-700 text-zinc-300"
-                                                    }`}
+                                                    className={`mt-0.5 w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${isDelete
+                                                        ? "bg-red-500/10 border-red-500/20 text-red-400"
+                                                        : isAdd
+                                                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                                            : "bg-zinc-800 border-zinc-700 text-zinc-300"
+                                                        }`}
                                                 >
                                                     {isDelete ? (
                                                         <HiOutlineTrash className="w-3.5 h-3.5" />
@@ -225,11 +229,10 @@ export default function TopBar({
 
                                                 <div className="min-w-0 flex-1">
                                                     <p
-                                                        className={`text-xs leading-snug ${
-                                                            isRead
-                                                                ? "text-zinc-300"
-                                                                : "text-zinc-100 font-medium"
-                                                        }`}
+                                                        className={`text-xs leading-snug ${isRead
+                                                            ? "text-zinc-300"
+                                                            : "text-zinc-100 font-medium"
+                                                            }`}
                                                     >
                                                         {item.message}
                                                     </p>
@@ -248,14 +251,14 @@ export default function TopBar({
                                                         <span>
                                                             {item.created_at
                                                                 ? new Date(
-                                                                      item.created_at
-                                                                  ).toLocaleTimeString(
-                                                                      [],
-                                                                      {
-                                                                          hour: "2-digit",
-                                                                          minute: "2-digit",
-                                                                      }
-                                                                  )
+                                                                    item.created_at
+                                                                ).toLocaleTimeString(
+                                                                    [],
+                                                                    {
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit",
+                                                                    }
+                                                                )
                                                                 : ""}
                                                         </span>
                                                     </div>
