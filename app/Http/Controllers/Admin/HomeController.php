@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Concerns\ResolvesAdminPortfolio;
 use App\Http\Controllers\Controller;
+use App\Models\PortfolioUser;
 use App\Services\LogService;
 use App\Services\PortfolioService;
 use Illuminate\Http\RedirectResponse;
@@ -66,7 +67,7 @@ class HomeController extends Controller
                 'string',
                 'max:100',
                 'alpha_dash',
-                Rule::notIn(['admin', 'api', 'storage', 'sanctum', 'up', '_boost', 'verify-email', 'messageMe', 'projects', 'me', 'v2']),
+                Rule::notIn(PortfolioUser::RESERVED_SLUGS),
                 Rule::unique('portfolio_users', 'slug')->ignore($portfolio->id),
             ],
             'passions' => ['nullable', 'array'],

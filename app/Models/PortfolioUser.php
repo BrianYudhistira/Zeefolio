@@ -12,6 +12,20 @@ class PortfolioUser extends Model
 {
     use HasFactory;
 
+    public const RESERVED_SLUGS = [
+        'admin',
+        'api',
+        'storage',
+        'sanctum',
+        'up',
+        '_boost',
+        'verify-email',
+        'messageMe',
+        'projects',
+        'me',
+        'v2',
+    ];
+
     protected $fillable = [
         'user_id',
         'sections',

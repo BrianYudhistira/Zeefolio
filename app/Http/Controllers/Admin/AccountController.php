@@ -144,19 +144,10 @@ class AccountController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        DB::beginTransaction();
-
-        try {
-            $user->forceFill([
-                'password' => Hash::make($validated['password']),
-                'remember_token' => \Illuminate\Support\Str::random(60),
-            ])->save();
-
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        }
+        $user->forceFill([
+            'password' => Hash::make($validated['password']),
+            'remember_token' => \Illuminate\Support\Str::random(60),
+        ])->save();
 
         try {
             Auth::logoutOtherDevices($validated['password']);

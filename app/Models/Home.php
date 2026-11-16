@@ -48,7 +48,21 @@ class Home extends Model
      */
     public function getLogoUrlAttribute(): ?string
     {
-        return $this->logo_path ? asset($this->logo_path) : null;
+        if (empty($this->logo_path)) {
+            return null;
+        }
+
+        $clean = ltrim($this->logo_path, '/');
+
+        if (str_starts_with($clean, 'http://') || str_starts_with($clean, 'https://')) {
+            return $clean;
+        }
+
+        if (str_starts_with($clean, 'images/') || str_starts_with($clean, 'storage/')) {
+            return asset($clean);
+        }
+
+        return asset('storage/' . $clean);
     }
 
     /**

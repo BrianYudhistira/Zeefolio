@@ -32,7 +32,7 @@ foreach (['me', 'v2'] as $legacyPrefix) {
 }
 
 // ── Public User Portfolio Routes by Slug (/{slug}) ──
-$slugPattern = '^(?!admin|api|storage|sanctum|up|_boost|verify-email|messageMe|projects|me|v2)[a-zA-Z0-9-_]+$';
+$slugPattern = '^(?!' . implode('|', PortfolioUser::RESERVED_SLUGS) . ')[a-zA-Z0-9-_]+$';
 
 Route::prefix('{slug}')
     ->where(['slug' => $slugPattern])

@@ -254,7 +254,8 @@ class PortfolioService
     {
         return DB::transaction(function () use ($user) {
             $baseSlug = Str::slug($user->username ?: $user->name) ?: 'user-'.$user->id;
-            $slug = PortfolioUser::where('slug', $baseSlug)->exists()
+            $isReserved = in_array(Str::lower($baseSlug), array_map('strtolower', PortfolioUser::RESERVED_SLUGS), true);
+            $slug = ($isReserved || PortfolioUser::where('slug', $baseSlug)->exists())
                 ? $baseSlug.'-'.Str::lower(Str::random(4))
                 : $baseSlug;
 
@@ -370,19 +371,10 @@ class PortfolioService
             return null;
         }
 
-        DB::beginTransaction();
-
-        try {
-            $contact = $portfolio->contacts()->updateOrCreate(
-                ['portfolio_user_id' => $portfolio->id],
-                collect($data)->only(['email', 'phone', 'address'])->all()
-            );
-
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        }
+        $contact = $portfolio->contacts()->updateOrCreate(
+            ['portfolio_user_id' => $portfolio->id],
+            collect($data)->only(['email', 'phone', 'address'])->all()
+        );
 
         $this->clearPortfolioCache($user->id);
 
@@ -488,7 +480,6 @@ class PortfolioService
      */
     private function clearPortfolioCache(int $userId): void
     {
-        Cache::forget("portfolio:user:{$userId}");
         Cache::forget($this->getUserCacheKey($userId));
         Cache::forget("portfolio:slug_by_user:{$userId}");
     }

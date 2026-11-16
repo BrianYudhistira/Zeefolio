@@ -11,7 +11,6 @@ use App\Services\LogService;
 use App\Services\PortfolioService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -82,18 +81,9 @@ class SkillController extends Controller
 
         $categoryIds = array_values(array_map('intval', $validated['skill_categories']));
 
-        DB::beginTransaction();
-
-        try {
-            $portfolio->update([
-                'skill_categories' => $categoryIds,
-            ]);
-
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        }
+        $portfolio->update([
+            'skill_categories' => $categoryIds,
+        ]);
 
         $categoryNames = TechStackCategory::whereIn('id', $categoryIds)->pluck('name')->implode(', ');
         $this->clearPortfolioCache($request);

@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Log;
 use App\Models\UserNotification;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log as LaravelLog;
 
 class LogService
@@ -34,11 +33,6 @@ class LogService
             filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false
         ) {
             return 'Local';
-        }
-
-        $cached = Cache::get("geoip:{$ip}");
-        if (is_string($cached) && $cached !== '') {
-            return $cached;
         }
 
         $request = request();
