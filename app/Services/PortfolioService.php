@@ -482,5 +482,6 @@ class PortfolioService
     {
         Cache::forget($this->getUserCacheKey($userId));
         Cache::forget("portfolio:slug_by_user:{$userId}");
+        Cache::forget(SeoService::SITEMAP_CACHE_KEY);
     }
 }

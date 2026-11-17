@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\PreventIndexing;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,15 +18,18 @@ Route::get('/', fn () => auth()->check()
 | Admin Panel & Dashboard Routes (/admin/*)
 |--------------------------------------------------------------------------
 */
-Route::prefix('admin')->name('admin.')->group(function () {
-    require __DIR__.'/web/auth.php';
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(PreventIndexing::class)
+    ->group(function () {
+        require __DIR__.'/web/auth.php';
 
-    Route::middleware('auth')->group(function () {
-        require __DIR__.'/web/dashboard/overview.php';
-        require __DIR__.'/web/dashboard/content.php';
-        require __DIR__.'/web/dashboard/administration.php';
+        Route::middleware('auth')->group(function () {
+            require __DIR__.'/web/dashboard/overview.php';
+            require __DIR__.'/web/dashboard/content.php';
+            require __DIR__.'/web/dashboard/administration.php';
+        });
     });
-});
 
 /*
 |--------------------------------------------------------------------------

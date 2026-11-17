@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { Head, Link } from "@inertiajs/react";
+import { Link } from "@inertiajs/react";
 import AnimatedContent from "@/Components/Animations/UI/AnimatedContent";
 import ProjectArchiveCard from "@/Components/Portfolio/Projects/ProjectArchiveCard";
 import PortfolioFooter from "@/Components/Portfolio/PortfolioFooter";
+import SeoHead from "@/Components/Portfolio/SeoHead";
 import {
     HiOutlineArrowLeft,
     HiMagnifyingGlass,
@@ -21,6 +22,7 @@ export default function ListProject({
     projects = [],
     portfolioSlug = "brian-yudhistira",
     portfolioName = "Portfolio",
+    seo = null,
 }) {
     const projectList = Array.isArray(projects) ? projects : [];
     const [searchQuery, setSearchQuery] = useState("");
@@ -77,7 +79,10 @@ export default function ListProject({
 
     return (
         <>
-            <Head title="Projects Archive - Portfolio" />
+            <SeoHead
+                seo={seo}
+                fallbackTitle={`Projects - ${portfolioName}`}
+            />
 
             <div className="w-full bg-black text-neutral-200 antialiased selection:bg-white selection:text-black min-h-screen relative font-sans flex flex-col justify-between">
                 {/* Subtle Ambient Background Lighting */}

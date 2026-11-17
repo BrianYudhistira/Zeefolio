@@ -24,6 +24,8 @@ class PortfolioUser extends Model
         'projects',
         'me',
         'v2',
+        'sitemap',
+        'sitemap.xml',
     ];
 
     protected $fillable = [

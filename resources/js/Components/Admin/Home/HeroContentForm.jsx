@@ -138,17 +138,33 @@ export default function HeroContentForm({
 
                 {/* Description */}
                 <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-zinc-300">
-                        About / Bio Description
-                    </label>
+                    <div className="flex items-center justify-between gap-2">
+                        <label className="block text-xs font-medium text-zinc-300">
+                            About / Bio Description
+                        </label>
+                        <span
+                            className={`text-[11px] font-mono ${
+                                (data.description?.trim().length || 0) >= 50
+                                    ? "text-emerald-400"
+                                    : "text-amber-400"
+                            }`}
+                        >
+                            {data.description?.trim().length || 0} / 50 min chars
+                        </span>
+                    </div>
                     <textarea
                         rows={4}
                         required
+                        minLength={50}
+                        maxLength={2000}
                         value={data.description}
                         onChange={(e) => setData("description", e.target.value)}
-                        placeholder="Write a concise summary about your background..."
+                        placeholder="Write a concise summary about your background (min. 50 characters for SEO indexing)..."
                         className="w-full text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 placeholder-zinc-600 outline-none transition-colors resize-y"
                     />
+                    <p className="text-[11px] text-zinc-500">
+                        Minimum 50 characters required so search engines index your portfolio instead of treating it as thin content.
+                    </p>
                     {errors.description && (
                         <p className="text-xs text-red-400">{errors.description}</p>
                     )}

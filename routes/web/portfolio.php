@@ -5,6 +5,9 @@ use App\Http\Controllers\Portfolio\PortfolioController;
 use App\Models\PortfolioUser;
 use Illuminate\Support\Facades\Route;
 
+// ── Dynamic XML Sitemap ──
+Route::get('/sitemap.xml', [PortfolioController::class, 'sitemap'])->name('portfolio.sitemap');
+
 // ── Signed Email Verification Link ──
 Route::get('/verify-email/{id}/{hash}', [AccountController::class, 'verifyEmail'])
     ->middleware('signed')
@@ -24,7 +27,7 @@ foreach (['me', 'v2'] as $legacyPrefix) {
         Route::get('/', function () {
             $defaultSlug = PortfolioUser::orderBy('id')->value('slug') ?? 'brian-yudhistira';
 
-            return redirect()->route('portfolio.index', ['slug' => $defaultSlug]);
+            return redirect()->route('portfolio.index', ['slug' => $defaultSlug], 301);
         });
         Route::get('/projects', [PortfolioController::class, 'redirectLegacyProjects']);
         Route::get('/projects/{projectSlug}', [PortfolioController::class, 'redirectLegacyProjectDetail']);

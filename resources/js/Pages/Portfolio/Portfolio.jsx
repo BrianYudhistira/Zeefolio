@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Head } from "@inertiajs/react";
 import PortfolioNavbar from "@/Components/Portfolio/PortfolioNavbar";
 import HomeSection from "@/Components/Portfolio/Sections/Home";
 import SkillsSection from "@/Components/Portfolio/Sections/Skills";
@@ -7,6 +6,7 @@ import ExperienceSection from "@/Components/Portfolio/Sections/Experience";
 import ProjectsSection from "@/Components/Portfolio/Sections/Project";
 import ContactSection from "@/Components/Portfolio/Sections/Contact";
 import PortfolioFooter from "@/Components/Portfolio/PortfolioFooter";
+import SeoHead from "@/Components/Portfolio/SeoHead";
 
 const navLinks = [
     { href: "#home", label: "Home" },
@@ -28,6 +28,7 @@ export default function Portfolio({
     portfolio,
     portfolioSlug,
     selectedSkillCategories = [],
+    seo = null,
 }) {
     const appName = import.meta.env.VITE_APP_NAME;
     const resolvedSlug = portfolioSlug || portfolio?.slug || "brian-yudhistira";
@@ -82,8 +83,9 @@ export default function Portfolio({
 
     return (
         <>
-            <Head
-                title={`${portfolio.home?.name || "Portfolio"}`}
+            <SeoHead
+                seo={seo}
+                fallbackTitle={portfolio.home?.name || "Portfolio"}
             />
 
             <div className="w-full bg-black text-neutral-200 antialiased selection:bg-white selection:text-black min-h-screen relative font-sans">

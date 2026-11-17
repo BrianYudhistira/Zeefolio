@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Head, Link } from "@inertiajs/react";
+import { Link } from "@inertiajs/react";
 import ProjectDetailHero from "@/Components/Portfolio/Projects/ProjectDetailHero";
 import ProjectShowcaseGallery from "@/Components/Portfolio/Projects/ProjectShowcaseGallery";
 import ProjectLightboxModal from "@/Components/Portfolio/Projects/ProjectLightboxModal";
 import PortfolioFooter from "@/Components/Portfolio/PortfolioFooter";
+import SeoHead from "@/Components/Portfolio/SeoHead";
 import { HiOutlineArrowLeft } from "react-icons/hi2";
 
 function resolveTechStack(project) {
@@ -32,6 +33,7 @@ export default function DetailProject({
     project,
     portfolioSlug = "brian-yudhistira",
     portfolioName = "Portfolio",
+    seo = null,
 }) {
     const [lightboxImage, setLightboxImage] = useState(null);
 
@@ -88,7 +90,10 @@ export default function DetailProject({
 
     return (
         <>
-            <Head title={`${project.title} - Project Details`} />
+            <SeoHead
+                seo={seo}
+                fallbackTitle={`${project.title} - Project Details`}
+            />
 
             <div className="w-full bg-black text-neutral-200 antialiased selection:bg-white selection:text-black min-h-screen relative font-sans flex flex-col justify-between">
                 {/* Subtle Ambient Background Lighting */}
