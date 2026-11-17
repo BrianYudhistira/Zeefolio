@@ -106,7 +106,7 @@ export default function DetailProject({
                             <img
                                 src="/images/web_icon.png"
                                 alt="Logo"
-                                className="h-6 w-6 object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
+                                className="h-10 w-10 object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
                             />
                             <span className="text-xs sm:text-sm font-mono tracking-wider uppercase hidden sm:inline text-neutral-200 group-hover:text-white transition-colors">
                                 {portfolioName}

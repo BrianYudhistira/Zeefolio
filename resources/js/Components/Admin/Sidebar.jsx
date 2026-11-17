@@ -132,11 +132,11 @@ export default function Sidebar({
 
             return contentItems.length > 0
                 ? [
-                      {
-                          label: "Portfolio Content",
-                          items: contentItems,
-                      },
-                  ]
+                    {
+                        label: "Portfolio Content",
+                        items: contentItems,
+                    },
+                ]
                 : [];
         })(),
         ...(() => {
@@ -220,6 +220,8 @@ export default function Sidebar({
     ];
 
     const roleMeta = getRoleMeta(user?.role);
+    const brandSuffix =
+        appName.toLowerCase() === "zeefolio" ? "eeFolio" : appName;
 
     const renderBody = (onNavigate) => (
         <div className="flex flex-col h-full">
@@ -228,14 +230,17 @@ export default function Sidebar({
                 <Link
                     href={route("admin.dashboard")}
                     onClick={onNavigate}
-                    className="flex items-center gap-2.5 font-semibold text-zinc-100"
+                    aria-label={appName}
+                    className="flex items-center font-semibold text-zinc-100"
                 >
                     <img
                         src="/images/web_icon.png"
-                        alt="Logo"
-                        className="h-6 w-6 object-contain grayscale"
+                        alt=""
+                        className="h-8 w-8 object-contain grayscale shrink-0"
                     />
-                    <span className="text-sm tracking-tight">{appName}</span>
+                    <span className="-ml-1.5 text-base tracking-tight leading-none">
+                        {brandSuffix}
+                    </span>
                 </Link>
 
                 <button

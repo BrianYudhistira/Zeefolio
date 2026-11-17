@@ -95,7 +95,7 @@ export default function ListProject({
                             <img
                                 src="/images/web_icon.png"
                                 alt="Logo"
-                                className="h-6 w-6 object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
+                                className="h-10 w-10 object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
                             />
                             <span className="text-xs sm:text-sm font-mono tracking-wider uppercase hidden sm:inline text-neutral-200 group-hover:text-white transition-colors">
                                 {portfolioName}
@@ -154,8 +154,8 @@ export default function ListProject({
                                                 type="button"
                                                 onClick={() => setActiveCategory(cat.id)}
                                                 className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider whitespace-nowrap transition-all duration-300 ${isActive
-                                                        ? "text-black bg-white font-semibold shadow-[0_0_20px_rgba(255,255,255,0.2)]"
-                                                        : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
+                                                    ? "text-black bg-white font-semibold shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                                                    : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
                                                     }`}
                                             >
                                                 {cat.label}
