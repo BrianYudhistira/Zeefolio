@@ -14,7 +14,7 @@ class SeoService
     public const MIN_DESCRIPTION_LENGTH = 50;
     public const META_DESCRIPTION_LIMIT = 155;
     public const DEFAULT_PLACEHOLDER_BIO = 'A brief description about yourself.';
-    public const DEFAULT_OG_IMAGE = '/favicon_dark.ico';
+    public const DEFAULT_OG_IMAGE = '/images/web_icon_dark.png';
     public const SITEMAP_CACHE_KEY = 'seo:sitemap_xml';
 
     /**
