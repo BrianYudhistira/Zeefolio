@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { Head, Link } from "@inertiajs/react";
+import { Link } from "@inertiajs/react";
 import AnimatedContent from "@/Components/Animations/UI/AnimatedContent";
 import ProjectArchiveCard from "@/Components/Portfolio/Projects/ProjectArchiveCard";
 import PortfolioFooter from "@/Components/Portfolio/PortfolioFooter";
+import SeoHead from "@/Components/Portfolio/SeoHead";
 import {
     HiOutlineArrowLeft,
     HiMagnifyingGlass,
@@ -21,6 +22,7 @@ export default function ListProject({
     projects = [],
     portfolioSlug = "brian-yudhistira",
     portfolioName = "Portfolio",
+    seo = null,
 }) {
     const projectList = Array.isArray(projects) ? projects : [];
     const [searchQuery, setSearchQuery] = useState("");
@@ -77,7 +79,10 @@ export default function ListProject({
 
     return (
         <>
-            <Head title="Projects Archive - Portfolio" />
+            <SeoHead
+                seo={seo}
+                fallbackTitle={`Projects - ${portfolioName}`}
+            />
 
             <div className="w-full bg-black text-neutral-200 antialiased selection:bg-white selection:text-black min-h-screen relative font-sans flex flex-col justify-between">
                 {/* Subtle Ambient Background Lighting */}
@@ -95,7 +100,7 @@ export default function ListProject({
                             <img
                                 src="/images/web_icon.png"
                                 alt="Logo"
-                                className="h-6 w-6 object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
+                                className="h-10 w-10 object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
                             />
                             <span className="text-xs sm:text-sm font-mono tracking-wider uppercase hidden sm:inline text-neutral-200 group-hover:text-white transition-colors">
                                 {portfolioName}
@@ -154,8 +159,8 @@ export default function ListProject({
                                                 type="button"
                                                 onClick={() => setActiveCategory(cat.id)}
                                                 className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider whitespace-nowrap transition-all duration-300 ${isActive
-                                                        ? "text-black bg-white font-semibold shadow-[0_0_20px_rgba(255,255,255,0.2)]"
-                                                        : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
+                                                    ? "text-black bg-white font-semibold shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                                                    : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
                                                     }`}
                                             >
                                                 {cat.label}

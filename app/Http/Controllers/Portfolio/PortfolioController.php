@@ -8,8 +8,10 @@ use App\Models\PortfolioUser;
 use App\Models\PortfolioView;
 use App\Services\LogService;
 use App\Services\PortfolioService;
+use App\Services\SeoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -20,38 +22,62 @@ class PortfolioController extends Controller
 {
     public function __construct(
         protected PortfolioService $portfolioService,
+        protected SeoService $seoService,
     ) {}
 
-    public function index(Request $request, string $slug): Response
+    public function index(Request $request, string $slug): Response|RedirectResponse
     {
         $portfolio = $this->resolveVisiblePortfolio($request, $slug);
 
+        if ($slug !== $portfolio->slug) {
+            return redirect()->route('portfolio.index', ['slug' => $portfolio->slug], 301);
+        }
+
         $this->recordView($request, $portfolio->id, 'home');
+
+        $seo = $this->seoService->forPortfolio($portfolio, isPreviewingDraft: ! $portfolio->is_active);
 
         return Inertia::render('Portfolio/Portfolio', [
             'portfolio' => $portfolio,
             'portfolioSlug' => $portfolio->slug,
             'selectedSkillCategories' => $portfolio->selected_skill_categories ?? [],
-        ]);
+            'seo' => $seo,
+        ])->withViewData(['seo' => $seo]);
     }
 
-    public function listProject(Request $request, string $slug): Response
+    public function listProject(Request $request, string $slug): Response|RedirectResponse
     {
         $portfolio = $this->resolveVisiblePortfolio($request, $slug);
+
+        if ($slug !== $portfolio->slug) {
+            return redirect()->route('portfolio.projects', ['slug' => $portfolio->slug], 301);
+        }
+
         $projects = $this->portfolioService->listProjects($portfolio, onlyActive: true);
 
         $this->recordView($request, $portfolio->id, 'projects');
+
+        $seo = $this->seoService->forProjectsArchive($portfolio, $projects->count());
 
         return Inertia::render('Portfolio/Projects/ListProject', [
             'projects' => $projects,
             'portfolioSlug' => $portfolio->slug,
             'portfolioName' => $portfolio->home?->name ?? 'Portfolio',
-        ]);
+            'seo' => $seo,
+        ])->withViewData(['seo' => $seo]);
     }
 
-    public function getProjectBySlug(Request $request, string $slug, string $projectSlug): Response
+    public function getProjectBySlug(Request $request, string $slug, string $projectSlug): Response|RedirectResponse
     {
         $portfolio = $this->resolveVisiblePortfolio($request, $slug);
+
+        if ($slug !== $portfolio->slug) {
+            return redirect()->route('portfolio.project', [
+                'slug' => $portfolio->slug,
+                'projectSlug' => $projectSlug,
+            ], 301);
+        }
+
         $project = $this->portfolioService->getProjectBySlug($projectSlug, $portfolio, onlyActive: true);
 
         if (! $project) {
@@ -60,10 +86,20 @@ class PortfolioController extends Controller
 
         $this->recordView($request, $portfolio->id, 'project', $project->id);
 
+        $seo = $this->seoService->forProjectDetail($portfolio, $project);
+
         return Inertia::render('Portfolio/Projects/DetailProject', [
             'project' => $project,
             'portfolioSlug' => $portfolio->slug,
             'portfolioName' => $portfolio->home?->name ?? 'Portfolio',
+            'seo' => $seo,
+        ])->withViewData(['seo' => $seo]);
+    }
+
+    public function sitemap(): HttpResponse
+    {
+        return response($this->seoService->generateSitemapXml(), 200, [
+            'Content-Type' => 'application/xml; charset=UTF-8',
         ]);
     }
 
@@ -71,7 +107,7 @@ class PortfolioController extends Controller
     {
         $defaultSlug = PortfolioUser::orderBy('id')->value('slug') ?? 'brian-yudhistira';
 
-        return redirect()->route('portfolio.projects', ['slug' => $defaultSlug]);
+        return redirect()->route('portfolio.projects', ['slug' => $defaultSlug], 301);
     }
 
     public function redirectLegacyProjectDetail(string $projectSlug): RedirectResponse
@@ -89,7 +125,7 @@ class PortfolioController extends Controller
         return redirect()->route('portfolio.project', [
             'slug' => $portfolioSlug,
             'projectSlug' => $project->slug,
-        ]);
+        ], 301);
     }
 
     protected function resolveVisiblePortfolio(Request $request, string $slug): PortfolioUser

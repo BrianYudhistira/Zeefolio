@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Concerns\ResolvesAdminPortfolio;
 use App\Http\Controllers\Controller;
+use App\Models\PortfolioUser;
 use App\Services\LogService;
 use App\Services\PortfolioService;
+use App\Services\SeoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -66,12 +68,12 @@ class HomeController extends Controller
                 'string',
                 'max:100',
                 'alpha_dash',
-                Rule::notIn(['admin', 'api', 'storage', 'sanctum', 'up', '_boost', 'verify-email', 'messageMe', 'projects', 'me', 'v2']),
+                Rule::notIn(PortfolioUser::RESERVED_SLUGS),
                 Rule::unique('portfolio_users', 'slug')->ignore($portfolio->id),
             ],
             'passions' => ['nullable', 'array'],
             'passions.*' => ['string', 'max:100'],
-            'description' => ['required', 'string'],
+            'description' => ['required', 'string', 'min:' . SeoService::MIN_DESCRIPTION_LENGTH, 'max:2000'],
             'social_media_links' => ['nullable', 'array'],
             'social_media_links.github' => ['nullable', 'url:http,https', 'max:255'],
             'social_media_links.linkedin' => ['nullable', 'url:http,https', 'max:255'],

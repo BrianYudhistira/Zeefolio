@@ -1,31 +1,8 @@
 import AnimatedContent from "@/Components/Animations/UI/AnimatedContent";
 import { HiArrowUpRight, HiOutlineArrowRight } from "react-icons/hi2";
 import { FaGithub } from "react-icons/fa6";
-
-function getDeviconClass(icon) {
-    if (!icon) return null;
-    if (icon.startsWith('devicon-')) return `${icon} colored`;
-    return `devicon-${icon}-plain colored`;
-}
-
-function getProjectCover(project) {
-    if (project.image_url) return project.image_url;
-    if (project.images && project.images.length > 0) {
-        const firstImg = project.images[0];
-        if (firstImg.image_url) {
-            return Array.isArray(firstImg.image_url) ? firstImg.image_url[0] : firstImg.image_url;
-        }
-        if (firstImg.image_path) {
-            const p = Array.isArray(firstImg.image_path) ? firstImg.image_path[0] : firstImg.image_path;
-            return `/storage/${p.replace(/^\//, '')}`;
-        }
-    }
-    if (project.image_path) {
-        const p = Array.isArray(project.image_path) ? project.image_path[0] : project.image_path;
-        return `/storage/${p.replace(/^\//, '')}`;
-    }
-    return "/images/placeholder.png";
-}
+import { getDeviconClass } from "@/Utils/devicon";
+import { getProjectCover } from "@/Utils/projectHelpers";
 
 export default function ProjectSection({
     projects,

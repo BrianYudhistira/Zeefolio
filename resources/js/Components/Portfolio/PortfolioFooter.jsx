@@ -1,4 +1,3 @@
-import { Link } from "@inertiajs/react";
 import { FaGithub } from "react-icons/fa6";
 import { HiArrowRight } from "react-icons/hi2";
 
@@ -59,14 +58,14 @@ export default function PortfolioFooter({
                         className="hidden sm:inline-block h-3 w-px bg-white/10"
                     />
 
-                    <Link
+                    <a
                         href={route("admin.register")}
                         className={`group inline-flex items-center gap-1.5 text-neutral-200 hover:text-white underline-offset-4 hover:underline transition-colors ${FOCUS_RING}`}
                         aria-label="Create your own portfolio"
                     >
                         <span>Create your own portfolio</span>
                         <HiArrowRight className="w-3.5 h-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
-                    </Link>
+                    </a>
                 </div>
             </div>
         </footer>

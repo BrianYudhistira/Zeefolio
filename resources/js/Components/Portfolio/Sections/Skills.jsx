@@ -1,4 +1,5 @@
 import AnimatedContent from "@/Components/Animations/UI/AnimatedContent";
+import { getDeviconClass } from "@/Utils/devicon";
 
 function normalizeSkillsInput(userSkills, selectedCategories = []) {
     const skillsData = userSkills?.data ?? userSkills;
@@ -118,12 +119,6 @@ function getGridClass(count) {
 }
 
 export default function SkillsSection({ skills, selectedCategories = [] }) {
-    const getDeviconClass = (icon) => {
-        if (!icon) return null;
-        if (icon.startsWith("devicon-")) return `${icon} colored`;
-        return `devicon-${icon}-plain colored`;
-    };
-
     const skillCategories = normalizeSkillsInput(skills, selectedCategories);
     const gridClass = getGridClass(skillCategories.length);
 

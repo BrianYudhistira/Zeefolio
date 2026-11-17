@@ -32,23 +32,7 @@ class NotificationController extends Controller
         }
 
         $notifications = $query->paginate(20)->withQueryString()->through(
-            fn (UserNotification $n) => [
-                'id' => $n->id,
-                'module' => $n->module,
-                'type' => $n->type,
-                'title' => $n->title,
-                'message' => $n->message,
-                'action_url' => $n->action_url ?: $logService->resolveActionUrl($n->module, (string) $n->message),
-                'is_popup_hidden' => (bool) $n->is_popup_hidden,
-                'read_at' => $n->read_at?->toISOString(),
-                'is_read' => $n->read_at !== null,
-                'created_at' => $n->created_at?->toISOString(),
-                'user' => $n->actor ? [
-                    'id' => $n->actor->id,
-                    'name' => $n->actor->name,
-                    'username' => $n->actor->username,
-                ] : null,
-            ]
+            fn (UserNotification $n) => $n->toPayload($logService)
         );
 
         $rawStats = UserNotification::query()

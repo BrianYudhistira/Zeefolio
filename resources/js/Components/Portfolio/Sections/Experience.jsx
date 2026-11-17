@@ -1,12 +1,7 @@
 import AnimatedContent from "@/Components/Animations/UI/AnimatedContent";
 import { useEffect, useRef, useState } from "react";
 import { HiOutlineBuildingOffice2, HiArrowTopRightOnSquare } from "react-icons/hi2";
-
-function getDeviconClass(icon) {
-    if (!icon) return null;
-    if (icon.startsWith('devicon-')) return `${icon} colored`;
-    return `devicon-${icon}-plain colored`;
-}
+import { getDeviconClass } from "@/Utils/devicon";
 
 function TimelineConnector({ isVisible }) {
     return (

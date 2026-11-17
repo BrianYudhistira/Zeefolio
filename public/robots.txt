@@ -1,2 +1,9 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /verify-email/
+Disallow: /messageMe
+Disallow: /me
+Disallow: /v2
+
+Sitemap: /sitemap.xml

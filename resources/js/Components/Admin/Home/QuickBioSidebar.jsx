@@ -27,14 +27,12 @@ export default function QuickBioSidebar({
                 <button
                     type="button"
                     onClick={() => setData("is_active", !data.is_active)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
-                        data.is_active ? "bg-emerald-500" : "bg-zinc-700"
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${data.is_active ? "bg-emerald-500" : "bg-zinc-700"
+                        }`}
                 >
                     <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            data.is_active ? "translate-x-6" : "translate-x-1"
-                        }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${data.is_active ? "translate-x-6" : "translate-x-1"
+                            }`}
                     />
                 </button>
             </div>
@@ -45,12 +43,17 @@ export default function QuickBioSidebar({
                     Profile Image
                 </h3>
                 <div className="flex items-center gap-3.5 sm:block sm:space-y-4">
-                    <div className="w-16 h-16 sm:w-full sm:aspect-square sm:max-w-[200px] sm:mx-auto rounded-xl bg-zinc-950 border border-zinc-800 overflow-hidden flex items-center justify-center shrink-0">
+                    <div
+                        className={`shrink-0 rounded-xl bg-zinc-950 border border-zinc-800 overflow-hidden flex items-center justify-center sm:w-full sm:max-w-[220px] sm:mx-auto ${imagePreview
+                                ? "w-20 max-h-28 sm:max-h-64"
+                                : "w-16 h-16 sm:h-44"
+                            }`}
+                    >
                         {imagePreview ? (
                             <img
                                 src={imagePreview}
                                 alt="Profile preview"
-                                className="w-full h-full object-cover"
+                                className="w-full h-auto max-h-28 sm:max-h-64 object-contain"
                             />
                         ) : (
                             <HiOutlinePhoto className="w-7 h-7 sm:w-10 sm:h-10 text-zinc-600" />
