@@ -36,16 +36,28 @@
                 <script inertia="json-ld" type="application/ld+json">{!! json_encode($seo['json_ld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
             @endif
         @else
-            <title inertia>{{ config('app.name', 'Laravel') }}</title>
+            @php($defaultSeo = \App\Services\SeoService::defaultPlatformSeo())
+            <title inertia>{{ config('app.name', 'ZeeFolio') }}</title>
             @if(request()->is('admin*'))
                 <meta inertia="robots" name="robots" content="noindex, nofollow">
             @endif
+            <meta inertia="description" name="description" content="{{ $defaultSeo['description'] }}">
+            <meta inertia="og:type" property="og:type" content="website">
+            <meta inertia="og:site_name" property="og:site_name" content="{{ config('app.name', 'ZeeFolio') }}">
+            <meta inertia="og:title" property="og:title" content="{{ $defaultSeo['title'] }}">
+            <meta inertia="og:description" property="og:description" content="{{ $defaultSeo['description'] }}">
+            <meta inertia="og:url" property="og:url" content="{{ $defaultSeo['url'] }}">
+            <meta inertia="og:image" property="og:image" content="{{ $defaultSeo['image'] }}">
+            <meta inertia="twitter:card" name="twitter:card" content="summary_large_image">
+            <meta inertia="twitter:title" property="twitter:title" content="{{ $defaultSeo['title'] }}">
+            <meta inertia="twitter:description" property="twitter:description" content="{{ $defaultSeo['description'] }}">
+            <meta inertia="twitter:image" property="twitter:image" content="{{ $defaultSeo['image'] }}">
         @endif
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <link rel="icon" type="image/x-icon" href="/images/web_icon.png">
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
         <!-- Devicon - Technology Icons (Pinned Version: SEC-15) -->
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/devicon.min.css" crossorigin="anonymous" />

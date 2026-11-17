@@ -14,8 +14,25 @@ class SeoService
     public const MIN_DESCRIPTION_LENGTH = 50;
     public const META_DESCRIPTION_LIMIT = 155;
     public const DEFAULT_PLACEHOLDER_BIO = 'A brief description about yourself.';
-    public const DEFAULT_OG_IMAGE = '/images/web_icon.png';
+    public const DEFAULT_OG_IMAGE = '/favicon_dark.ico';
     public const SITEMAP_CACHE_KEY = 'seo:sitemap_xml';
+
+    /**
+     * Build default platform OpenGraph & meta payload for root/auth pages.
+     *
+     * @return array<string, string>
+     */
+    public static function defaultPlatformSeo(): array
+    {
+        $siteName = (string) config('app.name', 'ZeeFolio');
+
+        return [
+            'title' => "{$siteName} — Multi-User Developer Portfolio Platform",
+            'description' => "Create, manage, and showcase your developer portfolio, software engineering projects, and technical skills on {$siteName}.",
+            'image' => asset(self::DEFAULT_OG_IMAGE),
+            'url' => url()->current(),
+        ];
+    }
 
     /**
      * Determine whether a portfolio meets quality and visibility rules for search indexing.
