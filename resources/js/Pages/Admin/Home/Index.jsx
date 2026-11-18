@@ -3,8 +3,8 @@ import { Head, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import HeroContentForm from "@/Components/Admin/Home/HeroContentForm";
 import QuickBioSidebar from "@/Components/Admin/Home/QuickBioSidebar";
+import PortfolioStatusCapsule from "@/Components/Admin/PortfolioStatusCapsule";
 import { notifyAdmin } from "@/Utils/notify";
-import { HiOutlineGlobeAlt } from "react-icons/hi2";
 
 export default function HomeIndex({ home = {}, portfolioMeta = {} }) {
     const [passionInput, setPassionInput] = useState("");
@@ -76,28 +76,7 @@ export default function HomeIndex({ home = {}, portfolioMeta = {} }) {
     const liveSlug = data.slug || portfolioMeta?.slug;
 
     const headerActions = (
-        <>
-            <span className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] sm:text-xs text-zinc-300">
-                <span
-                    className={`w-1.5 h-1.5 rounded-full ${data.is_active ? "bg-emerald-400" : "bg-zinc-500"
-                        }`}
-                />
-                {data.is_active ? "Active" : "Draft"}
-            </span>
-
-            {liveSlug && (
-                <a
-                    href={route("portfolio.index", { slug: liveSlug })}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 font-medium text-xs transition-colors"
-                >
-                    <HiOutlineGlobeAlt className="w-3.5 h-3.5" />
-                    <span className="sm:hidden">Live</span>
-                    <span className="hidden sm:inline">Live Site</span>
-                </a>
-            )}
-        </>
+        <PortfolioStatusCapsule isActive={data.is_active} slug={liveSlug} />
     );
 
     return (

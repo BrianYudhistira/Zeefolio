@@ -27,14 +27,14 @@ export default function ContactsIndex({ contact = {} }) {
             <div className="max-w-2xl">
                 <form
                     onSubmit={handleSubmit}
-                    className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4 sm:p-6 space-y-4 sm:space-y-5"
+                    className="admin-card rounded-xl border p-4 sm:p-6 space-y-4 sm:space-y-5"
                 >
                     <div>
                         <h2 className="text-sm font-semibold text-zinc-100">
-                            Direct Contact Information
+                            Contact Details
                         </h2>
                         <p className="hidden sm:block text-xs text-zinc-400 mt-0.5">
-                            Update the contact channels displayed on your public portfolio.
+                            Details shown in the contact section of your portfolio.
                         </p>
                     </div>
 
@@ -100,7 +100,7 @@ export default function ContactsIndex({ contact = {} }) {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition-colors disabled:opacity-50 cursor-pointer"
+                            className="admin-btn-primary w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs transition-colors disabled:opacity-50 cursor-pointer"
                         >
                             {processing ? "Saving..." : "Save Contact Info"}
                         </button>

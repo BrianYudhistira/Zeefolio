@@ -20,7 +20,7 @@ export default function ProfileInfoForm({
     return (
         <form
             onSubmit={onSubmit}
-            className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4 sm:p-6 space-y-4 sm:space-y-5"
+            className="admin-card rounded-xl border p-4 sm:p-6 space-y-4 sm:space-y-5"
         >
             <div>
                 <h2 className="text-sm font-semibold text-zinc-100">
@@ -181,7 +181,7 @@ export default function ProfileInfoForm({
                 <button
                     type="submit"
                     disabled={profileForm.processing}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition-colors disabled:opacity-50 cursor-pointer"
+                    className="admin-btn-primary w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs transition-colors disabled:opacity-50 cursor-pointer"
                 >
                     {profileForm.processing ? "Saving..." : "Save Profile"}
                 </button>

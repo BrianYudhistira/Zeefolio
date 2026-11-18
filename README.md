@@ -77,7 +77,7 @@
 | Role | Email | Password | Portfolio Slug |
 | :--- | :--- | :--- | :--- |
 | **Superadmin** | `brianyudhistira1@gmail.com` | `password` | `/brian-yudhistira` |
-| **Superadmin** | `bagusprasetya028@gmail.com` | `password` | `/bagus_good` |
+| **Member** | `sarah.chen@zeefolio.dev` | `password` | `/sarah-chen` |
 
 ---
 

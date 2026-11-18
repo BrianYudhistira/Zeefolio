@@ -84,8 +84,8 @@ export default function AdminSettingsIndex({
                         skillForm.reset();
                         notifyAdmin({
                             type: "success",
-                            title: "Global Skill Updated",
-                            message: `Global skill "${skillName}" has been updated.`,
+                            title: "Default Skill Updated",
+                            message: `Default skill "${skillName}" has been updated.`,
                         });
                     },
                 }
@@ -98,8 +98,8 @@ export default function AdminSettingsIndex({
                     skillForm.reset();
                     notifyAdmin({
                         type: "success",
-                        title: "Global Skill Added",
-                        message: `Global skill "${skillName}" has been added.`,
+                        title: "Default Skill Added",
+                        message: `Default skill "${skillName}" has been added.`,
                     });
                 },
             });
@@ -140,7 +140,7 @@ export default function AdminSettingsIndex({
                         ? `Skill category "${itemName}" has been deleted.`
                         : isProjectCategory
                           ? `Project category "${itemName}" has been deleted.`
-                          : `Global skill "${itemName}" has been deleted.`,
+                          : `Default skill "${itemName}" has been deleted.`,
                 });
             },
             onFinish: () => setDeleting(false),
@@ -152,7 +152,7 @@ export default function AdminSettingsIndex({
             ? "Delete Skill Category"
             : deleteTarget?.type === "project_category"
               ? "Delete Project Category"
-              : "Delete Global Skill";
+              : "Delete Default Skill";
 
     return (
         <AdminLayout
@@ -161,11 +161,11 @@ export default function AdminSettingsIndex({
                 <button
                     type="button"
                     onClick={openCreateSkill}
-                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 font-medium text-xs transition-colors cursor-pointer"
+                    className="admin-btn-primary inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
                 >
                     <HiOutlinePlus className="w-4 h-4" />
                     <span className="sm:hidden">Add Skill</span>
-                    <span className="hidden sm:inline">Add Global Skill</span>
+                    <span className="hidden sm:inline">Add Default Skill</span>
                 </button>
             }
         >
@@ -173,23 +173,23 @@ export default function AdminSettingsIndex({
 
             <div className="space-y-4 sm:space-y-6">
                 {/* Summary Banner */}
-                <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3.5 sm:p-5 flex items-center justify-between gap-3 sm:gap-4">
+                <div className="admin-card rounded-xl border p-3.5 sm:p-5 flex items-center justify-between gap-3 sm:gap-4">
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800 border border-zinc-700 text-zinc-300">
-                                Admin Configuration
+                                Shared Defaults
                             </span>
                             <h2 className="text-xs sm:text-sm font-semibold text-zinc-100 truncate">
-                                Global Skills & Categories
+                                Default Skills & Categories
                             </h2>
                         </div>
                         <p className="hidden sm:block text-xs text-zinc-400 mt-1">
-                            Configure the default global skills and skill categories available to all members across the platform.
+                            Configure the default skills and skill categories available to all members across the platform.
                         </p>
                     </div>
 
                     <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                        <div className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-center">
+                        <div className="admin-well px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg border text-center">
                             <p className="text-[10px] sm:text-[11px] text-zinc-500">
                                 Skills
                             </p>
@@ -197,17 +197,17 @@ export default function AdminSettingsIndex({
                                 {globalSkills.length}
                             </p>
                         </div>
-                        <div className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-center">
+                        <div className="admin-well px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg border text-center">
                             <p className="text-[10px] sm:text-[11px] text-zinc-500">
-                                Skill Cats
+                                Skill Groups
                             </p>
                             <p className="text-xs sm:text-sm font-semibold text-zinc-100">
                                 {categories.length}
                             </p>
                         </div>
-                        <div className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-center">
+                        <div className="admin-well px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg border text-center">
                             <p className="text-[10px] sm:text-[11px] text-zinc-500">
-                                Project Cats
+                                Project Groups
                             </p>
                             <p className="text-xs sm:text-sm font-semibold text-zinc-100">
                                 {projectCategories.length}
@@ -217,25 +217,25 @@ export default function AdminSettingsIndex({
                 </div>
 
                 {/* Mobile Section Switcher (< lg) */}
-                <div className="lg:hidden grid grid-cols-2 gap-1 p-1 rounded-xl bg-zinc-900/80 border border-zinc-800">
+                <div className="lg:hidden admin-pill-track grid grid-cols-2 gap-1 p-1 rounded-xl border">
                     <button
                         type="button"
                         onClick={() => setMobileSection("skills")}
-                        className={`py-2 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                        className={`py-2 px-3 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
                             mobileSection === "skills"
-                                ? "bg-zinc-800 text-zinc-100 border border-zinc-700"
-                                : "text-zinc-400 hover:text-zinc-200 border border-transparent"
+                                ? "admin-pill-active"
+                                : "admin-pill-inactive"
                         }`}
                     >
-                        Global Skills ({globalSkills.length})
+                        Default Skills ({globalSkills.length})
                     </button>
                     <button
                         type="button"
                         onClick={() => setMobileSection("categories")}
-                        className={`py-2 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                        className={`py-2 px-3 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
                             mobileSection === "categories"
-                                ? "bg-zinc-800 text-zinc-100 border border-zinc-700"
-                                : "text-zinc-400 hover:text-zinc-200 border border-transparent"
+                                ? "admin-pill-active"
+                                : "admin-pill-inactive"
                         }`}
                     >
                         Categories (

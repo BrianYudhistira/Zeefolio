@@ -1,4 +1,7 @@
-import { HiXMark } from "react-icons/hi2";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "@inertiajs/react";
+import { HiMagnifyingGlass, HiOutlinePlus, HiXMark } from "react-icons/hi2";
+import { getDeviconClass } from "@/Utils/devicon";
 
 export default function ExperienceFormModal({
     open,
@@ -7,9 +10,29 @@ export default function ExperienceFormModal({
     setData,
     errors,
     processing,
+    skills = [],
+    onToggleSkill,
     onClose,
     onSubmit,
 }) {
+    const [skillSearch, setSkillSearch] = useState("");
+
+    useEffect(() => {
+        if (open) {
+            setSkillSearch("");
+        }
+    }, [open]);
+
+    const filteredSkills = useMemo(() => {
+        const query = skillSearch.trim().toLowerCase();
+        if (!query) return skills;
+        return skills.filter(
+            (skill) =>
+                skill.name?.toLowerCase().includes(query) ||
+                skill.category?.toLowerCase().includes(query)
+        );
+    }, [skills, skillSearch]);
+
     if (!open) return null;
 
     return (
@@ -35,7 +58,7 @@ export default function ExperienceFormModal({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div className="space-y-1.5">
                             <label className="block text-xs font-medium text-zinc-300">
-                                Company Name
+                                Organization / Company
                             </label>
                             <input
                                 type="text"
@@ -44,7 +67,7 @@ export default function ExperienceFormModal({
                                 onChange={(e) =>
                                     setData("company", e.target.value)
                                 }
-                                placeholder="e.g. Acme Corp"
+                                placeholder="e.g. Acme Corp, University, Studio"
                                 className="w-full text-sm px-3 py-2 sm:px-3.5 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
                             />
                             {errors.company && (
@@ -56,7 +79,7 @@ export default function ExperienceFormModal({
 
                         <div className="space-y-1.5">
                             <label className="block text-xs font-medium text-zinc-300">
-                                Role / Position
+                                Role / Title
                             </label>
                             <input
                                 type="text"
@@ -65,7 +88,7 @@ export default function ExperienceFormModal({
                                 onChange={(e) =>
                                     setData("position", e.target.value)
                                 }
-                                placeholder="e.g. Backend Engineer"
+                                placeholder="e.g. Project Manager, Designer, Staff"
                                 className="w-full text-sm px-3 py-2 sm:px-3.5 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
                             />
                             {errors.position && (
@@ -76,7 +99,7 @@ export default function ExperienceFormModal({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div className="space-y-1.5">
                             <label className="block text-xs font-medium text-zinc-300">
                                 Start Date
@@ -99,7 +122,10 @@ export default function ExperienceFormModal({
 
                         <div className="space-y-1.5">
                             <label className="block text-xs font-medium text-zinc-300">
-                                End Date
+                                End Date{" "}
+                                <span className="text-zinc-500 font-normal">
+                                    (Optional)
+                                </span>
                             </label>
                             <input
                                 type="date"
@@ -115,54 +141,106 @@ export default function ExperienceFormModal({
                                 </p>
                             )}
                         </div>
-
-                        <div className="col-span-2 sm:col-span-1 space-y-1.5">
-                            <label className="block text-xs font-medium text-zinc-300">
-                                Sort Order
-                            </label>
-                            <input
-                                type="number"
-                                min={0}
-                                value={data.sort_order}
-                                onChange={(e) =>
-                                    setData(
-                                        "sort_order",
-                                        Number(e.target.value)
-                                    )
-                                }
-                                className="w-full text-sm px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
-                            />
-                            {errors.sort_order && (
-                                <p className="text-xs text-red-400">
-                                    {errors.sort_order}
-                                </p>
-                            )}
-                        </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-zinc-300">
-                            Tech Stack (Comma separated)
-                        </label>
-                        <input
-                            type="text"
-                            value={data.tech_stack}
-                            onChange={(e) =>
-                                setData("tech_stack", e.target.value)
-                            }
-                            placeholder="e.g. Laravel, React, PostgreSQL, Docker"
-                            className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
-                        />
-                        {errors.tech_stack && (
+                    {/* Synced User Skills Multi-Select */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                            <label className="block text-xs font-medium text-zinc-300">
+                                Skills ({data.skill_ids.length} selected)
+                            </label>
+                            {skills.length > 0 && (
+                                <Link
+                                    href={route("admin.skills.index")}
+                                    className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
+                                >
+                                    <HiOutlinePlus className="w-3 h-3" />
+                                    <span>Add Skill</span>
+                                </Link>
+                            )}
+                        </div>
+
+                        {skills.length === 0 ? (
+                            <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <p className="text-xs text-zinc-400">
+                                    You haven&apos;t added any skills yet. Add skills to your profile to link them here.
+                                </p>
+                                <Link
+                                    href={route("admin.skills.index")}
+                                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-medium text-zinc-100 transition-colors shrink-0"
+                                >
+                                    <HiOutlinePlus className="w-3.5 h-3.5" />
+                                    <span>Add Skills</span>
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="rounded-lg bg-zinc-950 border border-zinc-800 overflow-hidden">
+                                <div className="relative border-b border-zinc-800/80">
+                                    <HiMagnifyingGlass className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                    <input
+                                        type="text"
+                                        value={skillSearch}
+                                        onChange={(e) =>
+                                            setSkillSearch(e.target.value)
+                                        }
+                                        placeholder="Search your skills..."
+                                        className="w-full text-xs pl-8 pr-3 py-2 bg-transparent text-zinc-200 placeholder-zinc-600 outline-none"
+                                    />
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2.5">
+                                    {filteredSkills.length === 0 ? (
+                                        <p className="w-full py-1 px-1 text-xs text-zinc-500">
+                                            No matching skill found in your list. Use{" "}
+                                            <span className="text-emerald-400 font-medium">+ Add Skill</span> above to add one.
+                                        </p>
+                                    ) : (
+                                        filteredSkills.map((skill) => {
+                                            const selected =
+                                                data.skill_ids.includes(
+                                                    skill.id
+                                                );
+                                            const iconClass = getDeviconClass(
+                                                skill.icon
+                                            );
+
+                                            return (
+                                                <button
+                                                    key={skill.id}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        onToggleSkill?.(
+                                                            skill.id
+                                                        )
+                                                    }
+                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors cursor-pointer ${
+                                                        selected
+                                                            ? "bg-zinc-800 text-zinc-100 border-zinc-600"
+                                                            : "bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-zinc-300"
+                                                    }`}
+                                                >
+                                                    {iconClass && (
+                                                        <i
+                                                            className={`${iconClass} text-xs`}
+                                                        />
+                                                    )}
+                                                    <span>{skill.name}</span>
+                                                </button>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        {(errors.skill_ids || errors.tech_stack) && (
                             <p className="text-xs text-red-400">
-                                {errors.tech_stack}
+                                {errors.skill_ids || errors.tech_stack}
                             </p>
                         )}
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="block text-xs font-medium text-zinc-300">
-                            Description / Key Achievements
+                            Description
                         </label>
                         <textarea
                             rows={4}
@@ -171,7 +249,7 @@ export default function ExperienceFormModal({
                             onChange={(e) =>
                                 setData("description", e.target.value)
                             }
-                            placeholder="Describe your responsibilities and impact..."
+                            placeholder="Share what you did, your main responsibilities, or results..."
                             className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
                         />
                         {errors.description && (
@@ -198,7 +276,7 @@ export default function ExperienceFormModal({
                                 ? "Saving..."
                                 : editingItem
                                   ? "Save Changes"
-                                  : "Create Experience"}
+                                  : "Save Experience"}
                         </button>
                     </div>
                 </form>

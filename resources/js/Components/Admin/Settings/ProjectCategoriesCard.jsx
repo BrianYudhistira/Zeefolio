@@ -32,7 +32,7 @@ export default function ProjectCategoriesCard({
                 notifyAdmin({
                     type: "success",
                     title: "Project Category Added",
-                    message: `Global project category "${catName}" has been added.`,
+                    message: `Default project category "${catName}" has been added.`,
                 });
             },
         });
@@ -71,7 +71,7 @@ export default function ProjectCategoriesCard({
                 <div>
                     <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
                         <HiOutlineFolder className="w-4 h-4 text-zinc-400" />
-                        <span>Project Categories (Global)</span>
+                        <span>Project Categories (Default)</span>
                     </h3>
                     <p className="hidden sm:block text-xs text-zinc-400 mt-0.5">
                         Default project categories available to all users when creating projects.
@@ -109,7 +109,7 @@ export default function ProjectCategoriesCard({
             <div className="divide-y divide-zinc-800/80 border-t border-zinc-800 pt-1">
                 {projectCategories.length === 0 ? (
                     <p className="text-xs text-zinc-500 py-6 text-center">
-                        No global project categories yet.
+                        No default project categories yet.
                     </p>
                 ) : (
                     projectCategories.map((cat) => {

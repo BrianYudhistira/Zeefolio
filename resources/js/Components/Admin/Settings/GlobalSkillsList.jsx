@@ -23,7 +23,7 @@ export default function GlobalSkillsList({
                     <div className="flex items-center gap-2">
                         <HiOutlineGlobeAlt className="w-4 h-4 text-emerald-400 shrink-0" />
                         <h3 className="text-xs sm:text-sm font-semibold text-zinc-100">
-                            Global Skills ({filteredSkills.length})
+                            Default Skills ({filteredSkills.length})
                         </h3>
                     </div>
                     {selectedCategory !== "all" && (
@@ -68,7 +68,7 @@ export default function GlobalSkillsList({
 
             {filteredSkills.length === 0 ? (
                 <p className="text-xs text-zinc-500 py-12 text-center">
-                    No global skills match your search.
+                    No default skills match your search.
                 </p>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-zinc-800">
@@ -92,12 +92,12 @@ export default function GlobalSkillsList({
                                             {skill.name}
                                         </p>
                                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 shrink-0">
-                                            Global
+                                            Default
                                         </span>
                                     </div>
                                     <p className="text-[11px] sm:text-xs text-zinc-500 truncate capitalize">
                                         {skill.category?.name ||
-                                            "Uncategorized"}
+                                            "No Category"}
                                     </p>
                                 </div>
                             </div>
@@ -107,7 +107,7 @@ export default function GlobalSkillsList({
                                     type="button"
                                     onClick={() => onEditSkill(skill)}
                                     className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
-                                    title="Edit global skill"
+                                    title="Edit default skill"
                                 >
                                     <HiOutlinePencilSquare className="w-4 h-4" />
                                 </button>
@@ -115,7 +115,7 @@ export default function GlobalSkillsList({
                                     type="button"
                                     onClick={() => onDeleteSkill(skill)}
                                     className="p-1.5 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                                    title="Delete global skill"
+                                    title="Delete default skill"
                                 >
                                     <HiOutlineTrash className="w-4 h-4" />
                                 </button>

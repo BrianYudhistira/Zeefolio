@@ -61,7 +61,7 @@ export default function HeroContentForm({
                 {/* Portfolio URL Slug */}
                 <div className="space-y-1.5">
                     <label className="block text-xs font-medium text-zinc-300">
-                        Portfolio URL Slug
+                        Portfolio Link
                     </label>
                     <div className="flex items-center rounded-lg bg-zinc-950 border border-zinc-800 focus-within:border-zinc-600 overflow-hidden transition-colors">
                         <span className="px-3 py-2 sm:py-2.5 text-xs font-mono text-zinc-500 bg-zinc-900/70 border-r border-zinc-800 select-none shrink-0">
@@ -81,7 +81,7 @@ export default function HeroContentForm({
                                         .replace(/[^a-z0-9-_]/g, "-")
                                 )
                             }
-                            placeholder="your-portfolio-slug"
+                            placeholder="your-name"
                             className="w-full text-sm font-mono px-3 py-2 sm:py-2.5 bg-transparent text-zinc-100 placeholder-zinc-600 outline-none"
                         />
                     </div>
@@ -93,8 +93,8 @@ export default function HeroContentForm({
                 {/* Interactive Passions / Roles Tags */}
                 <div className="space-y-2">
                     <label className="block text-xs font-medium text-zinc-300">
-                        <span className="sm:hidden">Roles / Passions</span>
-                        <span className="hidden sm:inline">Roles / Passions (Typewriter Text)</span>
+                        <span className="sm:hidden">Roles / Specialties</span>
+                        <span className="hidden sm:inline">Roles & Specialties</span>
                     </label>
                     <div className="flex gap-2">
                         <input

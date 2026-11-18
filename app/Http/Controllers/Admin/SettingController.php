@@ -33,10 +33,11 @@ class SettingController extends Controller
             ->orderBy('name')
             ->get();
 
-        $categories = TechStackCategory::withCount([
-            'techStacks',
-            'techStacks as global_skills_count' => fn ($q) => $q->where('is_global', true),
-        ])
+        $categories = TechStackCategory::global()
+            ->withCount([
+                'techStacks',
+                'techStacks as global_skills_count' => fn ($q) => $q->where('is_global', true),
+            ])
             ->orderBy('name')
             ->get();
 
@@ -79,15 +80,15 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->adminLog('Settings', "Added global skill: {$skill->name}");
+        $this->logService->adminLog('Settings', "Added default skill: {$skill->name}");
 
-        return redirect()->back()->with('success', "Global skill \"{$skill->name}\" has been added.");
+        return redirect()->back()->with('success', "Default skill \"{$skill->name}\" has been added.");
     }
 
     public function updateGlobalSkill(Request $request, TechStack $techStack): RedirectResponse
     {
         if (! $techStack->is_global) {
-            abort(403, 'Only global skills can be edited here.');
+            abort(403, 'Only default skills can be edited here.');
         }
 
         $validated = $request->validate([
@@ -106,15 +107,15 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->adminLog('Settings', "Updated global skill: {$techStack->name}");
+        $this->logService->adminLog('Settings', "Updated default skill: {$techStack->name}");
 
-        return redirect()->back()->with('success', "Global skill \"{$techStack->name}\" has been updated.");
+        return redirect()->back()->with('success', "Default skill \"{$techStack->name}\" has been updated.");
     }
 
     public function destroyGlobalSkill(Request $request, TechStack $techStack): RedirectResponse
     {
         if (! $techStack->is_global) {
-            abort(403, 'Only global skills can be deleted here.');
+            abort(403, 'Only default skills can be deleted here.');
         }
 
         $name = $techStack->name;
@@ -122,19 +123,26 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->adminLog('Settings', "Deleted global skill: {$name}");
+        $this->logService->adminLog('Settings', "Deleted default skill: {$name}");
 
-        return redirect()->back()->with('success', "Global skill \"{$name}\" has been deleted.");
+        return redirect()->back()->with('success', "Default skill \"{$name}\" has been deleted.");
     }
 
     public function storeCategory(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:50', 'unique:tech_stack_categories,name'],
+            'name' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('tech_stack_categories', 'name')->where('is_global', true),
+            ],
         ]);
 
         $category = TechStackCategory::create([
             'name' => trim($validated['name']),
+            'user_id' => null,
+            'is_global' => true,
         ]);
 
         $this->portfolioService->bumpCatalogVersion();
@@ -146,12 +154,14 @@ class SettingController extends Controller
 
     public function updateCategory(Request $request, TechStackCategory $category): RedirectResponse
     {
+        abort_unless($category->is_global, 403, 'Only default categories can be modified here.');
+
         $validated = $request->validate([
             'name' => [
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('tech_stack_categories', 'name')->ignore($category->id),
+                Rule::unique('tech_stack_categories', 'name')->where('is_global', true)->ignore($category->id),
             ],
         ]);
 
@@ -168,6 +178,8 @@ class SettingController extends Controller
 
     public function destroyCategory(Request $request, TechStackCategory $category): RedirectResponse
     {
+        abort_unless($category->is_global, 403, 'Only default categories can be deleted here.');
+
         $name = $category->name;
         $category->delete();
 
@@ -201,15 +213,15 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->adminLog('Settings', "Added global project category: {$category->name} ({$category->slug})");
+        $this->logService->adminLog('Settings', "Added default project category: {$category->name} ({$category->slug})");
 
-        return redirect()->back()->with('success', "Global project category \"{$category->name}\" has been added.");
+        return redirect()->back()->with('success', "Default project category \"{$category->name}\" has been added.");
     }
 
     public function updateProjectCategory(Request $request, ProjectCategory $projectCategory): RedirectResponse
     {
         if (! $projectCategory->is_global) {
-            abort(403, 'Only global project categories can be edited here.');
+            abort(403, 'Only default project categories can be edited here.');
         }
 
         $validated = $request->validate([
@@ -238,15 +250,15 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->adminLog('Settings', "Updated global project category: {$projectCategory->name} ({$newSlug})");
+        $this->logService->adminLog('Settings', "Updated default project category: {$projectCategory->name} ({$newSlug})");
 
-        return redirect()->back()->with('success', "Global project category \"{$projectCategory->name}\" has been updated.");
+        return redirect()->back()->with('success', "Default project category \"{$projectCategory->name}\" has been updated.");
     }
 
     public function destroyProjectCategory(Request $request, ProjectCategory $projectCategory): RedirectResponse
     {
         if (! $projectCategory->is_global) {
-            abort(403, 'Only global project categories can be deleted here.');
+            abort(403, 'Only default project categories can be deleted here.');
         }
 
         $name = $projectCategory->name;
@@ -255,9 +267,9 @@ class SettingController extends Controller
 
         $this->portfolioService->bumpCatalogVersion();
         $this->clearPortfolioCache($request);
-        $this->logService->adminLog('Settings', "Deleted global project category: {$name} ({$slug})");
+        $this->logService->adminLog('Settings', "Deleted default project category: {$name} ({$slug})");
 
-        return redirect()->back()->with('success', "Global project category \"{$name}\" has been deleted.");
+        return redirect()->back()->with('success', "Default project category \"{$name}\" has been deleted.");
     }
 }
 

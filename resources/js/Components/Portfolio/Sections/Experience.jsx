@@ -192,17 +192,17 @@ export default function ExperienceSection({ experiences }) {
                             02 // EXPERIENCES
                         </span>
                         <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-4">
-                            Work Experience
+                            Experiences
                         </h2>
                         <p className="text-neutral-400 text-sm sm:text-base max-w-xl mx-auto">
-                            My professional track record, engineering roles, and achievements.
+                            My work history, roles, and key achievements.
                         </p>
                     </AnimatedContent>
                 </div>
 
                 {data.length === 0 ? (
                     <div className="text-center text-neutral-500 font-mono text-sm py-12">
-                        No experience records available.
+                        No experiences added yet.
                     </div>
                 ) : (
                     <div ref={timelineRef} className="relative">

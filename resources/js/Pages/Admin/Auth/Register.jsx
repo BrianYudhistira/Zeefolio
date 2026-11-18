@@ -2,12 +2,10 @@ import { useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import AnimatedContent from "@/Components/Animations/UI/AnimatedContent";
 import {
-    HiOutlineArrowLeft,
     HiOutlineEnvelope,
     HiOutlineEye,
     HiOutlineEyeSlash,
     HiOutlineLockClosed,
-    HiOutlinePhoto,
     HiOutlineUser,
     HiOutlineAtSymbol,
     HiArrowRight,
@@ -15,34 +13,17 @@ import {
 
 export default function Register() {
     const [showPassword, setShowPassword] = useState(false);
-    const [photoPreview, setPhotoPreview] = useState(null);
 
     const { data, setData, post, processing, errors } = useForm({
         name: "",
         username: "",
         email: "",
         password: "",
-        photo: null,
     });
-
-    const handlePhotoChange = (e) => {
-        const file = e.target.files?.[0] || null;
-        setData("photo", file);
-
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (ev) => setPhotoPreview(ev.target?.result || null);
-            reader.readAsDataURL(file);
-        } else {
-            setPhotoPreview(null);
-        }
-    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("admin.register.store"), {
-            forceFormData: true,
-        });
+        post(route("admin.register.store"));
     };
 
     return (
@@ -80,42 +61,6 @@ export default function Register() {
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-5">
-                                {/* Photo Upload */}
-                                <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/[0.02] border border-white/10">
-                                    <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                                        {photoPreview ? (
-                                            <img
-                                                src={photoPreview}
-                                                alt="Preview"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <HiOutlinePhoto className="w-6 h-6 text-neutral-500" />
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <label
-                                            htmlFor="photo"
-                                            className="block text-xs font-mono tracking-wider uppercase text-neutral-300 mb-1"
-                                        >
-                                            Avatar (Optional)
-                                        </label>
-                                        <input
-                                            id="photo"
-                                            type="file"
-                                            name="photo"
-                                            accept="image/jpeg,image/png,image/jpg,image/gif"
-                                            onChange={handlePhotoChange}
-                                            className="block w-full text-xs text-neutral-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border file:border-white/15 file:text-xs file:font-mono file:bg-white/[0.05] file:text-white hover:file:bg-white/[0.1] cursor-pointer"
-                                        />
-                                        {errors.photo && (
-                                            <p className="text-xs font-mono text-red-400 mt-1">
-                                                {errors.photo}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
                                 {/* Name & Username */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -217,9 +162,9 @@ export default function Register() {
                                             type={showPassword ? "text" : "password"}
                                             name="password"
                                             required
-                                            minLength={6}
+                                            minLength={8}
                                             autoComplete="new-password"
-                                            placeholder="Minimum 6 characters"
+                                            placeholder="Minimum 8 characters"
                                             value={data.password}
                                             onChange={(e) => setData("password", e.target.value)}
                                             className="w-full text-sm pl-11 pr-11 py-3 rounded-xl bg-white/[0.02] border border-white/10 focus:border-white/40 focus:bg-white/[0.04] text-white placeholder-neutral-600 outline-none transition-all duration-200"

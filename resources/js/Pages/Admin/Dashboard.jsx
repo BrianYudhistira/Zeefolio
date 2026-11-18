@@ -5,7 +5,7 @@ import ViewsChart from "@/Components/ViewsChart";
 import DashboardStatsGrid from "@/Components/Admin/Dashboard/DashboardStatsGrid";
 import RecentProjectsCard from "@/Components/Admin/Dashboard/RecentProjectsCard";
 import ProfileSummaryCard from "@/Components/Admin/Dashboard/ProfileSummaryCard";
-import { HiOutlineGlobeAlt } from "react-icons/hi2";
+import PortfolioStatusCapsule from "@/Components/Admin/PortfolioStatusCapsule";
 
 export default function Dashboard({
     stats = {},
@@ -35,28 +35,10 @@ export default function Dashboard({
     const portfolioSlug = portfolioSummary?.slug || "brian-yudhistira";
 
     const headerActions = (
-        <>
-            <span className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] sm:text-xs text-zinc-300">
-                <span
-                    className={`w-1.5 h-1.5 rounded-full ${portfolioSummary.is_active
-                        ? "bg-emerald-400"
-                        : "bg-zinc-500"
-                        }`}
-                />
-                {portfolioSummary.is_active ? "Active" : "Draft"}
-            </span>
-
-            <a
-                href={route("portfolio.index", { slug: portfolioSlug })}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 font-medium text-xs transition-colors"
-            >
-                <HiOutlineGlobeAlt className="w-3.5 h-3.5" />
-                <span className="sm:hidden">Live</span>
-                <span className="hidden sm:inline">Live Site</span>
-            </a>
-        </>
+        <PortfolioStatusCapsule
+            isActive={portfolioSummary.is_active}
+            slug={portfolioSlug}
+        />
     );
 
     return (

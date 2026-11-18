@@ -115,34 +115,38 @@ export default function AccountIndex({ account = {} }) {
         <AdminLayout title="Account Settings">
             <Head title="Account Settings - Zeefolio" />
 
-            <div className="max-w-3xl space-y-4 sm:space-y-6">
-                <ProfileInfoForm
-                    profileForm={profileForm}
-                    photoPreview={photoPreview}
-                    isVerified={isVerified}
-                    sendingVerification={sendingVerification}
-                    onPhotoChange={handlePhotoChange}
-                    onRemovePhoto={handleRemovePhoto}
-                    onSendVerification={handleSendVerification}
-                    onSubmit={handleProfileSubmit}
-                />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+                <div className="lg:col-span-7">
+                    <ProfileInfoForm
+                        profileForm={profileForm}
+                        photoPreview={photoPreview}
+                        isVerified={isVerified}
+                        sendingVerification={sendingVerification}
+                        onPhotoChange={handlePhotoChange}
+                        onRemovePhoto={handleRemovePhoto}
+                        onSendVerification={handleSendVerification}
+                        onSubmit={handleProfileSubmit}
+                    />
+                </div>
 
-                <UpdatePasswordForm
-                    passwordForm={passwordForm}
-                    onSubmit={handlePasswordSubmit}
-                />
+                <div className="lg:col-span-5 space-y-4 sm:space-y-6">
+                    <UpdatePasswordForm
+                        passwordForm={passwordForm}
+                        onSubmit={handlePasswordSubmit}
+                    />
 
-                <DeleteAccountSection
-                    deleteForm={deleteForm}
-                    deleteModalOpen={deleteModalOpen}
-                    onOpenModal={() => {
-                        deleteForm.reset();
-                        deleteForm.clearErrors();
-                        setDeleteModalOpen(true);
-                    }}
-                    onCloseModal={() => setDeleteModalOpen(false)}
-                    onSubmit={handleDeleteAccount}
-                />
+                    <DeleteAccountSection
+                        deleteForm={deleteForm}
+                        deleteModalOpen={deleteModalOpen}
+                        onOpenModal={() => {
+                            deleteForm.reset();
+                            deleteForm.clearErrors();
+                            setDeleteModalOpen(true);
+                        }}
+                        onCloseModal={() => setDeleteModalOpen(false)}
+                        onSubmit={handleDeleteAccount}
+                    />
+                </div>
             </div>
         </AdminLayout>
     );

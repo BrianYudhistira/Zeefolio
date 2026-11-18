@@ -4,7 +4,7 @@ export default function UpdatePasswordForm({ passwordForm, onSubmit }) {
     return (
         <form
             onSubmit={onSubmit}
-            className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4 sm:p-6 space-y-4"
+            className="admin-card rounded-xl border p-4 sm:p-6 space-y-4"
         >
             <div className="flex items-center gap-2">
                 <HiOutlineLockClosed className="w-4 h-4 text-zinc-400" />
@@ -43,7 +43,7 @@ export default function UpdatePasswordForm({ passwordForm, onSubmit }) {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-1.5">
                         <label className="block text-xs font-medium text-zinc-300">
                             New Password
@@ -93,7 +93,7 @@ export default function UpdatePasswordForm({ passwordForm, onSubmit }) {
                 <button
                     type="submit"
                     disabled={passwordForm.processing}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 font-medium text-xs transition-colors disabled:opacity-50 cursor-pointer"
+                    className="admin-btn-secondary w-full sm:w-auto px-5 py-2.5 rounded-lg font-medium text-xs transition-colors disabled:opacity-50 cursor-pointer"
                 >
                     {passwordForm.processing
                         ? "Updating..."

@@ -10,7 +10,7 @@ import {
     HiOutlineCheck,
     HiOutlineLockClosed,
 } from "react-icons/hi2";
-import { getRoleConfig } from "@/Components/Admin/Members/MemberStatsGrid";
+import { getRoleConfig } from "@/Utils/roleHelpers";
 import { notifyAdmin } from "@/Utils/notify";
 
 export default function RolesMatrixSection({
@@ -104,7 +104,7 @@ export default function RolesMatrixSection({
                     <div className="flex items-center gap-2">
                         <HiOutlineShieldCheck className="w-4 h-4 text-amber-400" />
                         <h3 className="text-xs sm:text-sm font-semibold text-zinc-100">
-                            Spatie Roles ({roles.length})
+                            Roles ({roles.length})
                         </h3>
                     </div>
                     <button

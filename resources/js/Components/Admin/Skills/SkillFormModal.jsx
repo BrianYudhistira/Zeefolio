@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import {
-    HiOutlinePlus,
     HiOutlineArrowTopRightOnSquare,
+    HiOutlinePlus,
 } from "react-icons/hi2";
 import { getDeviconClass } from "@/Utils/devicon";
 import { PROFICIENCY_LABELS } from "./SkillRowItem";
@@ -14,9 +15,26 @@ export default function SkillFormModal({
     setData,
     errors,
     processing,
+    resetKey = 0,
     onSubmit,
 }) {
+    const [creatingCategory, setCreatingCategory] = useState(false);
     const customIconPreview = getDeviconClass(data.icon);
+
+    useEffect(() => {
+        setCreatingCategory(false);
+    }, [resetKey]);
+
+    const handleToggleNewCategory = () => {
+        if (creatingCategory) {
+            setCreatingCategory(false);
+            setData("custom_category", "");
+            return;
+        }
+
+        setCreatingCategory(true);
+        setData("category_id", "");
+    };
 
     return (
         <form
@@ -28,7 +46,7 @@ export default function SkillFormModal({
                     Add Skill
                 </h2>
                 <p className="hidden sm:block text-xs text-zinc-400 mt-0.5">
-                    Choose from default global skills or create your own custom skill.
+                    Pick from ready-made skills or add your own custom skill.
                 </p>
             </div>
 
@@ -42,8 +60,8 @@ export default function SkillFormModal({
                         : "text-zinc-500 hover:text-zinc-300"
                         }`}
                 >
-                    <span className="sm:hidden">Catalog</span>
-                    <span className="hidden sm:inline">Default / Existing</span>
+                    <span className="sm:hidden">List</span>
+                    <span className="hidden sm:inline">Pick from List</span>
                 </button>
                 <button
                     type="button"
@@ -53,15 +71,15 @@ export default function SkillFormModal({
                         : "text-zinc-500 hover:text-zinc-300"
                         }`}
                 >
-                    <span className="sm:hidden">+ Custom</span>
-                    <span className="hidden sm:inline">+ Create Custom</span>
+                    <span className="sm:hidden">+ New</span>
+                    <span className="hidden sm:inline">+ Add Custom</span>
                 </button>
             </div>
 
             {mode === "existing" ? (
                 <div className="space-y-1.5">
                     <label className="block text-xs font-medium text-zinc-300">
-                        Technology / Skills
+                        Skill
                     </label>
                     <select
                         required
@@ -71,14 +89,14 @@ export default function SkillFormModal({
                         }
                         className="w-full text-sm px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
                     >
-                        <option value="">Select technology...</option>
+                        <option value="">Choose a skill...</option>
                         {availableTechStacks.map((ts) => (
                             <option key={ts.id} value={ts.id}>
                                 {ts.name}
                                 {ts.category?.name
                                     ? ` (${ts.category.name})`
                                     : ""}
-                                {ts.is_global ? " • Global" : " • Custom"}
+                                {!ts.is_global ? " • Custom" : ""}
                             </option>
                         ))}
                     </select>
@@ -92,7 +110,7 @@ export default function SkillFormModal({
                 <div className="space-y-3">
                     <div className="space-y-1.5">
                         <label className="block text-xs font-medium text-zinc-300">
-                            Custom Skill Name
+                            Skill Name
                         </label>
                         <input
                             type="text"
@@ -101,7 +119,7 @@ export default function SkillFormModal({
                             onChange={(e) =>
                                 setData("custom_name", e.target.value)
                             }
-                            placeholder="e.g. Supabase"
+                            placeholder="e.g. Figma, Public Speaking, Excel"
                             className="w-full text-sm px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
                         />
                         {errors.custom_name && (
@@ -112,29 +130,68 @@ export default function SkillFormModal({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-zinc-300">
-                            Category
-                        </label>
-                        <select
-                            value={data.category_id}
-                            onChange={(e) =>
-                                setData("category_id", e.target.value)
-                            }
-                            className="w-full text-sm px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
-                        >
-                            <option value="">Uncategorized</option>
-                            {categories.map((cat) => (
-                                <option key={cat.id} value={cat.id}>
-                                    {cat.name}
-                                </option>
-                            ))}
-                        </select>
+                        <div className="flex items-center justify-between gap-2">
+                            <label className="block text-xs font-medium text-zinc-300">
+                                Category
+                            </label>
+                            <button
+                                type="button"
+                                onClick={handleToggleNewCategory}
+                                className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                            >
+                                {!creatingCategory && (
+                                    <HiOutlinePlus className="w-3 h-3" />
+                                )}
+                                <span>
+                                    {creatingCategory
+                                        ? "Choose Existing"
+                                        : "New Category"}
+                                </span>
+                            </button>
+                        </div>
+
+                        {creatingCategory ? (
+                            <input
+                                type="text"
+                                value={data.custom_category}
+                                onChange={(e) =>
+                                    setData("custom_category", e.target.value)
+                                }
+                                placeholder="e.g. Design, Marketing, Tools"
+                                maxLength={50}
+                                className="w-full text-sm px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                            />
+                        ) : (
+                            <select
+                                value={data.category_id}
+                                onChange={(e) =>
+                                    setData("category_id", e.target.value)
+                                }
+                                className="w-full text-sm px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                            >
+                                <option value="">No Category</option>
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                        {!cat.is_global ? " • Custom" : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        {(errors.custom_category || errors.category_id) && (
+                            <p className="text-xs text-red-400">
+                                {errors.custom_category || errors.category_id}
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
                             <label className="block text-xs font-medium text-zinc-300">
-                                Devicon Name (Optional)
+                                Skill Icon{" "}
+                                <span className="text-zinc-500 font-normal">
+                                    (Optional)
+                                </span>
                             </label>
                             <a
                                 href="https://devicon.dev/"
@@ -142,7 +199,7 @@ export default function SkillFormModal({
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300 transition-colors"
                             >
-                                <span>Browse Devicon</span>
+                                <span>Find Icon</span>
                                 <HiOutlineArrowTopRightOnSquare className="w-3 h-3" />
                             </a>
                         </div>
@@ -153,7 +210,7 @@ export default function SkillFormModal({
                                 onChange={(e) =>
                                     setData("icon", e.target.value)
                                 }
-                                placeholder="e.g. supabase"
+                                placeholder="e.g. figma (leave blank for auto)"
                                 className="flex-1 text-sm px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
                             />
                             <div className="w-9 h-9 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center shrink-0">
@@ -162,12 +219,18 @@ export default function SkillFormModal({
                                         className={`${customIconPreview} text-base`}
                                     />
                                 ) : (
-                                    <span className="text-xs text-zinc-600">
-                                        —
+                                    <span className="text-xs font-semibold text-zinc-500">
+                                        {data.custom_name
+                                            ?.trim()
+                                            .charAt(0)
+                                            .toUpperCase() || "—"}
                                     </span>
                                 )}
                             </div>
                         </div>
+                        <p className="text-[11px] text-zinc-500">
+                            Leave blank to automatically show the first letter as the icon.
+                        </p>
                     </div>
                 </div>
             )}
@@ -175,7 +238,7 @@ export default function SkillFormModal({
             <div className="space-y-2">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-medium text-zinc-300">
-                        Proficiency Level
+                        Skill Level
                     </label>
                     <span className="text-xs text-zinc-400">
                         {data.proficiency_level}/5 —{" "}
@@ -211,9 +274,7 @@ export default function SkillFormModal({
             >
                 <HiOutlinePlus className="w-4 h-4" />
                 <span>
-                    {mode === "custom"
-                        ? "Create & Add Skill"
-                        : "Add to Skills"}
+                    {mode === "custom" ? "Save & Add Skill" : "Add Skill"}
                 </span>
             </button>
         </form>

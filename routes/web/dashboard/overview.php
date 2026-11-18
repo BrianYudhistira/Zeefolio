@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\NotificationStreamController;
 use Illuminate\Support\Facades\Route;
 
 // ── Dashboard Overview ──
@@ -11,9 +12,10 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware('permission:dashboard.view')
     ->name('dashboard');
 
-// ── User Notifications (Page, Read, Popup Dismiss, Soft Delete) ──
+// ── User Notifications (Page, SSE Stream, Read, Popup Dismiss, Soft Delete) ──
 Route::prefix('notifications')->name('notifications.')->group(function () {
     Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('/stream', [NotificationStreamController::class, 'index'])->name('stream');
     Route::put('/read-all', [NotificationController::class, 'markAllAsRead'])->name('read-all');
     Route::put('/popup-clear', [NotificationController::class, 'dismissAllFromPopup'])->name('popup-clear');
     Route::put('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('read');

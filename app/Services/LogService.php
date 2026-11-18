@@ -78,9 +78,7 @@ class LogService
         $lowerMsg = strtolower($message);
 
         return match ($module) {
-            'Skills' => str_contains($lowerMsg, 'custom tech stack')
-                ? '/admin/tech-stacks'
-                : '/admin/skills',
+            'Skills' => '/admin/skills',
             'Portfolio' => match (true) {
                 str_contains($lowerMsg, 'project') => '/admin/projects',
                 str_contains($lowerMsg, 'experience') => '/admin/experiences',

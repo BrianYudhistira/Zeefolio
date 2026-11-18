@@ -14,7 +14,7 @@ export default function DeleteAccountSection({
     return (
         <>
             {/* Danger Zone: Delete Account */}
-            <div className="rounded-xl bg-red-950/15 border border-red-500/25 p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="rounded-xl bg-[color-mix(in_srgb,var(--danger)_6%,var(--surface))] border border-[color-mix(in_srgb,var(--danger)_24%,var(--border))] p-4 sm:p-6 flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-stretch justify-between gap-4">
                 <div className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-lg bg-red-500/10 border border-red-500/25 flex items-center justify-center text-red-400 shrink-0 mt-0.5">
                         <HiOutlineShieldExclamation className="w-5 h-5" />
@@ -32,7 +32,7 @@ export default function DeleteAccountSection({
                 <button
                     type="button"
                     onClick={onOpenModal}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                    className="admin-btn-danger w-full sm:w-auto lg:w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer shrink-0"
                 >
                     <HiOutlineTrash className="w-4 h-4" />
                     <span>Delete Account</span>
@@ -94,7 +94,7 @@ export default function DeleteAccountSection({
                                     type="button"
                                     disabled={deleteForm.processing}
                                     onClick={onCloseModal}
-                                    className="px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 text-xs font-medium transition-colors cursor-pointer"
+                                    className="admin-btn-secondary px-3.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                                 >
                                     Cancel
                                 </button>

@@ -6,7 +6,7 @@ import {
 } from "react-icons/hi2";
 import SearchInput from "@/Components/UI/SearchInput";
 import EmptyState from "@/Components/UI/EmptyState";
-import { getRoleConfig } from "@/Components/Admin/Members/MemberStatsGrid";
+import { getRoleConfig } from "@/Utils/roleHelpers";
 
 export default function PermissionsCrudSection({
     permissions = [],

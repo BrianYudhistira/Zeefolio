@@ -48,7 +48,7 @@ export default function ConfirmDeleteModal({
                         type="button"
                         disabled={processing}
                         onClick={onClose}
-                        className="px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 text-xs font-medium transition-colors cursor-pointer"
+                        className="admin-btn-secondary px-3.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                     >
                         Cancel
                     </button>
@@ -56,7 +56,7 @@ export default function ConfirmDeleteModal({
                         type="button"
                         disabled={processing}
                         onClick={onConfirm}
-                        className="px-3.5 py-2 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+                        className="admin-btn-danger px-3.5 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
                     >
                         {processing ? "Deleting..." : confirmLabel}
                     </button>

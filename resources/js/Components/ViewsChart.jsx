@@ -69,6 +69,42 @@ export default function ViewsChart({
             ).toFixed(1)} Z`
             : "";
 
+    const activeLinePaths = [];
+    if (points.length > 1) {
+        let currentRun = [];
+        for (let i = 1; i < points.length; i++) {
+            const prev = points[i - 1];
+            const curr = points[i];
+            const isElevated = (prev.views || 0) > 0 || (curr.views || 0) > 0;
+            if (isElevated) {
+                if (currentRun.length === 0) {
+                    currentRun.push(prev);
+                }
+                currentRun.push(curr);
+            } else if (currentRun.length > 0) {
+                activeLinePaths.push(
+                    currentRun
+                        .map(
+                            (p, idx) =>
+                                `${idx === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`
+                        )
+                        .join(" ")
+                );
+                currentRun = [];
+            }
+        }
+        if (currentRun.length > 0) {
+            activeLinePaths.push(
+                currentRun
+                    .map(
+                        (p, idx) =>
+                            `${idx === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`
+                    )
+                    .join(" ")
+            );
+        }
+    }
+
     const labelStep =
         series.length <= 8
             ? 1
@@ -83,16 +119,18 @@ export default function ViewsChart({
             ? points[hoveredIndex]
             : null;
 
+    const lastPoint = points.length > 0 ? points[points.length - 1] : null;
+
     return (
-        <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3.5 sm:p-5 space-y-3 sm:space-y-4">
+        <div className="admin-card rounded-xl border p-3.5 sm:p-5 space-y-3 sm:space-y-4">
             {/* Header & Time Range Filters */}
             <div className="flex items-center justify-between gap-2.5">
                 <div className="min-w-0">
-                    <h2 className="text-sm font-medium text-zinc-100">
+                    <h2 className="text-sm font-medium text-[var(--text)]">
                         Portfolio Views
                     </h2>
-                    <p className="hidden sm:block text-xs text-zinc-400">
-                        Traffic overview across your public portfolio
+                    <p className="hidden sm:block text-xs text-[var(--text-muted)]">
+                        Visitor activity on your public portfolio
                     </p>
                 </div>
 
@@ -102,7 +140,7 @@ export default function ViewsChart({
                     disabled={isLoading}
                     onChange={(e) => onRangeChange?.(e.target.value)}
                     aria-label="Select time range"
-                    className="sm:hidden text-xs font-medium px-2.5 py-1.5 pr-7 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 focus:border-emerald-500/50 focus:ring-0 outline-none"
+                    className="sm:hidden admin-input text-xs font-medium px-2.5 py-1.5 pr-7 rounded-lg border focus:ring-0 outline-none"
                 >
                     {RANGE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -112,7 +150,7 @@ export default function ViewsChart({
                 </select>
 
                 {/* Desktop Segmented Filter Pills */}
-                <div className="hidden sm:flex items-center gap-1 p-1 rounded-lg bg-zinc-950 border border-zinc-800">
+                <div className="hidden sm:flex admin-pill-track items-center gap-1 p-1 rounded-lg border">
                     {RANGE_OPTIONS.map((opt) => {
                         const active = range === opt.value;
                         return (
@@ -121,9 +159,9 @@ export default function ViewsChart({
                                 type="button"
                                 disabled={isLoading}
                                 onClick={() => onRangeChange?.(opt.value)}
-                                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${active
-                                        ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                                        : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-transparent"
+                                className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--orange)] ${active
+                                    ? "admin-pill-active"
+                                    : "admin-pill-inactive"
                                     }`}
                             >
                                 {opt.label}
@@ -135,38 +173,38 @@ export default function ViewsChart({
 
             {/* Summary Metrics */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                <div className="rounded-lg bg-zinc-950/70 border border-zinc-800/80 px-3 py-2 sm:px-3.5 sm:py-2.5">
-                    <p className="text-[11px] text-zinc-400 truncate">
+                <div className="admin-well rounded-lg border px-3 py-2 sm:px-3.5 sm:py-2.5">
+                    <p className="text-[11px] text-[var(--text-muted)] truncate">
                         Views ({range.toUpperCase()})
                     </p>
-                    <p className="text-base sm:text-lg font-semibold text-zinc-100 mt-0.5">
+                    <p className="text-base sm:text-lg font-semibold text-[var(--text)] mt-0.5">
                         {rangeViews.toLocaleString()}
                     </p>
                 </div>
-                <div className="rounded-lg bg-zinc-950/70 border border-zinc-800/80 px-3 py-2 sm:px-3.5 sm:py-2.5">
-                    <p className="text-[11px] text-zinc-400 truncate">
+                <div className="admin-well rounded-lg border px-3 py-2 sm:px-3.5 sm:py-2.5">
+                    <p className="text-[11px] text-[var(--text-muted)] truncate">
                         <span className="sm:hidden">Unique</span>
                         <span className="hidden sm:inline">Unique Visitors</span>
                     </p>
-                    <p className="text-base sm:text-lg font-semibold text-zinc-100 mt-0.5">
+                    <p className="text-base sm:text-lg font-semibold text-[var(--text)] mt-0.5">
                         {uniqueVisitors.toLocaleString()}
                     </p>
                 </div>
-                <div className="rounded-lg bg-zinc-950/70 border border-zinc-800/80 px-3 py-2 sm:px-3.5 sm:py-2.5">
-                    <p className="text-[11px] text-zinc-400 truncate">
-                        <span className="sm:hidden">Peak</span>
-                        <span className="hidden sm:inline">Peak Bucket</span>
+                <div className="admin-well rounded-lg border px-3 py-2 sm:px-3.5 sm:py-2.5">
+                    <p className="text-[11px] text-[var(--text-muted)] truncate">
+                        <span className="sm:hidden">Highest</span>
+                        <span className="hidden sm:inline">Highest Views</span>
                     </p>
-                    <p className="text-base sm:text-lg font-semibold text-zinc-100 mt-0.5">
+                    <p className="text-base sm:text-lg font-semibold text-[var(--text)] mt-0.5">
                         {peakViews.toLocaleString()}
                     </p>
                 </div>
-                <div className="rounded-lg bg-zinc-950/70 border border-zinc-800/80 px-3 py-2 sm:px-3.5 sm:py-2.5">
-                    <p className="text-[11px] text-zinc-400 truncate">
-                        <span className="sm:hidden">All-Time</span>
-                        <span className="hidden sm:inline">All-Time Views</span>
+                <div className="admin-well rounded-lg border px-3 py-2 sm:px-3.5 sm:py-2.5">
+                    <p className="text-[11px] text-[var(--text-muted)] truncate">
+                        <span className="sm:hidden">Total</span>
+                        <span className="hidden sm:inline">Total Views</span>
                     </p>
-                    <p className="text-base sm:text-lg font-semibold text-emerald-400 mt-0.5">
+                    <p className="text-base sm:text-lg font-semibold text-[var(--text)] mt-0.5">
                         {totalViews.toLocaleString()}
                     </p>
                 </div>
@@ -176,7 +214,7 @@ export default function ViewsChart({
             <div className="relative w-full">
                 {activePoint && (
                     <div
-                        className="pointer-events-none absolute top-1 z-10 px-2.5 py-1.5 rounded-lg bg-zinc-950/95 border border-zinc-700 shadow-lg text-xs whitespace-nowrap"
+                        className="pointer-events-none absolute top-1 z-10 px-2.5 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-strong)] shadow-xl text-xs whitespace-nowrap"
                         style={{
                             left: `${Math.min(
                                 82,
@@ -185,10 +223,10 @@ export default function ViewsChart({
                             transform: "translateX(-50%)",
                         }}
                     >
-                        <p className="text-[10px] text-zinc-400">
+                        <p className="text-[10px] text-[var(--text-muted)]">
                             {activePoint.fullLabel}
                         </p>
-                        <p className="text-xs font-semibold text-emerald-300">
+                        <p className="text-xs font-semibold text-[var(--orange-soft)]">
                             {activePoint.views}{" "}
                             {activePoint.views === 1 ? "view" : "views"}
                         </p>
@@ -211,13 +249,13 @@ export default function ViewsChart({
                         >
                             <stop
                                 offset="0%"
-                                stopColor="#10b981"
-                                stopOpacity="0.32"
+                                stopColor="var(--orange)"
+                                stopOpacity="0.18"
                             />
                             <stop
                                 offset="100%"
-                                stopColor="#10b981"
-                                stopOpacity="0.0"
+                                stopColor="var(--orange)"
+                                stopOpacity="0"
                             />
                         </linearGradient>
                     </defs>
@@ -235,14 +273,16 @@ export default function ViewsChart({
                                     y1={y}
                                     x2={width - padRight}
                                     y2={y}
-                                    stroke="#27272a"
+                                    stroke="var(--border)"
+                                    strokeOpacity="0.9"
                                     strokeDasharray="3 3"
                                 />
                                 <text
                                     x={padLeft - 8}
                                     y={y + 3}
                                     textAnchor="end"
-                                    className="fill-zinc-500 text-[10px]"
+                                    fill="var(--text-muted)"
+                                    className="text-[10px]"
                                 >
                                     {tick}
                                 </text>
@@ -255,16 +295,51 @@ export default function ViewsChart({
                         <path d={areaPath} fill="url(#viewsAreaGrad)" />
                     )}
 
-                    {/* Line Path */}
+                    {/* Dimmed Baseline Path (including flat 0 segments) */}
                     {linePath && (
                         <path
                             d={linePath}
                             fill="none"
-                            stroke="#10b981"
+                            stroke="var(--orange)"
+                            strokeOpacity="0.28"
+                            strokeWidth="1.75"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    )}
+
+                    {/* Highlighted Non-Zero / Rising Line Segments */}
+                    {activeLinePaths.map((segPath, idx) => (
+                        <path
+                            key={idx}
+                            d={segPath}
+                            fill="none"
+                            stroke="var(--orange)"
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
                         />
+                    ))}
+
+                    {/* Clean Endpoint Marker */}
+                    {lastPoint && (
+                        <g>
+                            <circle
+                                cx={lastPoint.x}
+                                cy={lastPoint.y}
+                                r="5.5"
+                                fill="var(--orange)"
+                                fillOpacity="0.18"
+                            />
+                            <circle
+                                cx={lastPoint.x}
+                                cy={lastPoint.y}
+                                r="2.75"
+                                fill="var(--orange-text)"
+                                stroke="var(--surface)"
+                                strokeWidth="1.5"
+                            />
+                        </g>
                     )}
 
                     {/* Active Hover Guide & Dot */}
@@ -275,22 +350,23 @@ export default function ViewsChart({
                                 y1={padTop}
                                 x2={activePoint.x}
                                 y2={padTop + plotHeight}
-                                stroke="#52525b"
+                                stroke="var(--text-muted)"
+                                strokeOpacity="0.4"
                                 strokeDasharray="3 3"
                             />
                             <circle
                                 cx={activePoint.x}
                                 cy={activePoint.y}
                                 r="5"
-                                fill="#10b981"
-                                fillOpacity="0.25"
+                                fill="var(--orange)"
+                                fillOpacity="0.22"
                             />
                             <circle
                                 cx={activePoint.x}
                                 cy={activePoint.y}
                                 r="3"
-                                fill="#34d399"
-                                stroke="#09090b"
+                                fill="var(--orange-soft)"
+                                stroke="var(--bg)"
                                 strokeWidth="1.5"
                             />
                         </g>
@@ -309,7 +385,8 @@ export default function ViewsChart({
                                 x={p.x}
                                 y={height - 6}
                                 textAnchor="middle"
-                                className="fill-zinc-500 text-[10px]"
+                                fill="var(--text-muted)"
+                                className="text-[10px]"
                             >
                                 {p.label}
                             </text>

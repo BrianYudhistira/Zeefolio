@@ -1,5 +1,5 @@
 import { HiXMark, HiOutlineCheck } from "react-icons/hi2";
-import { getRoleConfig } from "@/Components/Admin/Members/MemberStatsGrid";
+import { getRoleConfig } from "@/Utils/roleHelpers";
 
 export default function PermissionFormModal({
     open,
@@ -36,7 +36,7 @@ export default function PermissionFormModal({
                                 : "Create New Permission"}
                         </h3>
                         <p className="text-xs text-zinc-400 mt-0.5">
-                            Add a permission key in the dashboard without running a seeder.
+                            Add a new access rule to assign to roles.
                         </p>
                     </div>
                     <button
@@ -51,7 +51,7 @@ export default function PermissionFormModal({
                 <form onSubmit={onSubmit} className="p-5 space-y-4">
                     <div className="space-y-1.5">
                         <label className="block text-xs font-medium text-zinc-300">
-                            Permission Key (Identifier)
+                            Permission Name
                         </label>
                         <input
                             type="text"
@@ -72,7 +72,7 @@ export default function PermissionFormModal({
 
                     <div className="space-y-1.5">
                         <label className="block text-xs font-medium text-zinc-300">
-                            Module / Group
+                            Section / Group
                         </label>
                         <input
                             type="text"
@@ -106,7 +106,7 @@ export default function PermissionFormModal({
                             onChange={(e) =>
                                 form.setData("description", e.target.value)
                             }
-                            placeholder="Explain what this permission controls..."
+                            placeholder="Describe what this allows a user to do..."
                             className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
                         />
                         {form.errors.description && (

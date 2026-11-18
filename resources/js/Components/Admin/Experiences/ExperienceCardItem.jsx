@@ -1,9 +1,8 @@
 import {
     HiOutlinePencilSquare,
     HiOutlineTrash,
-    HiOutlineArrowUp,
-    HiOutlineArrowDown,
 } from "react-icons/hi2";
+import { getDeviconClass } from "@/Utils/devicon";
 
 export function formatDateInput(val) {
     if (!val) return "";
@@ -17,16 +16,22 @@ export function formatMonthYear(val) {
     return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
+export function parseSkillNames(rawSkills) {
+    if (!rawSkills) return [];
+    return String(rawSkills)
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean);
+}
+
 export default function ExperienceCardItem({
     exp,
+    skillIconByName,
     idx,
-    totalCount,
-    movingId,
-    onMove,
     onEdit,
     onDelete,
 }) {
-    const isMoving = movingId === exp.id;
+    const skillNames = parseSkillNames(exp.tech_stack);
 
     return (
         <div className="p-3.5 sm:p-5 space-y-2 hover:bg-zinc-800/30 transition-colors">
@@ -50,27 +55,6 @@ export default function ExperienceCardItem({
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
-                    <div className="inline-flex items-center rounded-lg bg-zinc-950 border border-zinc-800 p-0.5">
-                        <button
-                            type="button"
-                            disabled={idx === 0 || isMoving}
-                            onClick={() => onMove(exp, "up")}
-                            className="p-1 sm:p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
-                            title="Move up"
-                        >
-                            <HiOutlineArrowUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            type="button"
-                            disabled={idx === totalCount - 1 || isMoving}
-                            onClick={() => onMove(exp, "down")}
-                            className="p-1 sm:p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
-                            title="Move down"
-                        >
-                            <HiOutlineArrowDown className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-
                     <button
                         type="button"
                         onClick={() => onEdit(exp)}
@@ -94,20 +78,24 @@ export default function ExperienceCardItem({
                 {exp.description}
             </p>
 
-            {exp.tech_stack && (
+            {skillNames.length > 0 && (
                 <div className="flex flex-wrap gap-1 sm:gap-1.5 pt-0.5">
-                    {exp.tech_stack
-                        .split(",")
-                        .map((t) => t.trim())
-                        .filter(Boolean)
-                        .map((tech) => (
+                    {skillNames.map((skillName) => {
+                        const iconClass = getDeviconClass(
+                            skillIconByName?.get(skillName.toLowerCase())
+                        );
+                        return (
                             <span
-                                key={tech}
-                                className="px-1.5 sm:px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] sm:text-[11px] text-zinc-400"
+                                key={skillName}
+                                className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] sm:text-[11px] text-zinc-400"
                             >
-                                {tech}
+                                {iconClass && (
+                                    <i className={`${iconClass} text-[11px]`} />
+                                )}
+                                <span>{skillName}</span>
                             </span>
-                        ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

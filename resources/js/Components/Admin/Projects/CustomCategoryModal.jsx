@@ -14,6 +14,16 @@ export default function CustomCategoryModal({
     globalCategories = [],
     customCategories = [],
     onCategoryDeleted,
+    title = "Project Categories",
+    subtitle = "Create and manage your custom project categories.",
+    inputLabel = "Add Custom Category",
+    placeholder = "e.g. AI / Machine Learning, Desktop App",
+    customListLabel = "My Custom Categories",
+    emptyMessage = "You haven't added any custom categories yet.",
+    storeRoute = "admin.projects.categories.store",
+    updateRoute = "admin.projects.categories.update",
+    destroyRoute = "admin.projects.categories.destroy",
+    capitalizeNames = false,
 }) {
     const [editingCatId, setEditingCatId] = useState(null);
     const [editingCatName, setEditingCatName] = useState("");
@@ -30,7 +40,7 @@ export default function CustomCategoryModal({
         const catName = catForm.data.name.trim();
         if (!catName) return;
 
-        catForm.post(route("admin.projects.categories.store"), {
+        catForm.post(route(storeRoute), {
             preserveScroll: true,
             onSuccess: () => {
                 catForm.reset();
@@ -48,7 +58,7 @@ export default function CustomCategoryModal({
         if (!trimmed) return;
 
         router.put(
-            route("admin.projects.categories.update", cat.id),
+            route(updateRoute, cat.id),
             { name: trimmed },
             {
                 preserveScroll: true,
@@ -67,11 +77,10 @@ export default function CustomCategoryModal({
 
     const deleteCustomCategory = (cat) => {
         setDeletingCatId(cat.id);
-        router.delete(route("admin.projects.categories.destroy", cat.id), {
+        router.delete(route(destroyRoute, cat.id), {
             preserveScroll: true,
             onSuccess: () => {
                 onCategoryDeleted?.(cat);
-                setDeletingCatId(null);
                 notifyAdmin({
                     type: "success",
                     title: "Category Deleted",
@@ -88,10 +97,10 @@ export default function CustomCategoryModal({
                 <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
                     <div>
                         <h3 className="text-sm font-semibold text-zinc-100">
-                            Project Categories
+                            {title}
                         </h3>
                         <p className="text-xs text-zinc-400 mt-0.5">
-                            Create and manage your custom project categories.
+                            {subtitle}
                         </p>
                     </div>
                     <button
@@ -110,23 +119,24 @@ export default function CustomCategoryModal({
                         className="space-y-1.5"
                     >
                         <label className="block text-xs font-medium text-zinc-300">
-                            Add Custom Category
+                            {inputLabel}
                         </label>
                         <div className="flex gap-2">
                             <input
                                 type="text"
                                 required
+                                maxLength={50}
                                 value={catForm.data.name}
                                 onChange={(e) =>
                                     catForm.setData("name", e.target.value)
                                 }
-                                placeholder="e.g. AI / Machine Learning, Desktop App"
+                                placeholder={placeholder}
                                 className="flex-1 text-xs px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 placeholder-zinc-500 outline-none"
                             />
                             <button
                                 type="submit"
                                 disabled={catForm.processing}
-                                className="px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-medium text-zinc-100 transition-colors cursor-pointer shrink-0"
+                                className="px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-medium text-zinc-100 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
                             >
                                 {catForm.processing ? "Adding..." : "Add"}
                             </button>
@@ -141,11 +151,11 @@ export default function CustomCategoryModal({
                     {/* Custom Categories List */}
                     <div className="space-y-2">
                         <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-                            My Custom Categories ({customCategories.length})
+                            {customListLabel} ({customCategories.length})
                         </p>
                         {customCategories.length === 0 ? (
                             <p className="text-xs text-zinc-500 py-4 text-center rounded-lg bg-zinc-950/60 border border-zinc-800/80">
-                                You haven&apos;t added any custom categories yet.
+                                {emptyMessage}
                             </p>
                         ) : (
                             <div className="divide-y divide-zinc-800 rounded-lg bg-zinc-950 border border-zinc-800 px-3">
@@ -160,6 +170,7 @@ export default function CustomCategoryModal({
                                                 <div className="flex items-center gap-1.5 flex-1">
                                                     <input
                                                         type="text"
+                                                        maxLength={50}
                                                         value={editingCatName}
                                                         onChange={(e) =>
                                                             setEditingCatName(
@@ -197,7 +208,9 @@ export default function CustomCategoryModal({
                                             ) : (
                                                 <>
                                                     <div className="flex items-center gap-2 min-w-0">
-                                                        <span className="font-medium text-zinc-200 truncate">
+                                                        <span
+                                                            className={`font-medium text-zinc-200 truncate ${capitalizeNames ? "capitalize" : ""}`}
+                                                        >
                                                             {cat.name}
                                                         </span>
                                                         <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-300">
@@ -246,20 +259,20 @@ export default function CustomCategoryModal({
                         )}
                     </div>
 
-                    {/* Global Categories Reference */}
+                    {/* Default Categories Reference */}
                     <div className="space-y-2">
                         <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-                            Global Categories ({globalCategories.length})
+                            Default Categories ({globalCategories.length})
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                             {globalCategories.map((cat) => (
                                 <span
                                     key={cat.id}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300"
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 ${capitalizeNames ? "capitalize" : ""}`}
                                 >
                                     <span>{cat.name}</span>
-                                    <span className="text-[10px] text-emerald-400">
-                                        Global
+                                    <span className="text-[10px] text-emerald-400 normal-case">
+                                        Default
                                     </span>
                                 </span>
                             ))}

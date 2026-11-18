@@ -72,7 +72,7 @@ export default function SkillCategoriesCard({
                 <div>
                     <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
                         <HiOutlineTag className="w-4 h-4 text-zinc-400" />
-                        <span>Skill Categories (Global)</span>
+                        <span>Skill Categories (Default)</span>
                     </h3>
                     <p className="hidden sm:block text-xs text-zinc-400 mt-0.5">
                         Manage primary categories used to group skills.
@@ -189,7 +189,7 @@ export default function SkillCategoriesCard({
                                             {cat.name}{" "}
                                             <span className="text-zinc-500 font-normal">
                                                 ({cat.global_skills_count ?? 0}{" "}
-                                                global)
+                                                default)
                                             </span>
                                         </button>
 

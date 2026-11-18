@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import SearchInput from "@/Components/UI/SearchInput";
 import EmptyState from "@/Components/UI/EmptyState";
+import PaginationBar from "@/Components/UI/PaginationBar";
 import {
     HiOutlineDocumentText,
     HiOutlineInformationCircle,
@@ -119,55 +120,39 @@ export default function LogsIndex({
             <div className="space-y-5">
                 {/* Summary Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
-                        <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">
-                            Total Logs
-                        </p>
-                        <p className="text-xl sm:text-2xl font-bold text-zinc-100 mt-1">
-                            {stats.total ?? 0}
-                        </p>
-                    </div>
-                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
-                        <p className="text-[11px] font-mono uppercase tracking-wider text-purple-300/80">
-                            Admin Access
-                        </p>
-                        <p className="text-xl sm:text-2xl font-bold text-purple-300 mt-1">
-                            {stats.admin ?? 0}
-                        </p>
-                    </div>
-                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
-                        <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-400/80">
-                            Info Logs
-                        </p>
-                        <p className="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
-                            {stats.info ?? 0}
-                        </p>
-                    </div>
-                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
-                        <p className="text-[11px] font-mono uppercase tracking-wider text-amber-300/80">
-                            Warnings
-                        </p>
-                        <p className="text-xl sm:text-2xl font-bold text-amber-300 mt-1">
-                            {stats.warning ?? 0}
-                        </p>
-                    </div>
-                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4">
-                        <p className="text-[11px] font-mono uppercase tracking-wider text-red-400/80">
-                            Errors
-                        </p>
-                        <p className="text-xl sm:text-2xl font-bold text-red-400 mt-1">
-                            {stats.error ?? 0}
-                        </p>
-                    </div>
+                    {[
+                        { label: "Total", value: stats.total ?? 0, accent: "var(--orange)" },
+                        { label: "Admin", value: stats.admin ?? 0, accent: "var(--indigo)" },
+                        { label: "Normal", value: stats.info ?? 0, accent: "var(--emerald)" },
+                        { label: "Warnings", value: stats.warning ?? 0, accent: "var(--amber)" },
+                        { label: "Errors", value: stats.error ?? 0, accent: "var(--danger)" },
+                    ].map((stat) => (
+                        <div
+                            key={stat.label}
+                            style={{ "--accent": stat.accent }}
+                            className="admin-stat-card rounded-xl border p-4"
+                        >
+                            <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                                <span
+                                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                                    style={{ backgroundColor: stat.accent }}
+                                />
+                                <span>{stat.label}</span>
+                            </p>
+                            <p className="text-xl sm:text-2xl font-bold text-[var(--text)] mt-1">
+                                {stat.value}
+                            </p>
+                        </div>
+                    ))}
                 </div>
 
                 {/* Filters Bar */}
-                <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <div className="admin-card rounded-xl border p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                     <div className="flex-1">
                         <SearchInput
                             value={search}
                             onChange={handleSearchChange}
-                            placeholder="Search message, user name, user_id, IP, or module..."
+                            placeholder="Search activity, user, location, or section..."
                         />
                     </div>
 
@@ -179,7 +164,7 @@ export default function LogsIndex({
                                 onChange={handleModuleChange}
                                 className="w-full sm:w-40 pl-8 pr-7 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:border-zinc-600 focus:outline-none"
                             >
-                                <option value="all">All Modules</option>
+                                <option value="all">All Sections</option>
                                 {modules.map((mod) => (
                                     <option key={mod} value={mod}>
                                         {mod}
@@ -193,9 +178,9 @@ export default function LogsIndex({
                             onChange={handleTypeChange}
                             className="flex-1 sm:flex-initial sm:w-40 px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:border-zinc-600 focus:outline-none"
                         >
-                            <option value="all">All Levels</option>
-                            <option value="admin">Admin Access</option>
-                            <option value="info">Info</option>
+                            <option value="all">All Types</option>
+                            <option value="admin">Admin</option>
+                            <option value="info">Normal</option>
                             <option value="warning">Warning</option>
                             <option value="error">Error</option>
                         </select>
@@ -203,12 +188,12 @@ export default function LogsIndex({
                 </div>
 
                 {/* Logs Table / List */}
-                <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 overflow-hidden">
+                <div className="admin-card rounded-xl border overflow-hidden">
                     <div className="px-4 sm:px-5 py-3.5 border-b border-zinc-800 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <HiOutlineDocumentText className="w-4 h-4 text-zinc-400" />
                             <h2 className="text-sm font-semibold text-zinc-100">
-                                System Audit Logs
+                                Activity History
                             </h2>
                         </div>
                         <span className="text-xs text-zinc-500 font-mono">
@@ -221,8 +206,8 @@ export default function LogsIndex({
                         <div className="p-6">
                             <EmptyState
                                 icon={HiOutlineDocumentText}
-                                title="No logs found"
-                                description="No system activity logs match your current filter criteria."
+                                title="No activity found"
+                                description="No activity matches your current filters."
                             />
                         </div>
                     ) : (
@@ -234,19 +219,19 @@ export default function LogsIndex({
                                         <tr className="border-b border-zinc-800/80 text-[11px] font-mono uppercase text-zinc-500 bg-zinc-950/40">
                                             <th className="py-3 px-4">ID</th>
                                             <th className="py-3 px-4">
-                                                User (user_id & Name)
+                                                User
                                             </th>
                                             <th className="py-3 px-4">
-                                                Module / Level
+                                                Section / Type
                                             </th>
                                             <th className="py-3 px-4">
-                                                Activity Message
+                                                Activity
                                             </th>
                                             <th className="py-3 px-4">
-                                                IP & Location
+                                                Location & IP
                                             </th>
                                             <th className="py-3 px-4 text-right">
-                                                Timestamp
+                                                Time
                                             </th>
                                         </tr>
                                     </thead>
@@ -416,45 +401,7 @@ export default function LogsIndex({
                         </>
                     )}
 
-                    {/* Pagination */}
-                    {paginationLinks.length > 3 && (
-                        <div className="px-4 py-3 border-t border-zinc-800 flex flex-wrap items-center justify-center sm:justify-end gap-1.5 bg-zinc-950/30">
-                            {paginationLinks.map((link, idx) => {
-                                const label = link.label
-                                    .replace("&laquo; Previous", "Prev")
-                                    .replace("Next &raquo;", "Next");
-
-                                if (!link.url) {
-                                    return (
-                                        <span
-                                            key={idx}
-                                            className="px-2.5 py-1 rounded-lg text-xs text-zinc-600 border border-transparent select-none"
-                                            dangerouslySetInnerHTML={{
-                                                __html: label,
-                                            }}
-                                        />
-                                    );
-                                }
-
-                                return (
-                                    <Link
-                                        key={idx}
-                                        href={link.url}
-                                        preserveScroll
-                                        preserveState
-                                        className={`px-2.5 py-1 rounded-lg text-xs border transition-colors ${
-                                            link.active
-                                                ? "bg-zinc-100 text-zinc-950 border-zinc-100 font-semibold"
-                                                : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800"
-                                        }`}
-                                        dangerouslySetInnerHTML={{
-                                            __html: label,
-                                        }}
-                                    />
-                                );
-                            })}
-                        </div>
-                    )}
+                    <PaginationBar links={paginationLinks} />
                 </div>
             </div>
         </AdminLayout>

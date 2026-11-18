@@ -12,7 +12,7 @@ export default function EmptyState({
                 <button
                     type="button"
                     onClick={onAction}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-medium text-zinc-200 transition-colors cursor-pointer"
+                    className="admin-btn-secondary inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                 >
                     <HiOutlinePlus className="w-4 h-4" />
                     <span>{actionLabel}</span>

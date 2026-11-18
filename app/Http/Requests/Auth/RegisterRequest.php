@@ -4,9 +4,30 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class RegisterRequest extends FormRequest
 {
+    /**
+     * Normalize email and optional username before validation runs.
+     */
+    protected function prepareForValidation(): void
+    {
+        $updates = [];
+
+        if ($this->has('email')) {
+            $updates['email'] = Str::lower(trim((string) $this->input('email')));
+        }
+
+        if ($this->filled('username')) {
+            $updates['username'] = trim((string) $this->input('username'));
+        }
+
+        if ($updates !== []) {
+            $this->merge($updates);
+        }
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Head, router, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import { HiOutlinePlus } from "react-icons/hi2";
@@ -7,13 +7,13 @@ import EmptyState from "@/Components/UI/EmptyState";
 import ConfirmDeleteModal from "@/Components/UI/ConfirmDeleteModal";
 import ExperienceCardItem, {
     formatDateInput,
+    parseSkillNames,
 } from "@/Components/Admin/Experiences/ExperienceCardItem";
 import ExperienceFormModal from "@/Components/Admin/Experiences/ExperienceFormModal";
 
-export default function ExperiencesIndex({ experiences = [] }) {
+export default function ExperiencesIndex({ experiences = [], skills = [] }) {
     const [editingItem, setEditingItem] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
-    const [movingId, setMovingId] = useState(null);
     const [expToDelete, setExpToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
 
@@ -24,9 +24,41 @@ export default function ExperiencesIndex({ experiences = [] }) {
             start_date: "",
             end_date: "",
             description: "",
-            tech_stack: "",
-            sort_order: 0,
+            skill_ids: [],
         });
+
+    const { skillIdByName, skillIconByName } = useMemo(() => {
+        const idMap = new Map();
+        const iconMap = new Map();
+
+        skills.forEach((skill) => {
+            const key = skill.name.trim().toLowerCase();
+            idMap.set(key, skill.id);
+            iconMap.set(key, skill.icon);
+        });
+
+        return { skillIdByName: idMap, skillIconByName: iconMap };
+    }, [skills]);
+
+    const resolveSkillIdsFromExperience = (rawSkills) => {
+        const matchedIds = [];
+        parseSkillNames(rawSkills).forEach((name) => {
+            const id = skillIdByName.get(name.toLowerCase());
+            if (id && !matchedIds.includes(id)) {
+                matchedIds.push(id);
+            }
+        });
+        return matchedIds;
+    };
+
+    const toggleSkill = (skillId) => {
+        setData(
+            "skill_ids",
+            data.skill_ids.includes(skillId)
+                ? data.skill_ids.filter((id) => id !== skillId)
+                : [...data.skill_ids, skillId]
+        );
+    };
 
     const openCreate = () => {
         setEditingItem(null);
@@ -37,8 +69,7 @@ export default function ExperiencesIndex({ experiences = [] }) {
             start_date: "",
             end_date: "",
             description: "",
-            tech_stack: "",
-            sort_order: experiences.length,
+            skill_ids: [],
         });
         setModalOpen(true);
     };
@@ -52,8 +83,7 @@ export default function ExperiencesIndex({ experiences = [] }) {
             start_date: formatDateInput(item.start_date),
             end_date: formatDateInput(item.end_date),
             description: item.description || "",
-            tech_stack: item.tech_stack || "",
-            sort_order: item.sort_order ?? 0,
+            skill_ids: resolveSkillIdsFromExperience(item.tech_stack),
         });
         setModalOpen(true);
     };
@@ -61,45 +91,24 @@ export default function ExperiencesIndex({ experiences = [] }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         const roleLabel = `${data.position.trim()} @ ${data.company.trim()}`;
-        if (editingItem) {
-            put(route("admin.experiences.update", editingItem.id), {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setModalOpen(false);
-                    reset();
-                    notifyAdmin({
-                        type: "success",
-                        title: "Experience Updated",
-                        message: `Experience "${roleLabel}" has been updated.`,
-                    });
-                },
-            });
-        } else {
-            post(route("admin.experiences.store"), {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setModalOpen(false);
-                    reset();
-                    notifyAdmin({
-                        type: "success",
-                        title: "Experience Added",
-                        message: `Experience "${roleLabel}" has been added.`,
-                    });
-                },
-            });
-        }
-    };
+        const isEditing = Boolean(editingItem);
+        const targetUrl = isEditing
+            ? route("admin.experiences.update", editingItem.id)
+            : route("admin.experiences.store");
+        const submit = isEditing ? put : post;
 
-    const handleMove = (exp, direction) => {
-        setMovingId(exp.id);
-        router.put(
-            route("admin.experiences.move", exp.id),
-            { direction },
-            {
-                preserveScroll: true,
-                onFinish: () => setMovingId(null),
-            }
-        );
+        submit(targetUrl, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setModalOpen(false);
+                reset();
+                notifyAdmin({
+                    type: "success",
+                    title: isEditing ? "Experience Updated" : "Experience Added",
+                    message: `Experience "${roleLabel}" has been ${isEditing ? "updated" : "added"}.`,
+                });
+            },
+        });
     };
 
     const confirmDelete = () => {
@@ -110,7 +119,6 @@ export default function ExperiencesIndex({ experiences = [] }) {
             preserveScroll: true,
             onSuccess: () => {
                 setExpToDelete(null);
-                setDeleting(false);
                 notifyAdmin({
                     type: "success",
                     title: "Deleted",
@@ -128,7 +136,7 @@ export default function ExperiencesIndex({ experiences = [] }) {
                 <button
                     type="button"
                     onClick={openCreate}
-                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 font-medium text-xs transition-colors cursor-pointer"
+                    className="admin-btn-primary inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
                 >
                     <HiOutlinePlus className="w-4 h-4" />
                     <span className="sm:hidden">Add</span>
@@ -138,21 +146,21 @@ export default function ExperiencesIndex({ experiences = [] }) {
         >
             <Head title="Experiences - Zeefolio" />
 
-            <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 overflow-hidden">
+            <div className="admin-card rounded-xl border overflow-hidden">
                 <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-zinc-800 flex items-center justify-between">
                     <div>
                         <h2 className="text-sm font-semibold text-zinc-100">
-                            Career Timeline ({experiences.length})
+                            Experiences ({experiences.length})
                         </h2>
                         <p className="hidden sm:block text-xs text-zinc-500 mt-0.5">
-                            Use the arrow buttons to adjust the display order on your portfolio.
+                            Sorted automatically from newest to oldest.
                         </p>
                     </div>
                 </div>
 
                 {experiences.length === 0 ? (
                     <EmptyState
-                        message="No work experiences added yet."
+                        message="No experiences added yet."
                         actionLabel="Add First Experience"
                         onAction={openCreate}
                     />
@@ -162,10 +170,8 @@ export default function ExperiencesIndex({ experiences = [] }) {
                             <ExperienceCardItem
                                 key={exp.id}
                                 exp={exp}
+                                skillIconByName={skillIconByName}
                                 idx={idx}
-                                totalCount={experiences.length}
-                                movingId={movingId}
-                                onMove={handleMove}
                                 onEdit={openEdit}
                                 onDelete={setExpToDelete}
                             />
@@ -181,6 +187,8 @@ export default function ExperiencesIndex({ experiences = [] }) {
                 setData={setData}
                 errors={errors}
                 processing={processing}
+                skills={skills}
+                onToggleSkill={toggleSkill}
                 onClose={() => setModalOpen(false)}
                 onSubmit={handleSubmit}
             />

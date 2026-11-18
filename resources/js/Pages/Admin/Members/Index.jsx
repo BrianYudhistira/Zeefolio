@@ -159,7 +159,7 @@ export default function MembersIndex({
                     notifyAdmin({
                         type: "success",
                         title: "Skill Promoted",
-                        message: `Skill "${skill.name}" promoted to Global Default.`,
+                        message: `Skill "${skill.name}" promoted to Default.`,
                     });
                 },
             }
@@ -174,7 +174,7 @@ export default function MembersIndex({
                     <button
                         type="button"
                         onClick={openCreateAccount}
-                        className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 font-medium text-xs transition-colors cursor-pointer"
+                        className="admin-btn-primary inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
                     >
                         <HiOutlinePlus className="w-4 h-4" />
                         <span className="sm:hidden">New</span>

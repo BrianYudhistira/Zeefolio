@@ -10,6 +10,7 @@ import SkillRowItem, {
 } from "@/Components/Admin/Skills/SkillRowItem";
 import SkillFormModal from "@/Components/Admin/Skills/SkillFormModal";
 import SkillCategoryDisplayCard from "@/Components/Admin/Skills/SkillCategoryDisplayCard";
+import CustomCategoryModal from "@/Components/Admin/Projects/CustomCategoryModal";
 
 export default function SkillsIndex({
     skills = [],
@@ -21,6 +22,11 @@ export default function SkillsIndex({
     const [mode, setMode] = useState("existing");
     const [skillToDelete, setSkillToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [formResetKey, setFormResetKey] = useState(0);
+    const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+
+    const globalCategories = categories.filter((c) => c.is_global);
+    const customCategories = categories.filter((c) => !c.is_global);
 
     const { data, setData, post, processing, errors, reset, clearErrors } =
         useForm({
@@ -28,6 +34,7 @@ export default function SkillsIndex({
             tech_stack_id: "",
             custom_name: "",
             category_id: "",
+            custom_category: "",
             icon: "",
             proficiency_level: 4,
         });
@@ -66,7 +73,14 @@ export default function SkillsIndex({
         post(route("admin.skills.store"), {
             preserveScroll: true,
             onSuccess: () => {
-                reset("tech_stack_id", "custom_name", "icon", "category_id");
+                reset(
+                    "tech_stack_id",
+                    "custom_name",
+                    "icon",
+                    "category_id",
+                    "custom_category"
+                );
+                setFormResetKey((prev) => prev + 1);
                 notifyAdmin({
                     type: "success",
                     title: "Skill Added",
@@ -102,7 +116,6 @@ export default function SkillsIndex({
             preserveScroll: true,
             onSuccess: () => {
                 setSkillToDelete(null);
-                setDeleting(false);
                 notifyAdmin({
                     type: "success",
                     title: "Deleted",
@@ -128,6 +141,7 @@ export default function SkillsIndex({
                         setData={setData}
                         errors={errors}
                         processing={processing}
+                        resetKey={formResetKey}
                         onSubmit={handleAdd}
                     />
                 </div>
@@ -137,22 +151,23 @@ export default function SkillsIndex({
                         categories={categories}
                         skills={skills}
                         initialSelectedIds={selectedCategoryIds}
+                        onManageCategories={() => setCategoryModalOpen(true)}
                     />
 
-                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 overflow-hidden">
+                    <div className="admin-card rounded-xl border overflow-hidden">
                         <div className="p-4 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <h2 className="text-sm font-semibold text-zinc-100">
-                                Active Skills ({filteredSkills.length})
+                                Your Skills ({filteredSkills.length})
                             </h2>
                             <SearchInput
                                 value={search}
                                 onChange={setSearch}
-                                placeholder="Search skills..."
+                                placeholder="Search your skills..."
                             />
                         </div>
 
                         {filteredSkills.length === 0 ? (
-                            <EmptyState message="No skills found." />
+                            <EmptyState message="No skills added yet." />
                         ) : (
                             <div className="divide-y divide-zinc-800">
                                 {filteredSkills.map((skill) => (
@@ -187,6 +202,28 @@ export default function SkillsIndex({
                 processing={deleting}
                 onClose={() => setSkillToDelete(null)}
                 onConfirm={confirmDelete}
+            />
+
+            <CustomCategoryModal
+                open={categoryModalOpen}
+                onClose={() => setCategoryModalOpen(false)}
+                globalCategories={globalCategories}
+                customCategories={customCategories}
+                title="Manage Skill Categories"
+                subtitle="Create, rename, or remove your custom categories."
+                inputLabel="Add New Category"
+                placeholder="e.g. Design, Marketing, Tools"
+                customListLabel="Your Custom Categories"
+                emptyMessage="You haven't created any custom categories yet."
+                storeRoute="admin.skills.custom-categories.store"
+                updateRoute="admin.skills.custom-categories.update"
+                destroyRoute="admin.skills.custom-categories.destroy"
+                capitalizeNames
+                onCategoryDeleted={(cat) => {
+                    if (String(data.category_id) === String(cat.id)) {
+                        setData("category_id", "");
+                    }
+                }}
             />
         </AdminLayout>
     );

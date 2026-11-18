@@ -35,7 +35,7 @@ export default function SkillRowItem({ skill, onLevelChange, onDelete }) {
                         )}
                     </div>
                     <p className="text-[11px] sm:text-xs text-zinc-500 truncate">
-                        {skill.tech_stack?.category?.name || "Uncategorized"}
+                        {skill.tech_stack?.category?.name || "No Category"}
                     </p>
                 </div>
             </div>

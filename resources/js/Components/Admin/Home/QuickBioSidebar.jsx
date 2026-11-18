@@ -122,7 +122,7 @@ export default function QuickBioSidebar({
             <button
                 type="submit"
                 disabled={processing}
-                className="w-full py-2.5 px-4 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-sm transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+                className="admin-btn-primary w-full py-2.5 px-4 rounded-xl text-sm transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
             >
                 {processing ? "Saving Changes..." : "Save Changes"}
             </button>

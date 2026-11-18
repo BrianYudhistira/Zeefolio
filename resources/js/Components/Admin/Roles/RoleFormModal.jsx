@@ -44,7 +44,7 @@ export default function RoleFormModal({
                                 : "Create New Role"}
                         </h3>
                         <p className="text-xs text-zinc-400 mt-0.5">
-                            Define a Spatie role and choose which permissions it grants.
+                            Set up a role and choose which features it can access.
                         </p>
                     </div>
                     <button
@@ -63,7 +63,7 @@ export default function RoleFormModal({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <label className="block text-xs font-medium text-zinc-300">
-                                Role Identifier (Slug)
+                                Role Name
                             </label>
                             <input
                                 type="text"

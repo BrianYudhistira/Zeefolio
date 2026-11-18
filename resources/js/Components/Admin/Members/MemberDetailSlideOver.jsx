@@ -364,11 +364,11 @@ export default function MemberDetailSlideOver({
                                                                 )
                                                             }
                                                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-[11px] font-medium text-zinc-200 transition-colors shrink-0 cursor-pointer"
-                                                            title="Promote to Global Default Skill"
+                                                            title="Set as Default Skill for all users"
                                                         >
                                                             <HiOutlineSparkles className="w-3 h-3" />
                                                             <span>
-                                                                Make Global
+                                                                Make Default
                                                             </span>
                                                         </button>
                                                     )}

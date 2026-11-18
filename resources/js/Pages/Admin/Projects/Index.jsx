@@ -209,9 +209,9 @@ export default function ProjectsIndex({
                     <button
                         type="button"
                         onClick={() => setCategoryModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 font-medium text-xs transition-colors cursor-pointer"
+                        className="admin-btn-ghost inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium text-xs transition-colors cursor-pointer"
                     >
-                        <HiOutlineTag className="w-4 h-4 text-zinc-400" />
+                        <HiOutlineTag className="w-4 h-4" />
                         <span className="sm:hidden">Categories</span>
                         <span className="hidden sm:inline">
                             Custom Categories ({customCategories.length})
@@ -220,7 +220,7 @@ export default function ProjectsIndex({
                     <button
                         type="button"
                         onClick={() => openCreate("general")}
-                        className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 font-medium text-xs transition-colors cursor-pointer"
+                        className="admin-btn-primary inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
                     >
                         <HiOutlinePlus className="w-4 h-4" />
                         <span className="sm:hidden">New</span>
@@ -234,16 +234,16 @@ export default function ProjectsIndex({
             <div className="space-y-3.5 sm:space-y-4">
                 {/* Filter & Search Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 -mx-1 px-1">
+                    <div className="admin-pill-track inline-flex items-center gap-1 p-1 rounded-lg border overflow-x-auto max-w-full">
                         {filterTabs.map((tab) => (
                             <button
                                 key={tab.value}
                                 type="button"
                                 onClick={() => setFilterType(tab.value)}
-                                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                                className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                                     filterType === tab.value
-                                        ? "bg-zinc-800 text-zinc-100 border-zinc-700"
-                                        : "bg-zinc-900/60 text-zinc-400 border-zinc-800 hover:text-zinc-200"
+                                        ? "admin-pill-active"
+                                        : "admin-pill-inactive"
                                 }`}
                             >
                                 <span className="sm:hidden">

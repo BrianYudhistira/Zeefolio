@@ -1,4 +1,5 @@
-import { HiOutlinePhoto } from "react-icons/hi2";
+import { Link } from "@inertiajs/react";
+import { HiOutlinePhoto, HiOutlinePlus } from "react-icons/hi2";
 
 export default function ProjectGeneralTab({
     data,
@@ -34,7 +35,7 @@ export default function ProjectGeneralTab({
 
                 <div className="space-y-1.5">
                     <label className="block text-xs font-medium text-zinc-300">
-                        Custom Slug (Optional)
+                        Custom Link (Optional)
                     </label>
                     <input
                         type="text"
@@ -81,7 +82,7 @@ export default function ProjectGeneralTab({
                         className="w-full text-sm px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
                     >
                         {globalCategories.length > 0 && (
-                            <optgroup label="Global Categories">
+                            <optgroup label="Default Categories">
                                 {globalCategories.map((cat) => (
                                     <option key={cat.id} value={cat.slug}>
                                         {cat.name}
@@ -205,11 +206,20 @@ export default function ProjectGeneralTab({
                 )}
             </div>
 
-            {/* Interactive Tech Stack Multi-Select */}
+            {/* Interactive Skills & Technologies Multi-Select */}
             <div className="space-y-2">
-                <label className="block text-xs font-medium text-zinc-300">
-                    Tech Stacks ({data.tech_stack_ids.length} selected)
-                </label>
+                <div className="flex items-center justify-between gap-2">
+                    <label className="block text-xs font-medium text-zinc-300">
+                        Skills Used ({data.tech_stack_ids.length} selected)
+                    </label>
+                    <Link
+                        href={route("admin.skills.index")}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
+                    >
+                        <HiOutlinePlus className="w-3 h-3" />
+                        <span>Add Skill</span>
+                    </Link>
+                </div>
                 <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2.5 rounded-lg bg-zinc-950 border border-zinc-800">
                     {techStacks.map((ts) => {
                         const selected = data.tech_stack_ids.includes(ts.id);

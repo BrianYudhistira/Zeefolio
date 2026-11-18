@@ -19,8 +19,8 @@ export default function GlobalSkillModal({
                 <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-zinc-100">
                         {editingSkill
-                            ? "Edit Global Skill"
-                            : "Add Global Skill"}
+                            ? "Edit Default Skill"
+                            : "Add Default Skill"}
                     </h3>
                     <button
                         type="button"
@@ -34,7 +34,7 @@ export default function GlobalSkillModal({
                 <form onSubmit={onSubmit} className="p-5 space-y-4">
                     <div className="space-y-1.5">
                         <label className="block text-xs font-medium text-zinc-300">
-                            Skill Name (Global)
+                            Skill Name (Default)
                         </label>
                         <input
                             type="text"
@@ -137,7 +137,7 @@ export default function GlobalSkillModal({
                         >
                             {skillForm.processing
                                 ? "Saving..."
-                                : "Save Global Skill"}
+                                : "Save Default Skill"}
                         </button>
                     </div>
                 </form>

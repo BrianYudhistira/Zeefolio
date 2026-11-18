@@ -17,11 +17,10 @@ html {
 }
 
 @theme {
-  --breakpoint-xl: 1280px;
-  --breakpoint-2xl: 2600px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 2600px;
 }
 
-/* Subtle dark scrollbars across the app */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -45,6 +44,571 @@ html {
     font-family: 'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
     letter-spacing: 0.02em;
 }
+
 .font-retro-mono {
     font-family: 'VT323', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.admin-theme {
+    --shell: #131315;
+    --bg: #0C0C0D;
+    --surface: #151517;
+    --surface-elevated: #1C1C20;
+
+    --border: #26262A;
+    --border-strong: #34343A;
+    --text: #F3F3F4;
+    --text-muted: #9A9AA2;
+
+    --orange: #F97316;
+    --orange-text: #FB923C;
+    --orange-soft: #FDBA74;
+    --indigo: #818CF8;
+    --emerald: #22C55E;
+    --amber: #F59E0B;
+    --success: #22C55E;
+    --danger: #F87171;
+
+    background-color: var(--shell);
+    color: var(--text);
+}
+
+.admin-theme ::selection {
+    background-color: color-mix(in srgb, var(--orange) 28%, transparent);
+    color: var(--text);
+}
+
+/* Rounded Inset Main Frame */
+.admin-theme .admin-main-frame {
+    background-color: var(--bg);
+}
+
+@media (min-width: 1024px) {
+    .admin-theme .admin-main-shell {
+        padding-top: 10px;
+        padding-right: 10px;
+        padding-bottom: 10px;
+    }
+
+    .admin-theme .admin-main-frame {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        overflow: clip;
+    }
+
+    .admin-theme .admin-sidebar-header {
+        height: 54px;
+        padding-top: 11px;
+    }
+
+    .admin-theme .admin-topbar {
+        height: 64px;
+    }
+}
+
+/* Admin Sidebar */
+.admin-theme .admin-sidebar {
+    background-color: var(--shell);
+    border-right-color: transparent;
+}
+
+.admin-theme .admin-sidebar-mobile {
+    background-color: var(--shell);
+    border-color: var(--border);
+}
+
+.admin-theme .admin-sidebar-header {
+    border-color: transparent;
+    padding-left: 18px;
+    padding-right: 16px;
+}
+
+.admin-theme .admin-brand-link {
+    gap: 0;
+    color: var(--text);
+}
+
+.admin-theme .admin-brand-icon {
+    width: 36px;
+    height: 36px;
+    filter: none;
+}
+
+.admin-theme .admin-brand-text {
+    margin-left: -7.5px;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--text);
+}
+
+.admin-theme .admin-sidebar-label {
+    color: var(--text-muted);
+}
+
+.admin-theme .admin-nav-item {
+    border-radius: 10px;
+    color: var(--text-muted);
+}
+
+.admin-theme .admin-nav-item:hover {
+    color: var(--text);
+    background-color: color-mix(in srgb, var(--surface-elevated) 75%, transparent);
+}
+
+.admin-theme .admin-nav-item[data-active="true"] {
+    background-color: color-mix(in srgb, var(--orange) 15%, var(--shell));
+    border-color: color-mix(in srgb, var(--orange) 26%, transparent);
+    color: var(--orange-text);
+}
+
+.admin-theme .admin-nav-item[data-active="true"] .admin-nav-icon {
+    color: var(--orange-text);
+}
+
+/* Seamless TopBar */
+.admin-theme .admin-topbar {
+    background-color: color-mix(in srgb, var(--bg) 82%, transparent);
+    border-color: transparent;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.admin-theme main {
+    padding-top: 0.5rem;
+}
+
+.admin-theme .admin-topbar-inner {
+    max-width: 72rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+    .admin-theme .admin-topbar-inner {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .admin-theme .admin-topbar-inner {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+.admin-theme .admin-topbar-title {
+    color: var(--text);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.admin-theme .admin-header-capsule {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+}
+
+.admin-theme .admin-capsule-action {
+    color: var(--text);
+}
+
+.admin-theme .admin-capsule-action:hover {
+    background-color: var(--surface-elevated);
+}
+
+.admin-theme .admin-topbar-btn {
+    background-color: var(--surface);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+.admin-theme .admin-topbar-btn:hover {
+    background-color: var(--surface-elevated);
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+
+.admin-theme .admin-topbar-bell {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+}
+
+.admin-theme .admin-topbar-bell:hover {
+    background-color: var(--surface-elevated);
+    color: var(--text);
+}
+
+.admin-theme .admin-notif-badge {
+    top: -2px;
+    right: -2px;
+    background-color: var(--orange);
+    color: var(--bg);
+}
+
+.admin-theme .admin-notif-panel {
+    background-color: var(--surface-elevated);
+    border-color: var(--border-strong);
+}
+
+.admin-theme .admin-notif-footer {
+    background-color: var(--surface);
+    border-color: var(--border);
+}
+
+.admin-theme .admin-notif-mark-read {
+    color: var(--success);
+}
+
+.admin-theme .admin-notif-item {
+    transition: background-color 160ms ease, opacity 160ms ease;
+}
+
+.admin-theme .admin-notif-item[data-unread="true"] {
+    background-color: color-mix(in srgb, var(--surface-elevated) 70%, var(--surface));
+}
+
+.admin-theme .admin-notif-item[data-unread="true"]:hover {
+    background-color: var(--surface-elevated);
+}
+
+.admin-theme .admin-notif-item[data-unread="false"] {
+    background-color: transparent;
+    opacity: 0.72;
+}
+
+.admin-theme .admin-notif-item[data-unread="false"]:hover {
+    background-color: color-mix(in srgb, var(--surface-elevated) 45%, transparent);
+    opacity: 0.96;
+}
+
+.admin-theme .admin-notif-module-pill {
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+}
+
+.admin-theme .admin-topbar-user-btn {
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+.admin-theme .admin-topbar-user-btn:hover,
+.admin-theme .admin-topbar-user-btn[data-open="true"] {
+    background-color: var(--surface);
+    border-color: var(--border);
+}
+
+.admin-theme .admin-topbar-user-panel {
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-strong);
+}
+
+.admin-theme .admin-topbar-user-item:hover {
+    background-color: color-mix(in srgb, var(--text) 5%, transparent);
+    color: var(--text);
+}
+
+.admin-theme .admin-topbar-user-logout {
+    color: var(--danger);
+}
+
+.admin-theme .admin-topbar-user-logout:hover {
+    background-color: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+/* Role & Status Badges */
+.admin-theme .admin-role-badge[data-role="superadmin"] {
+    background-color: color-mix(in srgb, var(--amber) 12%, transparent);
+    border-color: color-mix(in srgb, var(--amber) 28%, var(--border));
+    color: var(--amber);
+}
+
+.admin-theme .admin-status-active {
+    background-color: color-mix(in srgb, var(--success) 12%, transparent);
+    color: var(--success);
+}
+
+.admin-theme .admin-status-draft {
+    background-color: transparent;
+    color: var(--text-muted);
+}
+
+.admin-theme .admin-log-badge[data-tone="success"] {
+    background-color: color-mix(in srgb, var(--success) 12%, transparent);
+    border-color: color-mix(in srgb, var(--success) 26%, var(--border));
+    color: var(--success);
+}
+
+.admin-theme .admin-log-badge[data-tone="accent"] {
+    background-color: color-mix(in srgb, var(--orange) 12%, transparent);
+    border-color: color-mix(in srgb, var(--orange) 26%, var(--border));
+    color: var(--orange-text);
+}
+
+.admin-theme .admin-log-badge[data-tone="danger"] {
+    background-color: color-mix(in srgb, var(--danger) 12%, transparent);
+    border-color: color-mix(in srgb, var(--danger) 26%, var(--border));
+    color: var(--danger);
+}
+
+/* Reusable Admin Surface, Control & Typography Primitives */
+.admin-theme .admin-card {
+    background-color: var(--surface);
+    border-color: var(--border);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 3.5%, transparent);
+}
+
+.admin-theme .admin-card-header {
+    border-color: var(--border);
+    background-color: color-mix(in srgb, var(--surface-elevated) 42%, var(--surface));
+}
+
+.admin-theme .admin-well {
+    background-color: var(--surface-elevated);
+    border-color: var(--border);
+}
+
+.admin-theme .admin-stat-card {
+    background-color: var(--surface);
+    border-color: var(--border);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 3.5%, transparent);
+    transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.admin-theme .admin-stat-card:hover {
+    background-color: color-mix(in srgb, var(--surface-elevated) 55%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.admin-theme .admin-stat-icon-box {
+    border-radius: 10px;
+    padding: 8px;
+    background-color: color-mix(in srgb, var(--accent) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+    color: var(--accent);
+}
+
+.admin-theme .admin-pill-track {
+    background-color: var(--surface-elevated);
+    border-color: var(--border);
+}
+
+.admin-theme .admin-pill-active {
+    background-color: color-mix(in srgb, var(--orange) 20%, var(--surface-elevated));
+    border-color: color-mix(in srgb, var(--orange) 55%, var(--border-strong));
+    color: var(--orange-soft);
+}
+
+.admin-theme .admin-pill-inactive {
+    color: var(--text-muted);
+    border-color: transparent;
+}
+
+.admin-theme .admin-pill-inactive:hover {
+    color: var(--text);
+    background-color: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+/* Selectable Category Chips (Multi-select without heavy solid fill) */
+.admin-theme .admin-cat-chip {
+    background-color: var(--bg);
+    border-color: var(--border);
+    color: var(--text-muted);
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+.admin-theme .admin-cat-chip:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--surface-elevated) 70%, var(--bg));
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+
+.admin-theme .admin-cat-chip[data-selected="true"] {
+    background-color: var(--surface-elevated);
+    border-color: color-mix(in srgb, var(--orange) 38%, var(--border-strong));
+    color: var(--text);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.admin-theme .admin-cat-chip[data-selected="true"]:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--orange) 60%, var(--border-strong));
+}
+
+.admin-theme .admin-cat-chip-order {
+    background-color: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+}
+
+.admin-theme .admin-cat-chip[data-selected="true"] .admin-cat-chip-order {
+    background-color: color-mix(in srgb, var(--orange) 16%, var(--bg));
+    border-color: color-mix(in srgb, var(--orange) 42%, transparent);
+    color: var(--orange-text);
+}
+
+.admin-theme .admin-cat-chip-count {
+    background-color: var(--surface);
+    border: 1px solid transparent;
+    color: var(--text-muted);
+}
+
+.admin-theme .admin-cat-chip[data-selected="true"] .admin-cat-chip-count {
+    background-color: var(--bg);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+.admin-theme .admin-btn-primary {
+    background-color: var(--orange);
+    border: 1px solid color-mix(in srgb, var(--orange-soft) 35%, var(--orange));
+    color: var(--bg);
+    font-weight: 600;
+}
+
+.admin-theme .admin-btn-primary:hover:not(:disabled) {
+    background-color: var(--orange-text);
+}
+
+.admin-theme .admin-btn-secondary {
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+}
+
+.admin-theme .admin-btn-secondary:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--surface-elevated) 82%, var(--text) 8%);
+    border-color: color-mix(in srgb, var(--orange) 38%, var(--border-strong));
+}
+
+.admin-theme .admin-btn-ghost {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+}
+
+.admin-theme .admin-btn-ghost:hover:not(:disabled) {
+    background-color: var(--surface-elevated);
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+
+.admin-theme .admin-btn-danger {
+    background-color: color-mix(in srgb, var(--danger) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+    color: var(--danger);
+}
+
+.admin-theme .admin-btn-danger:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--danger) 22%, transparent);
+}
+
+.admin-theme .admin-input {
+    background-color: var(--bg);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+.admin-theme .admin-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.72;
+}
+
+.admin-theme .admin-input:focus {
+    border-color: var(--orange);
+}
+
+.admin-theme .admin-toast {
+    background-color: var(--surface-elevated);
+    border-color: var(--border-strong);
+}
+
+.admin-theme .bg-zinc-950,
+.admin-theme .bg-zinc-950\/70,
+.admin-theme .bg-zinc-950\/50,
+.admin-theme .bg-zinc-950\/30 {
+    background-color: var(--bg);
+}
+
+.admin-theme .bg-zinc-900,
+.admin-theme .bg-zinc-900\/95,
+.admin-theme .bg-zinc-900\/90,
+.admin-theme .bg-zinc-900\/80,
+.admin-theme .bg-zinc-900\/70,
+.admin-theme .bg-zinc-900\/60,
+.admin-theme .bg-zinc-900\/50,
+.admin-theme .bg-zinc-900\/40 {
+    background-color: var(--surface);
+}
+
+.admin-theme .bg-zinc-800,
+.admin-theme .bg-zinc-800\/85,
+.admin-theme .bg-zinc-800\/80,
+.admin-theme .bg-zinc-800\/60,
+.admin-theme .bg-zinc-800\/50 {
+    background-color: var(--surface-elevated);
+}
+
+.admin-theme .border-zinc-800,
+.admin-theme .border-zinc-800\/80,
+.admin-theme .border-zinc-800\/70 {
+    border-color: var(--border);
+}
+
+.admin-theme .border-zinc-700,
+.admin-theme .border-zinc-700\/80,
+.admin-theme .border-zinc-700\/70 {
+    border-color: var(--border-strong);
+}
+
+.admin-theme .divide-zinc-800> :not([hidden])~ :not([hidden]),
+.admin-theme .divide-zinc-800\/70> :not([hidden])~ :not([hidden]) {
+    border-color: var(--border);
+}
+
+.admin-theme .text-zinc-100,
+.admin-theme .text-zinc-200 {
+    color: var(--text);
+}
+
+.admin-theme .text-zinc-300 {
+    color: color-mix(in srgb, var(--text) 86%, var(--text-muted));
+}
+
+.admin-theme .text-zinc-400,
+.admin-theme .text-zinc-500 {
+    color: var(--text-muted);
+}
+
+.admin-theme .placeholder-zinc-500::placeholder,
+.admin-theme .placeholder-zinc-600::placeholder {
+    color: var(--text-muted);
+    opacity: 0.72;
+}
+
+.admin-theme .focus\:border-zinc-600:focus {
+    border-color: var(--orange);
+}
+
+.admin-theme .hover\:bg-zinc-800:hover,
+.admin-theme .hover\:bg-zinc-800\/60:hover,
+.admin-theme .hover\:bg-zinc-800\/40:hover,
+.admin-theme .hover\:bg-zinc-800\/30:hover {
+    background-color: color-mix(in srgb, var(--surface-elevated) 75%, transparent);
+}
+
+.admin-theme .hover\:bg-zinc-700:hover {
+    background-color: color-mix(in srgb, var(--surface-elevated) 85%, var(--text) 8%);
 }

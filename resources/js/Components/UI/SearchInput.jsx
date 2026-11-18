@@ -14,7 +14,7 @@ export default function SearchInput({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                className="w-full text-xs pl-9 pr-8 py-2 rounded-lg bg-zinc-900/80 border border-zinc-800 focus:border-zinc-600 text-zinc-100 placeholder-zinc-500 outline-none"
+                className="admin-input w-full text-xs pl-9 pr-8 py-2 rounded-lg border outline-none transition-colors"
             />
             {value && (
                 <button
