@@ -1,4 +1,10 @@
+import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import { Link } from "@inertiajs/react";
+import { useAdminTheme } from "@/Hooks/useAdminTheme";
+import {
+    getBrandSuffix,
+    hasUserPermission,
+} from "@/Utils/permissionHelpers";
 import {
     HiOutlineSquares2X2,
     HiOutlineFolderOpen,
@@ -12,20 +18,21 @@ import {
     HiOutlineCog6Tooth,
     HiOutlineShieldCheck,
     HiOutlineDocumentText,
+    HiOutlineGlobeAlt,
+    HiOutlineArrowTopRightOnSquare,
     HiXMark,
 } from "react-icons/hi2";
 
 export default function Sidebar({
-    appName = "Zeefolio",
+    appName = "ZeeFolio",
     user = null,
     sidebarOpen = false,
     onClose,
 }) {
-    const isSuperAdmin = user?.role === "superadmin";
-    const perms = Array.isArray(user?.permission_names)
-        ? user.permission_names
-        : [];
-    const hasPerm = (permission) => isSuperAdmin || perms.includes(permission);
+    const { theme } = useAdminTheme();
+    const hasPerm = (permission) => hasUserPermission(user, permission);
+    const portfolioSlug = user?.portfolio_slug || user?.username || null;
+    const isPortfolioActive = Boolean(user?.portfolio_is_active);
 
     const navGroups = [
         {
@@ -123,25 +130,27 @@ export default function Sidebar({
         },
     ].filter((group) => group.items.length > 0);
 
-    const brandSuffix =
-        appName.toLowerCase() === "zeefolio" ? "eeFolio" : appName;
+    const brandSuffix = getBrandSuffix(appName);
+    const brandHref = hasPerm("dashboard.view")
+        ? route("admin.dashboard")
+        : navGroups[0]?.items[0]?.href || route("admin.account.index");
 
     const renderBody = (onNavigate) => (
-        <div className="flex flex-col h-full mt-2">
+        <div className="flex flex-col h-full pt-2">
             {/* Brand Header */}
-            <div className="admin-sidebar-header h-14 px-5 flex items-center justify-between border-b shrink-0">
+            <div className="admin-sidebar-header flex items-center justify-between shrink-0">
                 <Link
-                    href={route("admin.dashboard")}
+                    href={brandHref}
                     onClick={onNavigate}
                     aria-label={appName}
-                    className="admin-brand-link flex items-center font-semibold"
+                    className="admin-brand-link flex items-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--orange)] rounded-lg"
                 >
                     <img
                         src="/images/web_icon.png"
                         alt=""
-                        className="admin-brand-icon h-8 w-8 object-contain shrink-0"
+                        className="admin-brand-icon object-contain shrink-0"
                     />
-                    <span className="admin-brand-text -ml-1.5 text-base tracking-tight leading-none">
+                    <span className="admin-brand-text tracking-tight leading-none">
                         {brandSuffix}
                     </span>
                 </Link>
@@ -149,7 +158,7 @@ export default function Sidebar({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="lg:hidden p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-elevated)] transition-colors"
+                    className="lg:hidden w-9 h-9 inline-flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-elevated)] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--orange)]"
                     aria-label="Close Sidebar"
                 >
                     <HiXMark className="w-5 h-5" />
@@ -157,7 +166,10 @@ export default function Sidebar({
             </div>
 
             {/* Navigation Groups */}
-            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+            <nav
+                aria-label="Admin navigation"
+                className="flex-1 overflow-y-auto px-3 py-4 space-y-5"
+            >
                 {navGroups.map((group) => (
                     <div key={group.label || "overview"} className="space-y-0.5">
                         {group.label && (
@@ -173,10 +185,14 @@ export default function Sidebar({
                                     href={item.href}
                                     onClick={onNavigate}
                                     data-active={item.active ? "true" : undefined}
-                                    className={`admin-nav-item group flex items-center px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${item.active
-                                        ? "font-medium"
-                                        : "border-transparent"
-                                        }`}
+                                    aria-current={
+                                        item.active ? "page" : undefined
+                                    }
+                                    className={`admin-nav-item group flex items-center px-3 py-2.5 lg:py-1.5 rounded-lg text-[13px] transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--orange)] ${
+                                        item.active
+                                            ? "font-medium"
+                                            : "border-transparent"
+                                    }`}
                                 >
                                     <span className="flex items-center gap-2.5">
                                         <Icon className="admin-nav-icon w-4 h-4 transition-colors" />
@@ -188,29 +204,94 @@ export default function Sidebar({
                     </div>
                 ))}
             </nav>
+
+            {portfolioSlug && (
+                <div className="admin-sidebar-footer shrink-0 p-3 border-t">
+                    <a
+                        href={route("portfolio.index", { slug: portfolioSlug })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={onNavigate}
+                        title={`Open live portfolio (/${portfolioSlug})`}
+                        className="admin-sidebar-live group flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-xl border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--orange)]"
+                    >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <span
+                                className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${
+                                    isPortfolioActive
+                                        ? "admin-sidebar-live-icon-active"
+                                        : "admin-sidebar-live-icon-draft"
+                                }`}
+                            >
+                                <HiOutlineGlobeAlt className="w-4 h-4" />
+                            </span>
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-semibold text-[var(--text)] leading-none">
+                                        Live Site
+                                    </span>
+                                    <span
+                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium leading-none ${
+                                            isPortfolioActive
+                                                ? "admin-status-active"
+                                                : "admin-status-draft"
+                                        }`}
+                                    >
+                                        <span
+                                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                                            style={{
+                                                backgroundColor:
+                                                    isPortfolioActive
+                                                        ? "var(--success)"
+                                                        : "var(--text-muted)",
+                                            }}
+                                        />
+                                        {isPortfolioActive ? "Active" : "Draft"}
+                                    </span>
+                                </div>
+                                <p className="text-[11px] font-mono text-[var(--text-muted)] truncate mt-1 leading-none">
+                                    /{portfolioSlug}
+                                </p>
+                            </div>
+                        </div>
+
+                        <HiOutlineArrowTopRightOnSquare className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
+                    </a>
+                </div>
+            )}
         </div>
     );
 
     return (
         <>
             {/* Desktop Sidebar */}
-            <aside className="admin-sidebar hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:left-0 z-30 border-r">
+            <aside className="admin-sidebar hidden lg:flex lg:flex-col lg:w-60 lg:fixed lg:inset-y-0 lg:left-0 z-30 border-r">
                 {renderBody()}
             </aside>
 
-            {/* Mobile Sidebar Drawer */}
-            {sidebarOpen && (
-                <div className="fixed inset-0 z-50 lg:hidden flex">
-                    <div
-                        className="fixed inset-0 bg-black/70 backdrop-blur-sm"
-                        onClick={onClose}
-                    />
-                    <aside className="admin-sidebar-mobile relative z-10 w-64 max-w-[85vw] h-full border-r">
+            {/* Mobile Accessible Sidebar Drawer */}
+            <Dialog
+                open={Boolean(sidebarOpen)}
+                onClose={onClose}
+                data-theme={theme}
+                aria-label="Admin navigation drawer"
+                className="admin-theme relative z-50 lg:hidden font-sans"
+            >
+                <DialogBackdrop
+                    transition
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-150 data-[closed]:opacity-0"
+                />
+
+                <div className="fixed inset-0 flex">
+                    <DialogPanel
+                        as="aside"
+                        transition
+                        className="admin-sidebar-mobile relative z-10 w-64 max-w-[85vw] h-full border-r transition-transform duration-200 data-[closed]:-translate-x-full"
+                    >
                         {renderBody(onClose)}
-                    </aside>
+                    </DialogPanel>
                 </div>
-            )}
+            </Dialog>
         </>
     );
 }
-

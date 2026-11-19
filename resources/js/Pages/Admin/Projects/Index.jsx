@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Head, router, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
+import MobileFab from "@/Components/Admin/MobileFab";
 import { HiOutlinePlus, HiOutlineTag } from "react-icons/hi2";
-import { notifyAdmin } from "@/Utils/notify";
 import { mapProjectShowcases } from "@/Utils/projectHelpers";
 import ConfirmDeleteModal from "@/Components/UI/ConfirmDeleteModal";
 import SearchInput from "@/Components/UI/SearchInput";
 import EmptyState from "@/Components/UI/EmptyState";
 import ProjectCardItem from "@/Components/Admin/Projects/ProjectCardItem";
 import ProjectFormModal from "@/Components/Admin/Projects/ProjectFormModal";
-import CustomCategoryModal from "@/Components/Admin/Projects/CustomCategoryModal";
+import CustomCategoryModal from "@/Components/Admin/Shared/CustomCategoryModal";
 
 const DEFAULT_PROJECT_CATEGORIES = [
     { id: "default-website", name: "Website", slug: "website", is_global: true },
@@ -32,6 +32,16 @@ export default function ProjectsIndex({
     const [projectToDelete, setProjectToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+    const coverBlobRef = useRef(null);
+
+    const revokeCoverBlob = () => {
+        if (coverBlobRef.current) {
+            URL.revokeObjectURL(coverBlobRef.current);
+            coverBlobRef.current = null;
+        }
+    };
+
+    useEffect(() => revokeCoverBlob, []);
 
     const availableCategories =
         projectCategories.length > 0
@@ -46,7 +56,6 @@ export default function ProjectsIndex({
         ...availableCategories.map((cat) => ({
             value: cat.slug,
             label: cat.name,
-            is_global: cat.is_global,
         })),
     ];
 
@@ -77,7 +86,10 @@ export default function ProjectsIndex({
         });
 
     const filteredProjects = projects.filter((p) => {
-        if (filterType !== "all" && p.project_type !== filterType) {
+        if (
+            filterType !== "all" &&
+            p.project_type?.toLowerCase() !== filterType.toLowerCase()
+        ) {
             return false;
         }
         const q = search.toLowerCase();
@@ -88,6 +100,7 @@ export default function ProjectsIndex({
     });
 
     const openCreate = (initialTab = "general") => {
+        revokeCoverBlob();
         setEditingItem(null);
         clearErrors();
         setImagePreview(null);
@@ -112,6 +125,7 @@ export default function ProjectsIndex({
     };
 
     const openEdit = (project, initialTab = "general") => {
+        revokeCoverBlob();
         setEditingItem(project);
         clearErrors();
         setImagePreview(project.image_url || null);
@@ -153,14 +167,18 @@ export default function ProjectsIndex({
     const handleImageChange = (e) => {
         const file = e.target.files?.[0] || null;
         setData("image", file);
+        revokeCoverBlob();
         if (file) {
-            setImagePreview(URL.createObjectURL(file));
+            const url = URL.createObjectURL(file);
+            coverBlobRef.current = url;
+            setImagePreview(url);
+        } else {
+            setImagePreview(editingItem?.image_url || null);
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const projectTitle = data.title.trim() || "Project";
         const isEditing = Boolean(editingItem);
         const targetRoute = isEditing
             ? route("admin.projects.update", editingItem.id)
@@ -170,122 +188,157 @@ export default function ProjectsIndex({
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
+                revokeCoverBlob();
                 setModalOpen(false);
                 reset();
-                notifyAdmin({
-                    type: "success",
-                    title: isEditing ? "Project Updated" : "Project Created",
-                    message: `Project "${projectTitle}" has been ${isEditing ? "updated" : "created"}.`,
-                });
+            },
+            onError: (errs) => {
+                const keys = Object.keys(errs || {});
+                const hasGeneralError = keys.some(
+                    (k) => !k.startsWith("showcases")
+                );
+                const hasShowcaseError = keys.some((k) =>
+                    k.startsWith("showcases")
+                );
+                if (activeTab === "showcase" && hasGeneralError) {
+                    setActiveTab("general");
+                } else if (
+                    activeTab === "general" &&
+                    hasShowcaseError &&
+                    !hasGeneralError
+                ) {
+                    setActiveTab("showcase");
+                }
             },
         });
     };
 
     const confirmDelete = () => {
         if (!projectToDelete) return;
-        const title = projectToDelete.title;
         setDeleting(true);
 
         router.delete(route("admin.projects.destroy", projectToDelete.id), {
             preserveScroll: true,
             onSuccess: () => {
                 setProjectToDelete(null);
-                setDeleting(false);
-                notifyAdmin({
-                    type: "success",
-                    title: "Deleted",
-                    message: `Project "${title}" has been deleted.`,
-                });
             },
             onFinish: () => setDeleting(false),
         });
     };
 
-    return (
-        <AdminLayout
-            title="Projects"
-            headerActions={
-                <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={() => setCategoryModalOpen(true)}
-                        className="admin-btn-ghost inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium text-xs transition-colors cursor-pointer"
-                    >
-                        <HiOutlineTag className="w-4 h-4" />
-                        <span className="sm:hidden">Categories</span>
-                        <span className="hidden sm:inline">
-                            Custom Categories ({customCategories.length})
-                        </span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => openCreate("general")}
-                        className="admin-btn-primary inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
-                    >
-                        <HiOutlinePlus className="w-4 h-4" />
-                        <span className="sm:hidden">New</span>
-                        <span className="hidden sm:inline">New Project</span>
-                    </button>
-                </div>
-            }
-        >
-            <Head title="Projects - Zeefolio" />
+    const hasActiveFilter = filterType !== "all" || search.trim() !== "";
 
-            <div className="space-y-3.5 sm:space-y-4">
+    return (
+        <>
+            <Head title="Projects" />
+
+            <div className="space-y-3.5 sm:space-y-4 pb-20 sm:pb-0">
                 {/* Filter & Search Bar */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
-                    <div className="admin-pill-track inline-flex items-center gap-1 p-1 rounded-lg border overflow-x-auto max-w-full">
-                        {filterTabs.map((tab) => (
-                            <button
-                                key={tab.value}
-                                type="button"
-                                onClick={() => setFilterType(tab.value)}
-                                className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                                    filterType === tab.value
-                                        ? "admin-pill-active"
-                                        : "admin-pill-inactive"
-                                }`}
-                            >
-                                <span className="sm:hidden">
-                                    {tab.value === "all" ? "All" : tab.label}
-                                </span>
-                                <span className="hidden sm:inline">
-                                    {tab.label}
-                                </span>
-                            </button>
-                        ))}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+                    <div className="flex items-start sm:items-center gap-2 min-w-0 flex-1">
+                        <div className="admin-scroll-strip overflow-x-auto max-w-full min-w-0 pb-2 sm:-mb-2">
+                            <div className="admin-pill-track inline-flex items-center gap-1 p-1 rounded-lg border">
+                                {filterTabs.map((tab) => (
+                                    <button
+                                        key={tab.value}
+                                        type="button"
+                                        aria-pressed={filterType === tab.value}
+                                        onClick={() => setFilterType(tab.value)}
+                                        className={`px-2.5 sm:px-3 py-1.5 sm:py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                                            filterType === tab.value
+                                                ? "admin-pill-active"
+                                                : "admin-pill-inactive"
+                                        }`}
+                                    >
+                                        <span className="sm:hidden">
+                                            {tab.value === "all"
+                                                ? "All"
+                                                : tab.label}
+                                        </span>
+                                        <span className="hidden sm:inline">
+                                            {tab.label}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setCategoryModalOpen(true)}
+                            title="Manage Categories"
+                            aria-label="Manage Categories"
+                            className="admin-btn-ghost admin-btn-sm admin-btn-mobile-icon mt-0.5 sm:mt-0 inline-flex items-center justify-center font-medium transition-colors cursor-pointer shrink-0"
+                        >
+                            <HiOutlineTag className="w-4 h-4 text-[var(--indigo)] shrink-0" />
+                            <span className="hidden sm:inline">
+                                Categories ({customCategories.length})
+                            </span>
+                        </button>
                     </div>
 
-                    <SearchInput
-                        value={search}
-                        onChange={setSearch}
-                        placeholder="Search projects..."
-                    />
+                    <div className="flex items-center gap-2 shrink-0">
+                        <SearchInput
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="Search projects..."
+                            className="w-full sm:w-56 md:w-64"
+                        />
+
+                        <button
+                            type="button"
+                            onClick={() => openCreate("general")}
+                            className="admin-btn-primary admin-btn-sm hidden sm:inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                        >
+                            <HiOutlinePlus className="w-4 h-4 shrink-0" />
+                            <span>New Project</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Projects List */}
-                <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 overflow-hidden">
-                    {filteredProjects.length === 0 ? (
+                {filteredProjects.length === 0 ? (
+                    <div className="admin-card rounded-xl border overflow-hidden">
                         <EmptyState
-                            message="No projects matching your criteria."
-                            actionLabel="Create Project"
-                            onAction={() => openCreate("general")}
+                            message={
+                                hasActiveFilter
+                                    ? "No projects match your current filters."
+                                    : "No projects added yet."
+                            }
+                            actionLabel={
+                                hasActiveFilter
+                                    ? "Clear Filters"
+                                    : "Create Project"
+                            }
+                            onAction={() => {
+                                if (hasActiveFilter) {
+                                    setFilterType("all");
+                                    setSearch("");
+                                } else {
+                                    openCreate("general");
+                                }
+                            }}
                         />
-                    ) : (
-                        <div className="divide-y divide-zinc-800">
-                            {filteredProjects.map((project) => (
-                                <ProjectCardItem
-                                    key={project.id}
-                                    project={project}
-                                    getCategoryLabel={getCategoryLabel}
-                                    onEdit={openEdit}
-                                    onDelete={setProjectToDelete}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {filteredProjects.map((project) => (
+                            <ProjectCardItem
+                                key={project.id}
+                                project={project}
+                                getCategoryLabel={getCategoryLabel}
+                                onEdit={openEdit}
+                                onDelete={setProjectToDelete}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
+
+            <MobileFab
+                onClick={() => openCreate("general")}
+                label="New Project"
+            />
 
             <ProjectFormModal
                 open={modalOpen}
@@ -303,7 +356,11 @@ export default function ProjectsIndex({
                 imagePreview={imagePreview}
                 onToggleTechStack={toggleTechStack}
                 onImageChange={handleImageChange}
-                onClose={() => setModalOpen(false)}
+                onClose={() => {
+                    if (processing) return;
+                    revokeCoverBlob();
+                    setModalOpen(false);
+                }}
                 onSubmit={handleSubmit}
             />
 
@@ -332,12 +389,16 @@ export default function ProjectsIndex({
                 onClose={() => setCategoryModalOpen(false)}
                 globalCategories={globalCategories}
                 customCategories={customCategories}
-                onCategoryDeleted={(cat) => {
-                    if (filterType === cat.slug) {
+                onCategoryDeleted={(deletedCat) => {
+                    if (filterType === deletedCat.slug) {
                         setFilterType("all");
                     }
                 }}
             />
-        </AdminLayout>
+        </>
     );
 }
+
+ProjectsIndex.layout = (page) => (
+    <AdminLayout title="Projects">{page}</AdminLayout>
+);

@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
 import { Head, router, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
+import MobileFab from "@/Components/Admin/MobileFab";
 import { HiOutlinePlus } from "react-icons/hi2";
-import { notifyAdmin } from "@/Utils/notify";
 import EmptyState from "@/Components/UI/EmptyState";
 import ConfirmDeleteModal from "@/Components/UI/ConfirmDeleteModal";
-import ExperienceCardItem, {
+import ExperienceCardItem from "@/Components/Admin/Experiences/ExperienceCardItem";
+import ExperienceFormModal from "@/Components/Admin/Experiences/ExperienceFormModal";
+import {
     formatDateInput,
     parseSkillNames,
 } from "@/Components/Admin/Experiences/ExperienceCardItem";
-import ExperienceFormModal from "@/Components/Admin/Experiences/ExperienceFormModal";
 
 export default function ExperiencesIndex({ experiences = [], skills = [] }) {
     const [editingItem, setEditingItem] = useState(null);
@@ -90,7 +91,6 @@ export default function ExperiencesIndex({ experiences = [], skills = [] }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const roleLabel = `${data.position.trim()} @ ${data.company.trim()}`;
         const isEditing = Boolean(editingItem);
         const targetUrl = isEditing
             ? route("admin.experiences.update", editingItem.id)
@@ -102,70 +102,57 @@ export default function ExperiencesIndex({ experiences = [], skills = [] }) {
             onSuccess: () => {
                 setModalOpen(false);
                 reset();
-                notifyAdmin({
-                    type: "success",
-                    title: isEditing ? "Experience Updated" : "Experience Added",
-                    message: `Experience "${roleLabel}" has been ${isEditing ? "updated" : "added"}.`,
-                });
             },
         });
     };
 
     const confirmDelete = () => {
         if (!expToDelete) return;
-        const roleLabel = `${expToDelete.position} @ ${expToDelete.company}`;
         setDeleting(true);
         router.delete(route("admin.experiences.destroy", expToDelete.id), {
             preserveScroll: true,
             onSuccess: () => {
                 setExpToDelete(null);
-                notifyAdmin({
-                    type: "success",
-                    title: "Deleted",
-                    message: `Experience "${roleLabel}" has been deleted.`,
-                });
             },
             onFinish: () => setDeleting(false),
         });
     };
 
     return (
-        <AdminLayout
-            title="Experiences"
-            headerActions={
-                <button
-                    type="button"
-                    onClick={openCreate}
-                    className="admin-btn-primary inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
-                >
-                    <HiOutlinePlus className="w-4 h-4" />
-                    <span className="sm:hidden">Add</span>
-                    <span className="hidden sm:inline">Add Experience</span>
-                </button>
-            }
-        >
-            <Head title="Experiences - Zeefolio" />
+        <>
+            <Head title="Experiences" />
 
-            <div className="admin-card rounded-xl border overflow-hidden">
-                <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-zinc-800 flex items-center justify-between">
+            <div className="space-y-3.5 pb-20 sm:pb-0">
+                <div className="flex items-center justify-between gap-2 px-0.5">
                     <div>
-                        <h2 className="text-sm font-semibold text-zinc-100">
+                        <h2 className="text-sm font-semibold text-[var(--text)]">
                             Experiences ({experiences.length})
                         </h2>
-                        <p className="hidden sm:block text-xs text-zinc-500 mt-0.5">
+                        <p className="hidden sm:block text-xs text-[var(--text-muted)] mt-0.5">
                             Sorted automatically from newest to oldest.
                         </p>
                     </div>
+
+                    <button
+                        type="button"
+                        onClick={openCreate}
+                        className="admin-btn-primary admin-btn-sm hidden sm:inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                    >
+                        <HiOutlinePlus className="w-4 h-4 shrink-0" />
+                        <span>Add Experience</span>
+                    </button>
                 </div>
 
                 {experiences.length === 0 ? (
-                    <EmptyState
-                        message="No experiences added yet."
-                        actionLabel="Add First Experience"
-                        onAction={openCreate}
-                    />
+                    <div className="admin-card rounded-xl border overflow-hidden">
+                        <EmptyState
+                            message="No experiences added yet."
+                            actionLabel="Add Experience"
+                            onAction={openCreate}
+                        />
+                    </div>
                 ) : (
-                    <div className="divide-y divide-zinc-800">
+                    <div className="space-y-3">
                         {experiences.map((exp, idx) => (
                             <ExperienceCardItem
                                 key={exp.id}
@@ -180,6 +167,8 @@ export default function ExperiencesIndex({ experiences = [], skills = [] }) {
                 )}
             </div>
 
+            <MobileFab onClick={openCreate} label="Add Experience" />
+
             <ExperienceFormModal
                 open={modalOpen}
                 editingItem={editingItem}
@@ -189,7 +178,7 @@ export default function ExperiencesIndex({ experiences = [], skills = [] }) {
                 processing={processing}
                 skills={skills}
                 onToggleSkill={toggleSkill}
-                onClose={() => setModalOpen(false)}
+                onClose={() => !processing && setModalOpen(false)}
                 onSubmit={handleSubmit}
             />
 
@@ -206,6 +195,10 @@ export default function ExperiencesIndex({ experiences = [], skills = [] }) {
                 onClose={() => setExpToDelete(null)}
                 onConfirm={confirmDelete}
             />
-        </AdminLayout>
+        </>
     );
 }
+
+ExperiencesIndex.layout = (page) => (
+    <AdminLayout title="Experiences">{page}</AdminLayout>
+);

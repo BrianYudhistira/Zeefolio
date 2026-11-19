@@ -1,4 +1,5 @@
-import { HiXMark, HiOutlineCheck } from "react-icons/hi2";
+import { HiOutlineCheck } from "react-icons/hi2";
+import AdminModal from "@/Components/UI/AdminModal";
 import { getRoleConfig } from "@/Utils/roleHelpers";
 
 export default function PermissionFormModal({
@@ -10,8 +11,6 @@ export default function PermissionFormModal({
     onClose,
     onSubmit,
 }) {
-    if (!open) return null;
-
     const toggleRole = (roleName) => {
         if (roleName === "superadmin") return;
         const current = form.data.roles || [];
@@ -26,34 +25,32 @@ export default function PermissionFormModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-xl bg-zinc-900 border border-zinc-800 shadow-2xl overflow-hidden">
-                <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-                    <div>
-                        <h3 className="text-sm font-semibold text-zinc-100">
-                            {editingPermission
-                                ? `Edit Permission — ${editingPermission.name}`
-                                : "Create New Permission"}
-                        </h3>
-                        <p className="text-xs text-zinc-400 mt-0.5">
-                            Add a new access rule to assign to roles.
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-zinc-400 hover:text-zinc-100 cursor-pointer"
-                    >
-                        <HiXMark className="w-5 h-5" />
-                    </button>
-                </div>
-
-                <form onSubmit={onSubmit} className="p-5 space-y-4">
+        <AdminModal
+            open={open}
+            onClose={onClose}
+            title={
+                editingPermission
+                    ? `Edit Permission — ${editingPermission.name}`
+                    : "Create New Permission"
+            }
+            subtitle="Add a new access rule to assign to roles."
+            maxWidthClass="max-w-md"
+            preventClose={form.processing}
+        >
+            <form
+                onSubmit={onSubmit}
+                className="flex flex-col flex-1 min-h-0 overflow-hidden"
+            >
+                <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
                     <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-zinc-300">
+                        <label
+                            htmlFor="perm-name"
+                            className="block text-xs font-medium text-zinc-300"
+                        >
                             Permission Name
                         </label>
                         <input
+                            id="perm-name"
                             type="text"
                             required
                             value={form.data.name}
@@ -61,7 +58,8 @@ export default function PermissionFormModal({
                                 form.setData("name", e.target.value)
                             }
                             placeholder="e.g. articles.publish, reports.export"
-                            className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none font-mono"
+                            aria-invalid={Boolean(form.errors.name)}
+                            className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none font-mono transition-colors"
                         />
                         {form.errors.name && (
                             <p className="text-xs text-red-400">
@@ -71,10 +69,14 @@ export default function PermissionFormModal({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-zinc-300">
+                        <label
+                            htmlFor="perm-group"
+                            className="block text-xs font-medium text-zinc-300"
+                        >
                             Section / Group
                         </label>
                         <input
+                            id="perm-group"
                             type="text"
                             list="permission-groups-list"
                             value={form.data.group}
@@ -82,7 +84,8 @@ export default function PermissionFormModal({
                                 form.setData("group", e.target.value)
                             }
                             placeholder="e.g. Portfolio, Administration, Access Control"
-                            className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                            aria-invalid={Boolean(form.errors.group)}
+                            className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                         />
                         <datalist id="permission-groups-list">
                             {permissionGroups.map((grp) => (
@@ -97,17 +100,22 @@ export default function PermissionFormModal({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-zinc-300">
+                        <label
+                            htmlFor="perm-description"
+                            className="block text-xs font-medium text-zinc-300"
+                        >
                             Description
                         </label>
                         <input
+                            id="perm-description"
                             type="text"
                             value={form.data.description}
                             onChange={(e) =>
                                 form.setData("description", e.target.value)
                             }
                             placeholder="Describe what this allows a user to do..."
-                            className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                            aria-invalid={Boolean(form.errors.description)}
+                            className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                         />
                         {form.errors.description && (
                             <p className="text-xs text-red-400">
@@ -116,10 +124,10 @@ export default function PermissionFormModal({
                         )}
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="block text-xs font-medium text-zinc-300">
+                    <fieldset className="space-y-2">
+                        <legend className="text-xs font-medium text-zinc-300">
                             Assign to Roles
-                        </label>
+                        </legend>
                         <div className="flex flex-wrap gap-1.5 p-2.5 rounded-lg bg-zinc-950 border border-zinc-800">
                             {roles.map((role) => {
                                 const isSuper = role.name === "superadmin";
@@ -133,12 +141,12 @@ export default function PermissionFormModal({
                                         key={role.id}
                                         type="button"
                                         disabled={isSuper}
+                                        aria-pressed={selected}
+                                        data-selected={
+                                            selected ? "true" : "false"
+                                        }
                                         onClick={() => toggleRole(role.name)}
-                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
-                                            selected
-                                                ? "bg-zinc-800 text-zinc-100 border-emerald-500/40"
-                                                : "bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-zinc-300"
-                                        } ${
+                                        className={`admin-cat-chip inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--orange)] ${
                                             isSuper
                                                 ? "opacity-75 cursor-not-allowed"
                                                 : "cursor-pointer"
@@ -152,31 +160,31 @@ export default function PermissionFormModal({
                                 );
                             })}
                         </div>
-                    </div>
+                    </fieldset>
+                </div>
 
-                    <div className="pt-2 flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition-colors cursor-pointer"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={form.processing}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-xs font-medium text-zinc-100 transition-colors disabled:opacity-50 cursor-pointer"
-                        >
-                            {form.processing
-                                ? "Saving..."
-                                : editingPermission
-                                  ? "Save Permission"
-                                  : "Create Permission"}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <div className="px-4 sm:px-5 py-3.5 border-t border-zinc-800 bg-zinc-950/60 flex items-center justify-end gap-2 shrink-0">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={form.processing}
+                        className="admin-btn-secondary admin-btn-md inline-flex items-center justify-center font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={form.processing}
+                        className="admin-btn-primary admin-btn-md inline-flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        {form.processing
+                            ? "Saving..."
+                            : editingPermission
+                              ? "Save Changes"
+                              : "Create Permission"}
+                    </button>
+                </div>
+            </form>
+        </AdminModal>
     );
 }
-

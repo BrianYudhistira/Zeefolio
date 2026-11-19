@@ -1,0 +1,94 @@
+﻿/* ZeeFolio Admin Theme Tokens & Scoped Theme Transitions */
+.admin-theme {
+    --shell: #131315;
+    --bg: #0C0C0D;
+    --surface: #151517;
+    --surface-elevated: #1C1C20;
+
+    --border: #26262A;
+    --border-strong: #34343A;
+    --text: #F3F3F4;
+    --text-muted: #9A9AA2;
+
+    --orange: #F97316;
+    --orange-text: #FB923C;
+    --orange-soft: #FDBA74;
+    --btn-primary: #DF7F43;
+    --btn-primary-hover: #E98E55;
+    --on-accent: #0C0C0D;
+    --indigo: #818CF8;
+    --emerald: #22C55E;
+    --amber: #F59E0B;
+    --success: #22C55E;
+    --danger: #F87171;
+
+    color-scheme: dark;
+    background-color: var(--shell);
+    color: var(--text);
+}
+
+.admin-theme[data-theme="light"] {
+    --shell: #FFFFFF;
+    --bg: #F6F7F9;
+    --surface: #FFFFFF;
+    --surface-elevated: #F1F2F6;
+
+    --border: #E5E7EB;
+    --border-strong: #D0D5DD;
+    --text: #1D2028;
+    --text-muted: #525A69;
+
+    --orange: #BA4C15;
+    --orange-text: #9E3E0E;
+    --orange-soft: #9E3E0E;
+    --btn-primary: #B5531E;
+    --btn-primary-hover: #9E4414;
+    --on-accent: #FFFFFF;
+    --indigo: #3F35C2;
+    --emerald: #116E35;
+    --amber: #A34A08;
+    --success: #116E35;
+    --danger: #BE1E1E;
+
+    color-scheme: light;
+}
+
+
+/* Smooth synchronized color transition on key admin containers when toggling Light / Dark mode */
+.admin-theme[data-theme-transitioning="true"],
+.admin-theme[data-theme-transitioning="true"] .admin-main-shell,
+.admin-theme[data-theme-transitioning="true"] .admin-main-frame,
+.admin-theme[data-theme-transitioning="true"] .admin-sidebar,
+.admin-theme[data-theme-transitioning="true"] .admin-topbar,
+.admin-theme[data-theme-transitioning="true"] .admin-card,
+.admin-theme[data-theme-transitioning="true"] .admin-stat-card,
+.admin-theme[data-theme-transitioning="true"] .admin-well,
+.admin-theme[data-theme-transitioning="true"] .admin-input,
+.admin-theme[data-theme-transitioning="true"] .admin-pill-track,
+.admin-theme[data-theme-transitioning="true"] .admin-auth-card {
+    transition-property: background-color, border-color, color, box-shadow;
+    transition-duration: 280ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-theme[data-theme-transitioning="true"],
+    .admin-theme[data-theme-transitioning="true"] .admin-main-shell,
+    .admin-theme[data-theme-transitioning="true"] .admin-main-frame,
+    .admin-theme[data-theme-transitioning="true"] .admin-sidebar,
+    .admin-theme[data-theme-transitioning="true"] .admin-topbar,
+    .admin-theme[data-theme-transitioning="true"] .admin-card,
+    .admin-theme[data-theme-transitioning="true"] .admin-stat-card,
+    .admin-theme[data-theme-transitioning="true"] .admin-well,
+    .admin-theme[data-theme-transitioning="true"] .admin-input,
+    .admin-theme[data-theme-transitioning="true"] .admin-pill-track,
+    .admin-theme[data-theme-transitioning="true"] .admin-auth-card {
+        transition-duration: 0ms;
+    }
+}
+
+.admin-theme ::selection {
+    background-color: color-mix(in srgb, var(--orange) 28%, transparent);
+    color: var(--text);
+}
+

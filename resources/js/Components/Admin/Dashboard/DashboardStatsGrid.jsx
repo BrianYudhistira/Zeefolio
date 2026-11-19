@@ -1,4 +1,5 @@
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
+import { hasUserPermission } from "@/Utils/permissionHelpers";
 import {
     HiOutlineFolderOpen,
     HiOutlineCpuChip,
@@ -7,13 +8,18 @@ import {
 } from "react-icons/hi2";
 
 export default function DashboardStatsGrid({ stats = {} }) {
+    const user = usePage().props?.auth?.user;
+    const hasPerm = (permission) => hasUserPermission(user, permission);
+
     const statCards = [
         {
             label: "Total Projects",
             shortLabel: "Projects",
             value: stats.projects ?? 0,
             icon: HiOutlineFolderOpen,
-            href: route("admin.projects.index"),
+            href: hasPerm("projects.manage")
+                ? route("admin.projects.index")
+                : null,
             accent: "var(--orange)",
         },
         {
@@ -21,7 +27,9 @@ export default function DashboardStatsGrid({ stats = {} }) {
             shortLabel: "Skills",
             value: stats.skills ?? 0,
             icon: HiOutlineCpuChip,
-            href: route("admin.skills.index"),
+            href: hasPerm("skills.manage")
+                ? route("admin.skills.index")
+                : null,
             accent: "var(--indigo)",
         },
         {
@@ -29,7 +37,9 @@ export default function DashboardStatsGrid({ stats = {} }) {
             shortLabel: "Experiences",
             value: stats.experiences ?? 0,
             icon: HiOutlineBriefcase,
-            href: route("admin.experiences.index"),
+            href: hasPerm("experiences.manage")
+                ? route("admin.experiences.index")
+                : null,
             accent: "var(--emerald)",
         },
         {
@@ -37,13 +47,13 @@ export default function DashboardStatsGrid({ stats = {} }) {
             shortLabel: "Activity",
             value: stats.logs ?? 0,
             icon: HiOutlineClipboardDocumentList,
-            href: null,
+            href: hasPerm("logs.view") ? route("admin.logs.index") : null,
             accent: "var(--amber)",
         },
     ];
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             {statCards.map((item) => {
                 const Icon = item.icon;
                 const CardWrapper = item.href ? Link : "div";
@@ -52,7 +62,7 @@ export default function DashboardStatsGrid({ stats = {} }) {
                         key={item.label}
                         {...(item.href ? { href: item.href } : {})}
                         style={{ "--accent": item.accent }}
-                        className="admin-stat-card rounded-xl border p-3.5 sm:p-5 block"
+                        className="admin-stat-card rounded-xl border p-3.5 sm:p-5 block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--orange)]"
                     >
                         <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-3">
                             <span className="text-xs font-medium text-[var(--text-muted)] truncate min-w-0">
@@ -67,7 +77,7 @@ export default function DashboardStatsGrid({ stats = {} }) {
                                 <Icon className="w-4 h-4" />
                             </span>
                         </div>
-                        <p className="text-xl sm:text-3xl font-semibold tracking-tight text-[var(--text)]">
+                        <p className="text-xl sm:text-3xl font-semibold tracking-tight text-[var(--text)] tabular-nums">
                             {Number(item.value).toLocaleString()}
                         </p>
                     </CardWrapper>

@@ -99,9 +99,12 @@ class HandleInertiaRequests extends Middleware
             }
 
             try {
-                $portfolioSlug = app(PortfolioService::class)->getUserPortfolioSlug($user);
+                $portfolioMeta = app(PortfolioService::class)->getUserPortfolioMeta($user);
+                $portfolioSlug = $portfolioMeta['slug'];
+                $portfolioIsActive = (bool) $portfolioMeta['is_active'];
             } catch (\Throwable) {
                 $portfolioSlug = $user->username ?: 'brian-yudhistira';
+                $portfolioIsActive = false;
             }
 
             $sharedUser = [
@@ -121,6 +124,7 @@ class HandleInertiaRequests extends Middleware
                 'role_names' => $roleNames,
                 'permission_names' => $permissionNames,
                 'portfolio_slug' => $portfolioSlug,
+                'portfolio_is_active' => $portfolioIsActive,
             ];
         }
 

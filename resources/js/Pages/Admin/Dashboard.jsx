@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Head, router } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import ViewsChart from "@/Components/ViewsChart";
 import DashboardStatsGrid from "@/Components/Admin/Dashboard/DashboardStatsGrid";
 import RecentProjectsCard from "@/Components/Admin/Dashboard/RecentProjectsCard";
 import ProfileSummaryCard from "@/Components/Admin/Dashboard/ProfileSummaryCard";
-import PortfolioStatusCapsule from "@/Components/Admin/PortfolioStatusCapsule";
 
 export default function Dashboard({
     stats = {},
@@ -14,6 +13,7 @@ export default function Dashboard({
     recentProjects = [],
     recentLogs = [],
 }) {
+    const { auth } = usePage().props;
     const [loadingRange, setLoadingRange] = useState(false);
 
     const handleRangeChange = (nextRange) => {
@@ -25,25 +25,23 @@ export default function Dashboard({
                 showProgress: false,
                 preserveState: true,
                 preserveScroll: true,
-                only: ["viewAnalytics", "stats"],
+                replace: true,
+                only: ["viewAnalytics"],
                 onStart: () => setLoadingRange(true),
                 onFinish: () => setLoadingRange(false),
-            },
+            }
         );
     };
 
-    const portfolioSlug = portfolioSummary?.slug || "brian-yudhistira";
-
-    const headerActions = (
-        <PortfolioStatusCapsule
-            isActive={portfolioSummary.is_active}
-            slug={portfolioSlug}
-        />
-    );
+    const portfolioSlug =
+        portfolioSummary?.slug ||
+        auth?.user?.portfolio_slug ||
+        auth?.user?.username ||
+        null;
 
     return (
-        <AdminLayout title="Dashboard" headerActions={headerActions}>
-            <Head title="Dashboard - Zeefolio" />
+        <>
+            <Head title="Dashboard" />
 
             <div className="space-y-4 sm:space-y-6">
                 {/* Stats Grid */}
@@ -62,12 +60,11 @@ export default function Dashboard({
                         recentProjects={recentProjects}
                         portfolioSlug={portfolioSlug}
                     />
-                    <ProfileSummaryCard
-                        recentLogs={recentLogs}
-                        portfolioSummary={portfolioSummary}
-                    />
+                    <ProfileSummaryCard recentLogs={recentLogs} />
                 </div>
             </div>
-        </AdminLayout>
+        </>
     );
 }
+
+Dashboard.layout = (page) => <AdminLayout title="Dashboard">{page}</AdminLayout>;

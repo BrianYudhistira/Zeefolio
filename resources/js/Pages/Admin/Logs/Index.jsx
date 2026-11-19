@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import SearchInput from "@/Components/UI/SearchInput";
 import EmptyState from "@/Components/UI/EmptyState";
 import PaginationBar from "@/Components/UI/PaginationBar";
+import { formatTimeParts } from "@/Utils/dateHelpers";
 import {
     HiOutlineDocumentText,
     HiOutlineInformationCircle,
     HiOutlineExclamationTriangle,
     HiOutlineXCircle,
-    HiOutlineUser,
     HiOutlineGlobeAlt,
     HiOutlineFunnel,
     HiOutlineShieldCheck,
@@ -56,6 +56,21 @@ export default function LogsIndex({
     const [search, setSearch] = useState(filters.search || "");
     const [moduleFilter, setModuleFilter] = useState(filters.module || "all");
     const [typeFilter, setTypeFilter] = useState(filters.type || "all");
+    const searchTimerRef = useRef(null);
+
+    useEffect(() => {
+        setSearch(filters.search || "");
+        setModuleFilter(filters.module || "all");
+        setTypeFilter(filters.type || "all");
+    }, [filters.search, filters.module, filters.type]);
+
+    useEffect(() => {
+        return () => {
+            if (searchTimerRef.current) {
+                clearTimeout(searchTimerRef.current);
+            }
+        };
+    }, []);
 
     const logRows = Array.isArray(logs?.data) ? logs.data : [];
     const paginationLinks = Array.isArray(logs?.links) ? logs.links : [];
@@ -77,6 +92,7 @@ export default function LogsIndex({
         });
 
         router.get(route("admin.logs.index"), query, {
+            only: ["logs", "filters"],
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -85,65 +101,125 @@ export default function LogsIndex({
 
     const handleSearchChange = (value) => {
         setSearch(value);
-        applyFilters({ search: value });
+        if (searchTimerRef.current) {
+            clearTimeout(searchTimerRef.current);
+        }
+
+        if (value === "") {
+            applyFilters({ search: "" });
+            return;
+        }
+
+        searchTimerRef.current = setTimeout(() => {
+            applyFilters({ search: value });
+        }, 300);
     };
 
     const handleModuleChange = (e) => {
+        if (searchTimerRef.current) {
+            clearTimeout(searchTimerRef.current);
+        }
         const val = e.target.value;
         setModuleFilter(val);
         applyFilters({ module: val });
     };
 
     const handleTypeChange = (e) => {
+        if (searchTimerRef.current) {
+            clearTimeout(searchTimerRef.current);
+        }
         const val = e.target.value;
         setTypeFilter(val);
         applyFilters({ type: val });
     };
 
-    const formatDateTime = (iso) => {
-        if (!iso) return "-";
-        const d = new Date(iso);
-        return d.toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-        });
+    const handleStatFilterClick = (targetType) => {
+        if (searchTimerRef.current) {
+            clearTimeout(searchTimerRef.current);
+        }
+        const nextType =
+            targetType === "all"
+                ? "all"
+                : typeFilter === targetType
+                  ? "all"
+                  : targetType;
+        if (nextType === typeFilter) return;
+        setTypeFilter(nextType);
+        applyFilters({ type: nextType });
     };
 
     return (
-        <AdminLayout title="Activity Logs">
-            <Head title="Activity Logs - Zeefolio" />
+        <>
+            <Head title="Activity Logs" />
 
             <div className="space-y-5">
                 {/* Summary Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
                     {[
-                        { label: "Total", value: stats.total ?? 0, accent: "var(--orange)" },
-                        { label: "Admin", value: stats.admin ?? 0, accent: "var(--indigo)" },
-                        { label: "Normal", value: stats.info ?? 0, accent: "var(--emerald)" },
-                        { label: "Warnings", value: stats.warning ?? 0, accent: "var(--amber)" },
-                        { label: "Errors", value: stats.error ?? 0, accent: "var(--danger)" },
-                    ].map((stat) => (
-                        <div
-                            key={stat.label}
-                            style={{ "--accent": stat.accent }}
-                            className="admin-stat-card rounded-xl border p-4"
-                        >
-                            <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
-                                <span
-                                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                                    style={{ backgroundColor: stat.accent }}
-                                />
-                                <span>{stat.label}</span>
-                            </p>
-                            <p className="text-xl sm:text-2xl font-bold text-[var(--text)] mt-1">
-                                {stat.value}
-                            </p>
-                        </div>
-                    ))}
+                        {
+                            filterType: "all",
+                            label: "Total",
+                            value: stats.total ?? 0,
+                            accent: "var(--orange)",
+                        },
+                        {
+                            filterType: "admin",
+                            label: "Admin",
+                            value: stats.admin ?? 0,
+                            accent: "var(--indigo)",
+                        },
+                        {
+                            filterType: "info",
+                            label: "Normal",
+                            value: stats.info ?? 0,
+                            accent: "var(--emerald)",
+                        },
+                        {
+                            filterType: "warning",
+                            label: "Warnings",
+                            value: stats.warning ?? 0,
+                            accent: "var(--amber)",
+                        },
+                        {
+                            filterType: "error",
+                            label: "Errors",
+                            value: stats.error ?? 0,
+                            accent: "var(--danger)",
+                        },
+                    ].map((stat, idx) => {
+                        const isActive = typeFilter === stat.filterType;
+                        return (
+                            <button
+                                key={stat.label}
+                                type="button"
+                                onClick={() =>
+                                    handleStatFilterClick(stat.filterType)
+                                }
+                                data-active={isActive ? "true" : "false"}
+                                aria-pressed={isActive}
+                                title={
+                                    stat.filterType === "all"
+                                        ? "Show all activity logs"
+                                        : `Filter by ${stat.label}`
+                                }
+                                style={{ "--accent": stat.accent }}
+                                className={`admin-stat-card rounded-xl border p-3.5 sm:p-4 text-left w-full cursor-pointer active:scale-[0.99] ${
+                                    idx === 0 ? "col-span-2 sm:col-span-1" : ""
+                                }`}
+                            >
+                                <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                                    <span
+                                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                                        style={{ backgroundColor: stat.accent }}
+                                    />
+                                    <span>{stat.label}</span>
+                                </p>
+                                <p className="text-xl sm:text-2xl font-bold text-[var(--text)] mt-1 tabular-nums">
+                                    {stat.value}
+                                </p>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Filters Bar */}
@@ -158,11 +234,12 @@ export default function LogsIndex({
 
                     <div className="flex items-center gap-2.5">
                         <div className="relative flex-1 sm:flex-initial">
-                            <HiOutlineFunnel className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <HiOutlineFunnel className="w-3.5 h-3.5 text-[var(--indigo)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                             <select
+                                aria-label="Filter by section"
                                 value={moduleFilter}
                                 onChange={handleModuleChange}
-                                className="w-full sm:w-40 pl-8 pr-7 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:border-zinc-600 focus:outline-none"
+                                className="admin-input w-full sm:w-40 pl-8 pr-7 py-2.5 sm:py-2 rounded-lg border text-xs focus:outline-none"
                             >
                                 <option value="all">All Sections</option>
                                 {modules.map((mod) => (
@@ -174,9 +251,10 @@ export default function LogsIndex({
                         </div>
 
                         <select
+                            aria-label="Filter by type"
                             value={typeFilter}
                             onChange={handleTypeChange}
-                            className="flex-1 sm:flex-initial sm:w-40 px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:border-zinc-600 focus:outline-none"
+                            className="admin-input flex-1 sm:flex-initial sm:w-40 px-3 py-2.5 sm:py-2 rounded-lg border text-xs focus:outline-none"
                         >
                             <option value="all">All Types</option>
                             <option value="admin">Admin</option>
@@ -189,17 +267,34 @@ export default function LogsIndex({
 
                 {/* Logs Table / List */}
                 <div className="admin-card rounded-xl border overflow-hidden">
-                    <div className="px-4 sm:px-5 py-3.5 border-b border-zinc-800 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <HiOutlineDocumentText className="w-4 h-4 text-zinc-400" />
-                            <h2 className="text-sm font-semibold text-zinc-100">
+                    <div className="px-5 sm:px-6 py-3.5 border-b border-[var(--border)] flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <HiOutlineDocumentText className="w-4 h-4 text-[var(--amber)] shrink-0" />
+                            <h2 className="text-sm font-semibold text-zinc-100 truncate">
                                 Activity History
                             </h2>
                         </div>
-                        <span className="text-xs text-zinc-500 font-mono">
-                            Showing {logs.from || 0}–{logs.to || 0} of{" "}
-                            {logs.total || 0}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                            {logRows.length > 0 && (
+                                <span className="md:hidden text-[10px] font-mono text-[var(--text-muted)] px-1.5 py-0.5 rounded border border-[var(--border)]">
+                                    Swipe ↔
+                                </span>
+                            )}
+                            <span className="text-[11px] sm:text-xs text-zinc-500 font-mono tabular-nums">
+                                <span className="sm:hidden">
+                                    {logRows.length > 0
+                                        ? `${logs.from || 0}–${logs.to || 0} / ${logs.total || 0}`
+                                        : "0 / 0"}
+                                </span>
+                                <span className="hidden sm:inline">
+                                    Showing{" "}
+                                    {logRows.length > 0
+                                        ? `${logs.from || 0}–${logs.to || 0}`
+                                        : "0–0"}{" "}
+                                    of {logRows.length > 0 ? logs.total || 0 : 0}
+                                </span>
+                            </span>
+                        </div>
                     </div>
 
                     {logRows.length === 0 ? (
@@ -212,198 +307,153 @@ export default function LogsIndex({
                         </div>
                     ) : (
                         <>
-                            {/* Desktop Table */}
-                            <div className="hidden md:block overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="border-b border-zinc-800/80 text-[11px] font-mono uppercase text-zinc-500 bg-zinc-950/40">
-                                            <th className="py-3 px-4">ID</th>
-                                            <th className="py-3 px-4">
-                                                User
-                                            </th>
-                                            <th className="py-3 px-4">
-                                                Section / Type
-                                            </th>
-                                            <th className="py-3 px-4">
-                                                Activity
-                                            </th>
-                                            <th className="py-3 px-4">
-                                                Location & IP
-                                            </th>
-                                            <th className="py-3 px-4 text-right">
-                                                Time
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-zinc-800/70 text-xs">
-                                        {logRows.map((log) => {
-                                            const typeMeta = getTypeStyle(
-                                                log.type
-                                            );
-                                            const TypeIcon = typeMeta.icon;
 
-                                            return (
-                                                <tr
-                                                    key={log.id}
-                                                    className="hover:bg-zinc-800/30 transition-colors align-top"
+                        <div className="admin-scroll-strip overflow-x-auto pb-1.5">
+                            <table className="w-full min-w-[680px] text-left border-collapse">
+                                <thead>
+                                    <tr className="admin-table-head border-b text-[11px] font-mono uppercase">
+                                        <th className="py-3 px-4 sm:py-3.5 sm:px-5 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6 whitespace-nowrap">
+                                            Time
+                                        </th>
+                                        <th className="py-3 px-4 sm:py-3.5 sm:px-5 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6 whitespace-nowrap">
+                                            User
+                                        </th>
+                                        <th className="py-3 px-4 sm:py-3.5 sm:px-5 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6 whitespace-nowrap">
+                                            Section / Type
+                                        </th>
+                                        <th className="py-3 px-4 sm:py-3.5 sm:px-5 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6 whitespace-nowrap">
+                                            Activity
+                                        </th>
+                                        <th className="py-3 px-4 sm:py-3.5 sm:px-5 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6 whitespace-nowrap">
+                                            Location & IP
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[var(--border)] text-xs">
+                                    {logRows.map((log) => {
+                                        const typeMeta = getTypeStyle(
+                                            log.type
+                                        );
+                                        const TypeIcon = typeMeta.icon;
+                                        const timeParts = formatTimeParts(
+                                            log.created_at
+                                        );
+
+                                        return (
+                                            <tr
+                                                key={log.id}
+                                                className="hover:bg-zinc-800/30 transition-colors align-top"
+                                            >
+                                                <td
+                                                    className="py-3.5 px-4 sm:py-4 sm:px-5 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6 font-mono tabular-nums whitespace-nowrap"
+                                                    title={
+                                                        timeParts
+                                                            ? `${timeParts.date}, ${timeParts.time}`
+                                                            : undefined
+                                                    }
                                                 >
-                                                    <td className="py-3.5 px-4 font-mono text-zinc-500 whitespace-nowrap">
-                                                        #{log.id}
-                                                    </td>
-
-                                                    <td className="py-3.5 px-4 whitespace-nowrap">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-[10px] text-zinc-300">
-                                                                ID:{" "}
-                                                                {log.user_id ??
-                                                                    "-"}
-                                                            </span>
-                                                            <div className="min-w-0">
-                                                                <p className="font-medium text-zinc-100 truncate">
-                                                                    {log.user
-                                                                        ?.name ||
-                                                                        (log.user_id
-                                                                            ? `Deleted User #${log.user_id}`
-                                                                            : "Guest / System")}
-                                                                </p>
-                                                                {log.user
-                                                                    ?.email && (
-                                                                    <p className="text-[11px] text-zinc-500 truncate">
-                                                                        {
-                                                                            log
-                                                                                .user
-                                                                                .email
-                                                                        }
-                                                                    </p>
-                                                                )}
+                                                    {timeParts ? (
+                                                        <div>
+                                                            <div className="text-[11px] font-medium text-zinc-200">
+                                                                {timeParts.date}
+                                                            </div>
+                                                            <div className="text-[11px] text-zinc-500 mt-0.5">
+                                                                {timeParts.time}
                                                             </div>
                                                         </div>
-                                                    </td>
-
-                                                    <td className="py-3.5 px-4 whitespace-nowrap">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="px-2 py-0.5 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-200 font-medium text-[11px]">
-                                                                {log.module ||
-                                                                    "System"}
-                                                            </span>
-                                                            <span
-                                                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-mono uppercase ${typeMeta.badge}`}
-                                                            >
-                                                                <TypeIcon className="w-3 h-3" />
-                                                                {typeMeta.label}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-
-                                                    <td className="py-3.5 px-4 text-zinc-200 max-w-md">
-                                                        <p className="leading-relaxed break-words">
-                                                            {log.message}
-                                                        </p>
-                                                        {log.user_agent && (
-                                                            <p
-                                                                className="text-[10px] text-zinc-500 truncate max-w-xs mt-0.5"
-                                                                title={
-                                                                    log.user_agent
-                                                                }
-                                                            >
-                                                                {log.user_agent}
-                                                            </p>
-                                                        )}
-                                                    </td>
-
-                                                    <td className="py-3.5 px-4 whitespace-nowrap text-zinc-400 font-mono text-[11px]">
-                                                        <div>
-                                                            {log.ip_address ||
-                                                                "-"}
-                                                        </div>
-                                                        <div className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5 font-sans">
-                                                            <HiOutlineGlobeAlt className="w-3 h-3" />
-                                                            <span>
-                                                                {log.location ||
-                                                                    "Unknown"}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-
-                                                    <td className="py-3.5 px-4 whitespace-nowrap text-right font-mono text-[11px] text-zinc-400">
-                                                        {formatDateTime(
-                                                            log.created_at
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Mobile Card List */}
-                            <div className="md:hidden divide-y divide-zinc-800/70">
-                                {logRows.map((log) => {
-                                    const typeMeta = getTypeStyle(log.type);
-                                    const TypeIcon = typeMeta.icon;
-
-                                    return (
-                                        <div
-                                            key={log.id}
-                                            className="p-4 space-y-2.5"
-                                        >
-                                            <div className="flex items-center justify-between gap-2">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="font-mono text-[11px] text-zinc-500">
-                                                        #{log.id}
-                                                    </span>
-                                                    <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px] font-medium">
-                                                        {log.module || "System"}
-                                                    </span>
-                                                    <span
-                                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-mono uppercase ${typeMeta.badge}`}
-                                                    >
-                                                        <TypeIcon className="w-3 h-3" />
-                                                        {typeMeta.label}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[11px] font-mono text-zinc-500">
-                                                    {formatDateTime(
-                                                        log.created_at
+                                                    ) : (
+                                                        <span className="text-[11px] text-zinc-500">
+                                                            -
+                                                        </span>
                                                     )}
-                                                </span>
-                                            </div>
+                                                </td>
 
-                                            <p className="text-xs text-zinc-100 leading-relaxed">
-                                                {log.message}
-                                            </p>
+                                                <td className="py-3.5 px-4 sm:py-4 sm:px-5 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6 whitespace-nowrap">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-[10px] text-zinc-300 tabular-nums">
+                                                            ID:{" "}
+                                                            {log.user_id ?? "-"}
+                                                        </span>
+                                                        <div className="min-w-0">
+                                                            <p className="font-medium text-zinc-100 truncate">
+                                                                {log.user
+                                                                    ?.name ||
+                                                                    (log.user_id
+                                                                        ? `Deleted User #${log.user_id}`
+                                                                        : "Guest / System")}
+                                                            </p>
+                                                            {log.user
+                                                                ?.email && (
+                                                                <p className="text-[11px] text-zinc-500 truncate">
+                                                                    {
+                                                                        log.user
+                                                                            .email
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
 
-                                            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-zinc-400">
-                                                <div className="flex items-center gap-1.5">
-                                                    <HiOutlineUser className="w-3.5 h-3.5 text-zinc-500" />
-                                                    <span className="px-1.5 py-0.2 rounded bg-zinc-800 border border-zinc-700 font-mono text-[10px] text-zinc-300">
-                                                        ID:{" "}
-                                                        {log.user_id ?? "-"}
-                                                    </span>
-                                                    <span className="text-zinc-200 font-medium">
-                                                        {log.user?.name ||
-                                                            (log.user_id
-                                                                ? `Deleted User #${log.user_id}`
-                                                                : "Guest / System")}
-                                                    </span>
-                                                </div>
+                                                <td className="py-3.5 px-4 sm:py-4 sm:px-5 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6 whitespace-nowrap">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-200 font-medium text-[11px]">
+                                                            {log.module ||
+                                                                "System"}
+                                                        </span>
+                                                        <span
+                                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-mono uppercase ${typeMeta.badge}`}
+                                                        >
+                                                            <TypeIcon className="w-3 h-3" />
+                                                            {typeMeta.label}
+                                                        </span>
+                                                    </div>
+                                                </td>
 
-                                                <span className="font-mono text-[10px] text-zinc-500">
-                                                    {log.ip_address || "-"} (
-                                                    {log.location || "Unknown"})
-                                                </span>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                                <td className="py-3.5 px-4 sm:py-4 sm:px-5 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6 text-zinc-200 min-w-[220px] max-w-md">
+                                                    <p className="leading-relaxed break-words">
+                                                        {log.message}
+                                                    </p>
+                                                    {log.user_agent && (
+                                                        <p
+                                                            className="text-[10px] text-zinc-500 truncate max-w-xs mt-0.5"
+                                                            title={
+                                                                log.user_agent
+                                                            }
+                                                        >
+                                                            {log.user_agent}
+                                                        </p>
+                                                    )}
+                                                </td>
+
+                                                <td className="py-3.5 px-4 sm:py-4 sm:px-5 first:pl-5 last:pr-5 sm:first:pl-6 sm:last:pr-6 whitespace-nowrap text-zinc-400 font-mono text-[11px] tabular-nums">
+                                                    <div>
+                                                        {log.ip_address || "-"}
+                                                    </div>
+                                                    <div className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5 font-sans">
+                                                        <HiOutlineGlobeAlt className="w-3 h-3" />
+                                                        <span>
+                                                            {log.location ||
+                                                                "Unknown"}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                            <PaginationBar links={paginationLinks} />
                         </>
                     )}
-
-                    <PaginationBar links={paginationLinks} />
                 </div>
             </div>
-        </AdminLayout>
+        </>
     );
 }
+
+LogsIndex.layout = (page) => (
+    <AdminLayout title="Activity Logs">{page}</AdminLayout>
+);

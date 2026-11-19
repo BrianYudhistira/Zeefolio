@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { router } from "@inertiajs/react";
 import {
     HiOutlineShieldCheck,
@@ -11,7 +11,7 @@ import {
     HiOutlineLockClosed,
 } from "react-icons/hi2";
 import { getRoleConfig } from "@/Utils/roleHelpers";
-import { notifyAdmin } from "@/Utils/notify";
+import { groupPermissions } from "@/Utils/permissionHelpers";
 
 export default function RolesMatrixSection({
     roles = [],
@@ -24,6 +24,7 @@ export default function RolesMatrixSection({
 }) {
     const [selectedPerms, setSelectedPerms] = useState([]);
     const [savingMatrix, setSavingMatrix] = useState(false);
+    const matrixRef = useRef(null);
 
     useEffect(() => {
         if (selectedRole) {
@@ -31,12 +32,7 @@ export default function RolesMatrixSection({
         }
     }, [selectedRole]);
 
-    const groupedPermissions = permissions.reduce((acc, perm) => {
-        const grp = perm.group || "General";
-        if (!acc[grp]) acc[grp] = [];
-        acc[grp].push(perm);
-        return acc;
-    }, {});
+    const groupedPermissions = groupPermissions(permissions);
 
     const isSuperAdminRole = selectedRole?.name === "superadmin";
 
@@ -46,6 +42,28 @@ export default function RolesMatrixSection({
         if (orig.size !== selectedPerms.length) return true;
         return selectedPerms.some((p) => !orig.has(p));
     })();
+
+    const handleRoleClick = (role) => {
+        if (
+            hasUnsavedChanges &&
+            role.id !== selectedRole?.id &&
+            typeof window !== "undefined" &&
+            !window.confirm(
+                "You have unsaved permission changes for this role. Discard them?"
+            )
+        ) {
+            return;
+        }
+        onSelectRole(role);
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+            requestAnimationFrame(() => {
+                matrixRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            });
+        }
+    };
 
     const togglePermission = (permName) => {
         if (isSuperAdminRole) return;
@@ -83,14 +101,6 @@ export default function RolesMatrixSection({
             },
             {
                 preserveScroll: true,
-                onSuccess: () => {
-                    setSavingMatrix(false);
-                    notifyAdmin({
-                        type: "success",
-                        title: "Permissions Updated",
-                        message: `Updated permissions for role "${selectedRole.name}".`,
-                    });
-                },
                 onFinish: () => setSavingMatrix(false),
             }
         );
@@ -99,7 +109,7 @@ export default function RolesMatrixSection({
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
             {/* Left Column: Roles List */}
-            <div className="lg:col-span-4 rounded-xl bg-zinc-900/60 border border-zinc-800 overflow-hidden">
+            <div className="lg:col-span-4 admin-card rounded-xl border overflow-hidden">
                 <div className="p-4 border-b border-zinc-800 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <HiOutlineShieldCheck className="w-4 h-4 text-amber-400" />
@@ -110,9 +120,9 @@ export default function RolesMatrixSection({
                     <button
                         type="button"
                         onClick={onOpenCreateRole}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs font-medium transition-colors cursor-pointer"
+                        className="admin-btn-primary admin-btn-sm hidden sm:inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
                     >
-                        <HiOutlinePlus className="w-3.5 h-3.5" />
+                        <HiOutlinePlus className="w-3.5 h-3.5 shrink-0" />
                         <span>New Role</span>
                     </button>
                 </div>
@@ -125,50 +135,78 @@ export default function RolesMatrixSection({
                         return (
                             <div
                                 key={role.id}
-                                onClick={() => onSelectRole(role)}
-                                className={`p-3.5 sm:p-4 transition-colors cursor-pointer ${
+                                className={`p-3.5 sm:p-4 transition-colors ${
                                     isSelected
                                         ? "bg-zinc-800/80"
                                         : "hover:bg-zinc-800/30"
                                 }`}
                             >
                                 <div className="flex items-start justify-between gap-2">
-                                    <div className="space-y-1 min-w-0">
-                                        <div className="flex flex-wrap items-center gap-1.5">
-                                            <span
-                                                className={`px-2 py-0.5 rounded border text-[11px] font-medium ${roleCfg.badgeClass}`}
-                                            >
-                                                {roleCfg.label}
-                                            </span>
-                                            <span className="text-[11px] font-mono text-zinc-500">
-                                                {role.name}
-                                            </span>
-                                            {role.is_system ? (
-                                                <span className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] text-zinc-400">
-                                                    System
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRoleClick(role)}
+                                        aria-current={
+                                            isSelected ? "true" : undefined
+                                        }
+                                        className="flex-1 min-w-0 text-left cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--orange)]"
+                                    >
+                                        <div className="space-y-1 min-w-0">
+                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                <span
+                                                    className={`px-2 py-0.5 rounded border text-[11px] font-medium ${roleCfg.badgeClass}`}
+                                                >
+                                                    {roleCfg.label}
                                                 </span>
-                                            ) : (
-                                                <span className="px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-[10px] text-purple-300">
-                                                    Custom
+                                                <span className="text-[11px] font-mono text-zinc-500">
+                                                    {role.name}
                                                 </span>
+                                                {role.is_system ? (
+                                                    <span className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] text-zinc-400">
+                                                        System
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-[10px] text-purple-300">
+                                                        Custom
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {role.description && (
+                                                <p className="text-xs text-zinc-400 line-clamp-2">
+                                                    {role.description}
+                                                </p>
                                             )}
                                         </div>
-                                        {role.description && (
-                                            <p className="text-xs text-zinc-400 line-clamp-2">
-                                                {role.description}
-                                            </p>
-                                        )}
-                                    </div>
 
-                                    <div
-                                        className="flex items-center gap-1 shrink-0"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
+                                        <div className="mt-2.5 flex items-center gap-3 text-[11px] text-zinc-500">
+                                            <span className="inline-flex items-center gap-1">
+                                                <HiOutlineUsers className="w-3.5 h-3.5" />
+                                                <span>
+                                                    {role.users_count}{" "}
+                                                    {role.users_count === 1
+                                                        ? "user"
+                                                        : "users"}
+                                                </span>
+                                            </span>
+                                            <span className="inline-flex items-center gap-1">
+                                                <HiOutlineKey className="w-3.5 h-3.5" />
+                                                <span>
+                                                    {role.name === "superadmin"
+                                                        ? `All (${permissions.length})`
+                                                        : role.permissions
+                                                              ?.length || 0}{" "}
+                                                    permissions
+                                                </span>
+                                            </span>
+                                        </div>
+                                    </button>
+
+                                    <div className="flex items-center gap-1 shrink-0">
                                         <button
                                             type="button"
                                             onClick={() => onOpenEditRole(role)}
-                                            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+                                            aria-label={`Edit role ${roleCfg.label}`}
                                             title="Edit role"
+                                            className="admin-icon-btn inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
                                         >
                                             <HiOutlinePencilSquare className="w-4 h-4" />
                                         </button>
@@ -178,35 +216,14 @@ export default function RolesMatrixSection({
                                                 onClick={() =>
                                                     onDeleteRole(role)
                                                 }
-                                                className="p-1.5 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                                                aria-label={`Delete custom role ${roleCfg.label}`}
                                                 title="Delete custom role"
+                                                className="admin-icon-btn inline-flex items-center justify-center text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                                             >
                                                 <HiOutlineTrash className="w-4 h-4" />
                                             </button>
                                         )}
                                     </div>
-                                </div>
-
-                                <div className="mt-2.5 flex items-center gap-3 text-[11px] text-zinc-500">
-                                    <span className="inline-flex items-center gap-1">
-                                        <HiOutlineUsers className="w-3.5 h-3.5" />
-                                        <span>
-                                            {role.users_count}{" "}
-                                            {role.users_count === 1
-                                                ? "user"
-                                                : "users"}
-                                        </span>
-                                    </span>
-                                    <span className="inline-flex items-center gap-1">
-                                        <HiOutlineKey className="w-3.5 h-3.5" />
-                                        <span>
-                                            {role.name === "superadmin"
-                                                ? `All (${permissions.length})`
-                                                : role.permissions?.length ||
-                                                  0}{" "}
-                                            permissions
-                                        </span>
-                                    </span>
                                 </div>
                             </div>
                         );
@@ -215,10 +232,13 @@ export default function RolesMatrixSection({
             </div>
 
             {/* Right Column: Interactive Permission Assignment Matrix */}
-            <div className="lg:col-span-8 rounded-xl bg-zinc-900/60 border border-zinc-800 overflow-hidden">
+            <div
+                ref={matrixRef}
+                className="lg:col-span-8 scroll-mt-20 admin-card rounded-xl border overflow-hidden"
+            >
                 {!selectedRole ? (
                     <div className="p-12 text-center text-xs text-zinc-500">
-                        Select a role on the left to configure its permissions.
+                        Select a role to configure its permissions.
                     </div>
                 ) : (
                     <>
@@ -234,7 +254,7 @@ export default function RolesMatrixSection({
                                             ).label
                                         }
                                     </h3>
-                                    <span className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[11px] font-mono text-zinc-400">
+                                    <span className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[11px] font-mono text-zinc-400 tabular-nums">
                                         {isSuperAdminRole
                                             ? `${permissions.length} / ${permissions.length}`
                                             : `${selectedPerms.length} / ${permissions.length}`}{" "}
@@ -243,13 +263,13 @@ export default function RolesMatrixSection({
                                 </div>
                                 <p className="text-xs text-zinc-400 mt-0.5">
                                     {isSuperAdminRole
-                                        ? "Super Admin automatically has unrestricted access to all permissions via Gate::before."
-                                        : "Check or uncheck permissions below and click Save Permissions to apply changes immediately."}
+                                        ? "Super Admin has full unrestricted access to all system permissions."
+                                        : "Check or uncheck permissions below and click Save to apply changes immediately."}
                                 </p>
                             </div>
 
                             {!isSuperAdminRole && (
-                                <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex flex-wrap items-center gap-2 shrink-0">
                                     <button
                                         type="button"
                                         onClick={() =>
@@ -257,14 +277,14 @@ export default function RolesMatrixSection({
                                                 permissions.map((p) => p.name)
                                             )
                                         }
-                                        className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-300 transition-colors cursor-pointer"
+                                        className="admin-btn-ghost admin-btn-sm inline-flex items-center justify-center font-medium transition-colors cursor-pointer"
                                     >
                                         Select All
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setSelectedPerms([])}
-                                        className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-400 transition-colors cursor-pointer"
+                                        className="admin-btn-ghost admin-btn-sm inline-flex items-center justify-center font-medium transition-colors cursor-pointer"
                                     >
                                         Clear
                                     </button>
@@ -274,13 +294,17 @@ export default function RolesMatrixSection({
                                             savingMatrix || !hasUnsavedChanges
                                         }
                                         onClick={handleSaveMatrix}
-                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-medium transition-colors disabled:opacity-40 cursor-pointer"
+                                        className={`admin-btn-sm inline-flex items-center justify-center font-medium transition-colors ${
+                                            hasUnsavedChanges || savingMatrix
+                                                ? "admin-btn-primary cursor-pointer"
+                                                : "admin-btn-ghost opacity-55 cursor-not-allowed"
+                                        }`}
                                     >
                                         <HiOutlineCheck className="w-4 h-4" />
                                         <span>
                                             {savingMatrix
                                                 ? "Saving..."
-                                                : "Save Permissions"}
+                                                : "Save"}
                                         </span>
                                     </button>
                                 </div>
@@ -318,7 +342,7 @@ export default function RolesMatrixSection({
                                                                 groupPerms
                                                             )
                                                         }
-                                                        className="text-[11px] text-zinc-400 hover:text-zinc-200 underline cursor-pointer"
+                                                        className="px-2 py-1 rounded text-[11px] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 underline cursor-pointer transition-colors"
                                                     >
                                                         {allChecked
                                                             ? "Unselect group"
@@ -338,12 +362,7 @@ export default function RolesMatrixSection({
                                                     return (
                                                         <label
                                                             key={perm.id}
-                                                            onClick={() =>
-                                                                togglePermission(
-                                                                    perm.name
-                                                                )
-                                                            }
-                                                            className={`p-3 rounded-lg border transition-colors flex items-start gap-3 ${
+                                                            className={`p-3 rounded-lg border transition-colors flex items-start gap-3 focus-within:ring-2 focus-within:ring-[var(--orange)] ${
                                                                 isSuperAdminRole
                                                                     ? "bg-zinc-900/50 border-zinc-800/80 opacity-80 cursor-not-allowed"
                                                                     : checked
@@ -351,6 +370,19 @@ export default function RolesMatrixSection({
                                                                       : "bg-zinc-900/30 border-zinc-800/70 hover:border-zinc-700 cursor-pointer"
                                                             }`}
                                                         >
+                                                            <input
+                                                                type="checkbox"
+                                                                className="sr-only peer"
+                                                                checked={checked}
+                                                                disabled={
+                                                                    isSuperAdminRole
+                                                                }
+                                                                onChange={() =>
+                                                                    togglePermission(
+                                                                        perm.name
+                                                                    )
+                                                                }
+                                                            />
                                                             <div
                                                                 className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center border shrink-0 transition-colors ${
                                                                     checked

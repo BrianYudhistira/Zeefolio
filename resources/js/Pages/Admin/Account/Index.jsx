@@ -1,15 +1,23 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Head, router, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import ProfileInfoForm from "@/Components/Admin/Account/ProfileInfoForm";
 import UpdatePasswordForm from "@/Components/Admin/Account/UpdatePasswordForm";
 import DeleteAccountSection from "@/Components/Admin/Account/DeleteAccountSection";
-import { notifyAdmin } from "@/Utils/notify";
 
 export default function AccountIndex({ account = {} }) {
     const [photoPreview, setPhotoPreview] = useState(account?.photo_url || null);
     const [sendingVerification, setSendingVerification] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const photoBlobRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (photoBlobRef.current) {
+                URL.revokeObjectURL(photoBlobRef.current);
+            }
+        };
+    }, []);
 
     const profileForm = useForm({
         name: account?.name || "",
@@ -31,16 +39,27 @@ export default function AccountIndex({ account = {} }) {
 
     const handlePhotoChange = (e) => {
         const file = e.target.files?.[0] || null;
+        if (photoBlobRef.current) {
+            URL.revokeObjectURL(photoBlobRef.current);
+            photoBlobRef.current = null;
+        }
         if (!file) return;
+
+        const blobUrl = URL.createObjectURL(file);
+        photoBlobRef.current = blobUrl;
         profileForm.setData((prev) => ({
             ...prev,
             photo: file,
             remove_photo: false,
         }));
-        setPhotoPreview(URL.createObjectURL(file));
+        setPhotoPreview(blobUrl);
     };
 
     const handleRemovePhoto = () => {
+        if (photoBlobRef.current) {
+            URL.revokeObjectURL(photoBlobRef.current);
+            photoBlobRef.current = null;
+        }
         profileForm.setData((prev) => ({
             ...prev,
             photo: null,
@@ -56,11 +75,6 @@ export default function AccountIndex({ account = {} }) {
             preserveScroll: true,
             onSuccess: () => {
                 profileForm.setData("photo", null);
-                notifyAdmin({
-                    type: "success",
-                    title: "Profile Updated",
-                    message: "Your profile information has been saved.",
-                });
             },
         });
     };
@@ -71,11 +85,6 @@ export default function AccountIndex({ account = {} }) {
             preserveScroll: true,
             onSuccess: () => {
                 passwordForm.reset();
-                notifyAdmin({
-                    type: "success",
-                    title: "Password Updated",
-                    message: "Your account password has been updated.",
-                });
             },
         });
     };
@@ -87,13 +96,6 @@ export default function AccountIndex({ account = {} }) {
             {},
             {
                 preserveScroll: true,
-                onSuccess: () => {
-                    notifyAdmin({
-                        type: "success",
-                        title: "Verification Sent",
-                        message: "Verification email has been sent.",
-                    });
-                },
                 onFinish: () => setSendingVerification(false),
             }
         );
@@ -103,17 +105,14 @@ export default function AccountIndex({ account = {} }) {
         e.preventDefault();
         deleteForm.delete(route("admin.account.destroy"), {
             preserveScroll: true,
-            onError: () => {
-                // Keep modal open to show validation error
-            },
         });
     };
 
     const isVerified = Boolean(account?.email_verified_at);
 
     return (
-        <AdminLayout title="Account Settings">
-            <Head title="Account Settings - Zeefolio" />
+        <>
+            <Head title="Account Settings" />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
                 <div className="lg:col-span-7">
@@ -148,6 +147,10 @@ export default function AccountIndex({ account = {} }) {
                     />
                 </div>
             </div>
-        </AdminLayout>
+        </>
     );
 }
+
+AccountIndex.layout = (page) => (
+    <AdminLayout title="Account Settings">{page}</AdminLayout>
+);

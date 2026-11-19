@@ -1,16 +1,11 @@
-import { useState } from "react";
-import { Head, Link, router, useForm } from "@inertiajs/react";
+import { useRef, useState } from "react";
+import { Head, router, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
-import {
-    HiOutlinePlus,
-    HiOutlineInformationCircle,
-    HiOutlineShieldCheck,
-} from "react-icons/hi2";
-import { notifyAdmin } from "@/Utils/notify";
+import MobileFab from "@/Components/Admin/MobileFab";
 import ConfirmDeleteModal from "@/Components/UI/ConfirmDeleteModal";
 import MemberStatsGrid from "@/Components/Admin/Members/MemberStatsGrid";
 import MemberListCard from "@/Components/Admin/Members/MemberListCard";
-import MemberDetailSlideOver from "@/Components/Admin/Members/MemberDetailSlideOver";
+import MemberDetailPanel from "@/Components/Admin/Members/MemberDetailPanel";
 import MemberFormModal from "@/Components/Admin/Members/MemberFormModal";
 
 export default function MembersIndex({
@@ -22,12 +17,14 @@ export default function MembersIndex({
     const [roleFilter, setRoleFilter] = useState("all");
     const [selectedId, setSelectedId] = useState(members[0]?.id || null);
     const [activeTab, setActiveTab] = useState("account");
+    const [mobileSection, setMobileSection] = useState("list");
 
     const [modalOpen, setModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState(null);
 
     const [memberToDelete, setMemberToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const detailRef = useRef(null);
 
     const isSuperAdmin = currentUserRole === "superadmin";
 
@@ -38,7 +35,6 @@ export default function MembersIndex({
         password: "",
         role: "member",
         status: "active",
-        bio: "",
     });
 
     const filteredMembers = members.filter((m) => {
@@ -52,7 +48,9 @@ export default function MembersIndex({
     });
 
     const selectedMember =
-        members.find((m) => m.id === selectedId) || filteredMembers[0] || null;
+        filteredMembers.find((m) => m.id === selectedId) ||
+        filteredMembers[0] ||
+        null;
 
     const superAdminCount = members.filter(
         (m) => m.role === "superadmin"
@@ -70,7 +68,6 @@ export default function MembersIndex({
             password: "",
             role: "member",
             status: "active",
-            bio: "",
         });
         setModalOpen(true);
     };
@@ -85,14 +82,12 @@ export default function MembersIndex({
             password: "",
             role: member.role || "member",
             status: member.status || "active",
-            bio: member.bio || "",
         });
         setModalOpen(true);
     };
 
     const handleSaveAccount = (e) => {
         e.preventDefault();
-        const accountName = form.data.name.trim() || "Account";
 
         if (editingMember) {
             form.put(route("admin.members.update", editingMember.id), {
@@ -100,11 +95,6 @@ export default function MembersIndex({
                 onSuccess: () => {
                     setModalOpen(false);
                     form.reset("password");
-                    notifyAdmin({
-                        type: "success",
-                        title: "Account Updated",
-                        message: `Account "${accountName}" (${form.data.role}) has been updated.`,
-                    });
                 },
             });
         } else {
@@ -113,37 +103,43 @@ export default function MembersIndex({
                 onSuccess: () => {
                     setModalOpen(false);
                     form.reset();
-                    notifyAdmin({
-                        type: "success",
-                        title: "Account Created",
-                        message: `Account "${accountName}" (${form.data.role}) has been created.`,
-                    });
                 },
             });
         }
     };
 
+    const handleSelectMember = (id) => {
+        setSelectedId(id);
+        setMobileSection("detail");
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+            requestAnimationFrame(() => {
+                detailRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            });
+        }
+    };
+
+    const handleRoleFilterChange = (nextRole) => {
+        setRoleFilter(nextRole);
+        setMobileSection("list");
+    };
+
     const confirmDeleteAccount = () => {
         if (!memberToDelete) return;
-        const name = memberToDelete.name;
+        const deletedId = memberToDelete.id;
         setDeleting(true);
 
-        router.delete(route("admin.members.destroy", memberToDelete.id), {
+        router.delete(route("admin.members.destroy", deletedId), {
             preserveScroll: true,
             onSuccess: () => {
-                if (selectedId === memberToDelete.id) {
-                    const remaining = members.filter(
-                        (m) => m.id !== memberToDelete.id
-                    );
+                if (selectedId === deletedId) {
+                    const remaining = members.filter((m) => m.id !== deletedId);
                     setSelectedId(remaining[0]?.id || null);
                 }
                 setMemberToDelete(null);
-                setDeleting(false);
-                notifyAdmin({
-                    type: "success",
-                    title: "Deleted",
-                    message: `Account "${name}" has been deleted.`,
-                });
+                setMobileSection("list");
             },
             onFinish: () => setDeleting(false),
         });
@@ -153,59 +149,78 @@ export default function MembersIndex({
         router.put(
             route("admin.members.skills.promote", skill.id),
             {},
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    notifyAdmin({
-                        type: "success",
-                        title: "Skill Promoted",
-                        message: `Skill "${skill.name}" promoted to Default.`,
-                    });
-                },
-            }
+            { preserveScroll: true }
         );
     };
 
     return (
-        <AdminLayout
-            title="Members & Accounts"
-            headerActions={
-                <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={openCreateAccount}
-                        className="admin-btn-primary inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
-                    >
-                        <HiOutlinePlus className="w-4 h-4" />
-                        <span className="sm:hidden">New</span>
-                        <span className="hidden sm:inline">New Account</span>
-                    </button>
-                </div>
-            }
-        >
-            <Head title="Members & Accounts - Zeefolio" />
+        <>
+            <Head title="Members & Accounts" />
 
-            <div className="space-y-4 sm:space-y-6">
+            <div
+                className={`space-y-4 sm:space-y-6 ${
+                    mobileSection === "list" ? "pb-20 sm:pb-0" : ""
+                }`}
+            >
                 <MemberStatsGrid
                     totalCount={members.length}
                     superAdminCount={superAdminCount}
                     adminCount={adminCount}
                     memberCount={memberCount}
+                    activeFilter={roleFilter}
+                    onFilterChange={handleRoleFilterChange}
                 />
+
+                {/* Mobile Master-Detail Switcher (< lg) */}
+                <div
+                    role="tablist"
+                    aria-label="Account views"
+                    className="lg:hidden admin-pill-track grid grid-cols-2 gap-1 p-1 rounded-xl border"
+                >
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={mobileSection === "list"}
+                        onClick={() => setMobileSection("list")}
+                        className={`py-2.5 px-3 rounded-lg text-xs font-medium border transition-colors cursor-pointer truncate ${
+                            mobileSection === "list"
+                                ? "admin-pill-active"
+                                : "admin-pill-inactive"
+                        }`}
+                    >
+                        Accounts ({filteredMembers.length})
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={mobileSection === "detail"}
+                        onClick={() => setMobileSection("detail")}
+                        className={`py-2.5 px-3 rounded-lg text-xs font-medium border transition-colors cursor-pointer truncate ${
+                            mobileSection === "detail"
+                                ? "admin-pill-active"
+                                : "admin-pill-inactive"
+                        }`}
+                    >
+                        {selectedMember ? selectedMember.name : "Account Detail"}
+                    </button>
+                </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
                     <MemberListCard
                         members={filteredMembers}
                         availableRoles={availableRoles}
                         selectedId={selectedMember?.id}
-                        onSelectMember={setSelectedId}
+                        onSelectMember={handleSelectMember}
                         roleFilter={roleFilter}
-                        onRoleFilterChange={setRoleFilter}
+                        onRoleFilterChange={handleRoleFilterChange}
                         search={search}
                         onSearchChange={setSearch}
+                        visibleOnMobile={mobileSection === "list"}
+                        onCreateAccount={openCreateAccount}
                     />
 
-                    <MemberDetailSlideOver
+                    <MemberDetailPanel
+                        panelRef={detailRef}
                         selectedMember={selectedMember}
                         availableRoles={availableRoles}
                         activeTab={activeTab}
@@ -213,9 +228,14 @@ export default function MembersIndex({
                         onEditAccount={openEditAccount}
                         onDeleteAccount={setMemberToDelete}
                         onPromoteSkill={handlePromoteSkill}
+                        visibleOnMobile={mobileSection === "detail"}
                     />
                 </div>
             </div>
+
+            {mobileSection === "list" && (
+                <MobileFab onClick={openCreateAccount} label="New Account" />
+            )}
 
             <MemberFormModal
                 open={modalOpen}
@@ -247,6 +267,10 @@ export default function MembersIndex({
                 onClose={() => setMemberToDelete(null)}
                 onConfirm={confirmDeleteAccount}
             />
-        </AdminLayout>
+        </>
     );
 }
+
+MembersIndex.layout = (page) => (
+    <AdminLayout title="Members & Accounts">{page}</AdminLayout>
+);

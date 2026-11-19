@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Head, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import HeroContentForm from "@/Components/Admin/Home/HeroContentForm";
 import QuickBioSidebar from "@/Components/Admin/Home/QuickBioSidebar";
-import PortfolioStatusCapsule from "@/Components/Admin/PortfolioStatusCapsule";
-import { notifyAdmin } from "@/Utils/notify";
 
 export default function HomeIndex({ home = {}, portfolioMeta = {} }) {
     const [passionInput, setPassionInput] = useState("");
     const [imagePreview, setImagePreview] = useState(home?.image_url || null);
+    const blobUrlRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (blobUrlRef.current) {
+                URL.revokeObjectURL(blobUrlRef.current);
+            }
+        };
+    }, []);
 
     const socialLinks = home?.social_media_links || {};
 
@@ -53,8 +60,16 @@ export default function HomeIndex({ home = {}, portfolioMeta = {} }) {
     const handleImageChange = (e) => {
         const file = e.target.files?.[0] || null;
         setData("image", file);
+        if (blobUrlRef.current) {
+            URL.revokeObjectURL(blobUrlRef.current);
+            blobUrlRef.current = null;
+        }
         if (file) {
-            setImagePreview(URL.createObjectURL(file));
+            const url = URL.createObjectURL(file);
+            blobUrlRef.current = url;
+            setImagePreview(url);
+        } else {
+            setImagePreview(home?.image_url || null);
         }
     };
 
@@ -64,27 +79,17 @@ export default function HomeIndex({ home = {}, portfolioMeta = {} }) {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
-                notifyAdmin({
-                    type: "success",
-                    title: "Home Updated",
-                    message: "Home & profile settings have been saved.",
-                });
+                setData((prev) => ({ ...prev, image: null, cv: null }));
             },
         });
     };
 
-    const liveSlug = data.slug || portfolioMeta?.slug;
-
-    const headerActions = (
-        <PortfolioStatusCapsule isActive={data.is_active} slug={liveSlug} />
-    );
-
     return (
-        <AdminLayout title="Home & Profile" headerActions={headerActions}>
-            <Head title="Home & Profile - Zeefolio" />
+        <>
+            <Head title="Home & Profile" />
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_auto_auto_1fr_auto] gap-4 sm:gap-6 items-start">
                     <HeroContentForm
                         data={data}
                         setData={setData}
@@ -107,6 +112,10 @@ export default function HomeIndex({ home = {}, portfolioMeta = {} }) {
                     />
                 </div>
             </form>
-        </AdminLayout>
+        </>
     );
 }
+
+HomeIndex.layout = (page) => (
+    <AdminLayout title="Home & Profile">{page}</AdminLayout>
+);

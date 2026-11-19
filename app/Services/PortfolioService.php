@@ -48,15 +48,32 @@ class PortfolioService
     }
 
     /**
+     * Get cached portfolio metadata (slug & active state) for shared Inertia props.
+     *
+     * @return array{slug: string, is_active: bool}
+     */
+    public function getUserPortfolioMeta(User $user): array
+    {
+        return Cache::remember(
+            "portfolio:meta_by_user:{$user->id}",
+            3600,
+            function () use ($user) {
+                $portfolio = $user->portfolioUser()->first(['slug', 'is_active']);
+
+                return [
+                    'slug' => $portfolio?->slug ?: ($user->username ?: 'brian-yudhistira'),
+                    'is_active' => (bool) ($portfolio?->is_active ?? false),
+                ];
+            }
+        );
+    }
+
+    /**
      * Get the cached portfolio slug for a user (used by HandleInertiaRequests).
      */
     public function getUserPortfolioSlug(User $user): string
     {
-        return Cache::remember(
-            "portfolio:slug_by_user:{$user->id}",
-            3600,
-            fn () => $user->portfolioUser()->value('slug') ?: ($user->username ?: 'brian-yudhistira')
-        );
+        return $this->getUserPortfolioMeta($user)['slug'];
     }
 
     /**
@@ -482,6 +499,7 @@ class PortfolioService
     {
         Cache::forget($this->getUserCacheKey($userId));
         Cache::forget("portfolio:slug_by_user:{$userId}");
+        Cache::forget("portfolio:meta_by_user:{$userId}");
         Cache::forget(SeoService::SITEMAP_CACHE_KEY);
     }
 }

@@ -1,4 +1,5 @@
-import { HiOutlineArrowTopRightOnSquare, HiXMark } from "react-icons/hi2";
+import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2";
+import AdminModal from "@/Components/UI/AdminModal";
 import { getDeviconClass } from "@/Utils/devicon";
 
 export default function GlobalSkillModal({
@@ -9,34 +10,32 @@ export default function GlobalSkillModal({
     onClose,
     onSubmit,
 }) {
-    if (!open) return null;
-
     const previewIconClass = getDeviconClass(skillForm.data.icon);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-xl bg-zinc-900 border border-zinc-800 shadow-2xl overflow-hidden">
-                <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-zinc-100">
-                        {editingSkill
-                            ? "Edit Default Skill"
-                            : "Add Default Skill"}
-                    </h3>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-zinc-400 hover:text-zinc-100 cursor-pointer"
-                    >
-                        <HiXMark className="w-5 h-5" />
-                    </button>
-                </div>
-
-                <form onSubmit={onSubmit} className="p-5 space-y-4">
+        <AdminModal
+            open={open}
+            onClose={onClose}
+            title={
+                editingSkill ? "Edit Default Skill" : "Add Default Skill"
+            }
+            maxWidthClass="max-w-md"
+            preventClose={skillForm.processing}
+        >
+            <form
+                onSubmit={onSubmit}
+                className="flex flex-col flex-1 min-h-0 overflow-hidden"
+            >
+                <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
                     <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-zinc-300">
+                        <label
+                            htmlFor="global-skill-name"
+                            className="block text-xs font-medium text-zinc-300"
+                        >
                             Skill Name (Default)
                         </label>
                         <input
+                            id="global-skill-name"
                             type="text"
                             required
                             value={skillForm.data.name}
@@ -44,7 +43,8 @@ export default function GlobalSkillModal({
                                 skillForm.setData("name", e.target.value)
                             }
                             placeholder="e.g. Laravel, TypeScript, Docker"
-                            className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                            aria-invalid={Boolean(skillForm.errors.name)}
+                            className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                         />
                         {skillForm.errors.name && (
                             <p className="text-xs text-red-400">
@@ -55,14 +55,17 @@ export default function GlobalSkillModal({
 
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
-                            <label className="block text-xs font-medium text-zinc-300">
+                            <label
+                                htmlFor="global-skill-icon"
+                                className="block text-xs font-medium text-zinc-300"
+                            >
                                 Devicon Name / Class
                             </label>
                             <a
                                 href="https://devicon.dev/"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300 transition-colors"
+                                className="inline-flex items-center gap-1 py-1 text-[11px] text-emerald-400 hover:text-emerald-300 transition-colors"
                             >
                                 <span>Browse Devicon</span>
                                 <HiOutlineArrowTopRightOnSquare className="w-3 h-3" />
@@ -70,13 +73,15 @@ export default function GlobalSkillModal({
                         </div>
                         <div className="flex items-center gap-2.5">
                             <input
+                                id="global-skill-icon"
                                 type="text"
                                 value={skillForm.data.icon}
                                 onChange={(e) =>
                                     skillForm.setData("icon", e.target.value)
                                 }
                                 placeholder="e.g. laravel, react, tailwindcss"
-                                className="flex-1 text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                                aria-invalid={Boolean(skillForm.errors.icon)}
+                                className="admin-input flex-1 min-w-0 text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                             />
                             <div className="w-10 h-10 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center shrink-0">
                                 {previewIconClass ? (
@@ -85,7 +90,10 @@ export default function GlobalSkillModal({
                                     />
                                 ) : (
                                     <span className="text-xs text-zinc-600">
-                                        —
+                                        {skillForm.data.name
+                                            ?.trim()
+                                            .charAt(0)
+                                            .toUpperCase() || "—"}
                                     </span>
                                 )}
                             </div>
@@ -98,15 +106,20 @@ export default function GlobalSkillModal({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-zinc-300">
+                        <label
+                            htmlFor="global-skill-category"
+                            className="block text-xs font-medium text-zinc-300"
+                        >
                             Skill Category
                         </label>
                         <select
+                            id="global-skill-category"
                             value={skillForm.data.category_id}
                             onChange={(e) =>
                                 skillForm.setData("category_id", e.target.value)
                             }
-                            className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                            aria-invalid={Boolean(skillForm.errors.category_id)}
+                            className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                         >
                             <option value="">Uncategorized</option>
                             {categories.map((cat) => (
@@ -121,27 +134,30 @@ export default function GlobalSkillModal({
                             </p>
                         )}
                     </div>
+                </div>
 
-                    <div className="pt-2 flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition-colors cursor-pointer"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={skillForm.processing}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-xs font-medium text-zinc-100 transition-colors disabled:opacity-50 cursor-pointer"
-                        >
-                            {skillForm.processing
-                                ? "Saving..."
-                                : "Save Default Skill"}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <div className="px-4 sm:px-5 py-3.5 border-t border-zinc-800 bg-zinc-950/60 flex items-center justify-end gap-2 shrink-0">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={skillForm.processing}
+                        className="admin-btn-secondary admin-btn-md inline-flex items-center justify-center font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={skillForm.processing}
+                        className="admin-btn-primary admin-btn-md inline-flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        {skillForm.processing
+                            ? "Saving..."
+                            : editingSkill
+                              ? "Save Changes"
+                              : "Add Skill"}
+                    </button>
+                </div>
+            </form>
+        </AdminModal>
     );
 }

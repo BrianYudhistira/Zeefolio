@@ -21,8 +21,8 @@ export default function ContactsIndex({ contact = {} }) {
     };
 
     return (
-        <AdminLayout title="Contacts">
-            <Head title="Contacts - Zeefolio" />
+        <>
+            <Head title="Contact Info" />
 
             <div className="max-w-2xl">
                 <form
@@ -39,18 +39,27 @@ export default function ContactsIndex({ contact = {} }) {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-zinc-300">
+                        <label
+                            htmlFor="contact-email"
+                            className="block text-xs font-medium text-zinc-300"
+                        >
                             Email Address
                         </label>
                         <div className="relative">
-                            <HiOutlineEnvelope className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                            <HiOutlineEnvelope
+                                className="w-4 h-4 text-[var(--orange-text)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                                aria-hidden="true"
+                            />
                             <input
+                                id="contact-email"
                                 type="email"
                                 required
+                                autoComplete="email"
                                 value={data.email}
                                 onChange={(e) => setData("email", e.target.value)}
                                 placeholder="you@example.com"
-                                className="w-full text-sm pl-10 pr-3.5 py-2 sm:py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 placeholder-zinc-600 outline-none transition-colors"
+                                aria-invalid={Boolean(errors.email)}
+                                className="admin-input w-full text-sm pl-10 pr-3.5 py-2 sm:py-2.5 rounded-lg border outline-none transition-colors"
                             />
                         </div>
                         {errors.email && (
@@ -59,17 +68,27 @@ export default function ContactsIndex({ contact = {} }) {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-zinc-300">
+                        <label
+                            htmlFor="contact-phone"
+                            className="block text-xs font-medium text-zinc-300"
+                        >
                             Phone / WhatsApp Number
                         </label>
                         <div className="relative">
-                            <HiOutlinePhone className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                            <HiOutlinePhone
+                                className="w-4 h-4 text-[var(--emerald)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                                aria-hidden="true"
+                            />
                             <input
-                                type="text"
+                                id="contact-phone"
+                                type="tel"
+                                maxLength={20}
+                                autoComplete="tel"
                                 value={data.phone}
                                 onChange={(e) => setData("phone", e.target.value)}
                                 placeholder="+62 812 3456 7890"
-                                className="w-full text-sm pl-10 pr-3.5 py-2 sm:py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 placeholder-zinc-600 outline-none transition-colors"
+                                aria-invalid={Boolean(errors.phone)}
+                                className="admin-input w-full text-sm pl-10 pr-3.5 py-2 sm:py-2.5 rounded-lg border outline-none transition-colors"
                             />
                         </div>
                         {errors.phone && (
@@ -78,21 +97,35 @@ export default function ContactsIndex({ contact = {} }) {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-zinc-300">
+                        <label
+                            htmlFor="contact-address"
+                            className="block text-xs font-medium text-zinc-300"
+                        >
                             Location / Address
                         </label>
                         <div className="relative">
-                            <HiOutlineMapPin className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
+                            <HiOutlineMapPin
+                                className="w-4 h-4 text-[var(--indigo)] absolute left-3.5 top-3 pointer-events-none"
+                                aria-hidden="true"
+                            />
                             <textarea
+                                id="contact-address"
                                 rows={3}
+                                maxLength={500}
+                                autoComplete="street-address"
                                 value={data.address}
-                                onChange={(e) => setData("address", e.target.value)}
+                                onChange={(e) =>
+                                    setData("address", e.target.value)
+                                }
                                 placeholder="Jakarta, Indonesia"
-                                className="w-full text-sm pl-10 pr-3.5 py-2 sm:py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 placeholder-zinc-600 outline-none transition-colors"
+                                aria-invalid={Boolean(errors.address)}
+                                className="admin-input w-full text-sm pl-10 pr-3.5 py-2 sm:py-2.5 rounded-lg border outline-none transition-colors"
                             />
                         </div>
                         {errors.address && (
-                            <p className="text-xs text-red-400">{errors.address}</p>
+                            <p className="text-xs text-red-400">
+                                {errors.address}
+                            </p>
                         )}
                     </div>
 
@@ -100,14 +133,17 @@ export default function ContactsIndex({ contact = {} }) {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="admin-btn-primary w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs transition-colors disabled:opacity-50 cursor-pointer"
+                            className="admin-btn-primary admin-btn-lg inline-flex items-center justify-center w-full sm:w-auto transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
-                            {processing ? "Saving..." : "Save Contact Info"}
+                            {processing ? "Saving..." : "Save Changes"}
                         </button>
                     </div>
                 </form>
             </div>
-        </AdminLayout>
+        </>
     );
 }
 
+ContactsIndex.layout = (page) => (
+    <AdminLayout title="Contact Info">{page}</AdminLayout>
+);

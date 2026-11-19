@@ -33,7 +33,7 @@
             @endif
 
             @if(!empty($seo['json_ld']))
-                <script inertia="json-ld" type="application/ld+json">{!! json_encode($seo['json_ld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+                <script inertia="json-ld" type="application/ld+json">{!! json_encode($seo['json_ld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
             @endif
         @else
             @php($defaultSeo = \App\Services\SeoService::defaultPlatformSeo())
@@ -57,13 +57,16 @@
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@1,600;1,700&display=swap" rel="stylesheet" />
         <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
         <!-- Devicon - Technology Icons (Pinned Version: SEC-15) -->
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/devicon.min.css" crossorigin="anonymous" />
 
         <!-- Scripts -->
-        @routes(request()->is('admin*') ? null : 'public')
+        @routes(auth()->check() && request()->is('admin*') ? null : 'public')
         @viteReactRefresh
         @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
         @inertiaHead

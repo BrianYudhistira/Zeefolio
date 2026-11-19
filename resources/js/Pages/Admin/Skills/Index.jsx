@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { Head, router, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
-import { notifyAdmin } from "@/Utils/notify";
+import AdminModal from "@/Components/UI/AdminModal";
+import MobileFab from "@/Components/Admin/MobileFab";
 import SearchInput from "@/Components/UI/SearchInput";
 import EmptyState from "@/Components/UI/EmptyState";
 import ConfirmDeleteModal from "@/Components/UI/ConfirmDeleteModal";
-import SkillRowItem, {
-    PROFICIENCY_LABELS,
-} from "@/Components/Admin/Skills/SkillRowItem";
+import SkillRowItem from "@/Components/Admin/Skills/SkillRowItem";
 import SkillFormModal from "@/Components/Admin/Skills/SkillFormModal";
 import SkillCategoryDisplayCard from "@/Components/Admin/Skills/SkillCategoryDisplayCard";
-import CustomCategoryModal from "@/Components/Admin/Projects/CustomCategoryModal";
+import CustomCategoryModal from "@/Components/Admin/Shared/CustomCategoryModal";
 
 export default function SkillsIndex({
     skills = [],
@@ -19,9 +18,10 @@ export default function SkillsIndex({
     selectedCategoryIds = [],
 }) {
     const [search, setSearch] = useState("");
-    const [mode, setMode] = useState("existing");
+    const [mobileAddOpen, setMobileAddOpen] = useState(false);
     const [skillToDelete, setSkillToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [updatingSkillId, setUpdatingSkillId] = useState(null);
     const [formResetKey, setFormResetKey] = useState(0);
     const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
@@ -40,12 +40,8 @@ export default function SkillsIndex({
         });
 
     const switchMode = (newMode) => {
-        setMode(newMode);
         clearErrors();
-        setData((prev) => ({
-            ...prev,
-            mode: newMode,
-        }));
+        setData("mode", newMode);
     };
 
     const existingTechIds = new Set(skills.map((s) => s.tech_stack_id));
@@ -62,14 +58,6 @@ export default function SkillsIndex({
 
     const handleAdd = (e) => {
         e.preventDefault();
-        const selectedTech = techStacks.find(
-            (t) => String(t.id) === String(data.tech_stack_id)
-        );
-        const addedName =
-            mode === "custom"
-                ? data.custom_name.trim()
-                : selectedTech?.name || "Skill";
-
         post(route("admin.skills.store"), {
             preserveScroll: true,
             onSuccess: () => {
@@ -81,59 +69,47 @@ export default function SkillsIndex({
                     "custom_category"
                 );
                 setFormResetKey((prev) => prev + 1);
-                notifyAdmin({
-                    type: "success",
-                    title: "Skill Added",
-                    message: `Skill "${addedName}" has been added to your portfolio.`,
-                });
+                setMobileAddOpen(false);
             },
         });
     };
 
     const handleLevelChange = (skill, newLevel) => {
+        if (skill.proficiency_level === newLevel) return;
+        if (updatingSkillId === skill.id) return;
+
+        setUpdatingSkillId(skill.id);
         router.put(
             route("admin.skills.update", skill.id),
             { proficiency_level: newLevel },
             {
                 preserveScroll: true,
-                onSuccess: () => {
-                    notifyAdmin({
-                        type: "success",
-                        title: "Level Updated",
-                        message: `"${skill.tech_stack?.name}" level updated to ${newLevel}/5 (${PROFICIENCY_LABELS[newLevel]}).`,
-                    });
-                },
+                onFinish: () => setUpdatingSkillId(null),
             }
         );
     };
 
     const confirmDelete = () => {
         if (!skillToDelete) return;
-        const skillName = skillToDelete.tech_stack?.name || "Skill";
         setDeleting(true);
 
         router.delete(route("admin.skills.destroy", skillToDelete.id), {
             preserveScroll: true,
             onSuccess: () => {
                 setSkillToDelete(null);
-                notifyAdmin({
-                    type: "success",
-                    title: "Deleted",
-                    message: `Skill "${skillName}" has been removed from your portfolio.`,
-                });
             },
             onFinish: () => setDeleting(false),
         });
     };
 
     return (
-        <AdminLayout title="Skills">
-            <Head title="Skills - Zeefolio" />
+        <>
+            <Head title="Skills" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
-                <div className="lg:col-span-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start pb-20 lg:pb-0">
+                <div className="hidden lg:block lg:col-span-4">
                     <SkillFormModal
-                        mode={mode}
+                        mode={data.mode}
                         onSwitchMode={switchMode}
                         availableTechStacks={availableTechStacks}
                         categories={categories}
@@ -167,13 +143,22 @@ export default function SkillsIndex({
                         </div>
 
                         {filteredSkills.length === 0 ? (
-                            <EmptyState message="No skills added yet." />
+                            <EmptyState
+                                message={
+                                    search
+                                        ? "No skills match your search."
+                                        : "No skills added yet."
+                                }
+                                actionLabel={search ? "Clear Search" : null}
+                                onAction={search ? () => setSearch("") : null}
+                            />
                         ) : (
                             <div className="divide-y divide-zinc-800">
                                 {filteredSkills.map((skill) => (
                                     <SkillRowItem
                                         key={skill.id}
                                         skill={skill}
+                                        updating={updatingSkillId === skill.id}
                                         onLevelChange={handleLevelChange}
                                         onDelete={setSkillToDelete}
                                     />
@@ -183,6 +168,38 @@ export default function SkillsIndex({
                     </div>
                 </div>
             </div>
+
+            <MobileFab
+                onClick={() => {
+                    clearErrors();
+                    setMobileAddOpen(true);
+                }}
+                label="Add Skill"
+                hideAbove="lg"
+            />
+
+            <AdminModal
+                open={mobileAddOpen}
+                onClose={() => setMobileAddOpen(false)}
+                mobileSheet
+                showCloseButton={false}
+                maxWidthClass="sm:max-w-md"
+                preventClose={processing}
+            >
+                <SkillFormModal
+                    mode={data.mode}
+                    onSwitchMode={switchMode}
+                    availableTechStacks={availableTechStacks}
+                    categories={categories}
+                    data={data}
+                    setData={setData}
+                    errors={errors}
+                    processing={processing}
+                    resetKey={formResetKey}
+                    onSubmit={handleAdd}
+                    onClose={() => !processing && setMobileAddOpen(false)}
+                />
+            </AdminModal>
 
             <ConfirmDeleteModal
                 open={Boolean(skillToDelete)}
@@ -225,6 +242,8 @@ export default function SkillsIndex({
                     }
                 }}
             />
-        </AdminLayout>
+        </>
     );
 }
+
+SkillsIndex.layout = (page) => <AdminLayout title="Skills">{page}</AdminLayout>;

@@ -6,7 +6,7 @@ import {
 
 export default function RecentProjectsCard({
     recentProjects = [],
-    portfolioSlug = "brian-yudhistira",
+    portfolioSlug = "",
 }) {
     return (
         <div className="lg:col-span-7 admin-card rounded-xl border overflow-hidden">
@@ -36,20 +36,24 @@ export default function RecentProjectsCard({
                     </p>
                     <Link
                         href={route("admin.projects.index")}
-                        className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] hover:border-[color-mix(in_srgb,var(--orange)_42%,var(--border-strong))] text-[var(--text)] border border-[var(--border-strong)] text-xs font-medium transition-colors"
+                        className="mt-3.5 admin-btn-secondary admin-btn-sm inline-flex items-center justify-center font-medium transition-colors"
                     >
                         Add Project
                     </Link>
                 </div>
             ) : (
-                <div className="divide-y divide-[var(--border)] max-h-80 sm:max-h-[26rem] overflow-y-auto">
+                <div className="divide-y divide-[var(--border)] lg:max-h-[26rem] lg:overflow-y-auto">
                     {recentProjects.map((project) => (
                         <Link
                             key={project.id}
-                            href={route("portfolio.project", {
-                                slug: portfolioSlug,
-                                projectSlug: project.slug,
-                            })}
+                            href={
+                                portfolioSlug && project.slug
+                                    ? route("portfolio.project", {
+                                          slug: portfolioSlug,
+                                          projectSlug: project.slug,
+                                      })
+                                    : route("admin.projects.index")
+                            }
                             className="group flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 hover:bg-[color-mix(in_srgb,var(--surface-elevated)_65%,transparent)] transition-colors"
                         >
                             <div className="min-w-0">
