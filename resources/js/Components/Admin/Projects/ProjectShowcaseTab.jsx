@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import {
     HiOutlinePlus,
     HiOutlineTrash,
@@ -9,8 +10,26 @@ import {
 
 export default function ProjectShowcaseTab({
     showcases = [],
+    errors = {},
     onChangeShowcases,
 }) {
+    const createdBlobUrlsRef = useRef(new Set());
+
+    useEffect(() => {
+        const created = createdBlobUrlsRef.current;
+        return () => {
+            created.forEach((url) => URL.revokeObjectURL(url));
+            created.clear();
+        };
+    }, []);
+
+    const revokeUrlIfOwned = (url) => {
+        if (url && createdBlobUrlsRef.current.has(url)) {
+            URL.revokeObjectURL(url);
+            createdBlobUrlsRef.current.delete(url);
+        }
+    };
+
     const addShowcaseItem = () => {
         onChangeShowcases([
             ...showcases,
@@ -36,6 +55,8 @@ export default function ProjectShowcaseTab({
     };
 
     const removeShowcaseItem = (index) => {
+        const target = showcases[index];
+        target?.new_previews?.forEach(revokeUrlIfOwned);
         const next = showcases.filter((_, idx) => idx !== index);
         onChangeShowcases(next);
     };
@@ -56,7 +77,11 @@ export default function ProjectShowcaseTab({
 
         const next = [...showcases];
         const current = next[index];
-        const previews = files.map((file) => URL.createObjectURL(file));
+        const previews = files.map((file) => {
+            const url = URL.createObjectURL(file);
+            createdBlobUrlsRef.current.add(url);
+            return url;
+        });
 
         next[index] = {
             ...current,
@@ -84,6 +109,8 @@ export default function ProjectShowcaseTab({
     const removeNewShowcaseImage = (showcaseIndex, imgIndex) => {
         const next = [...showcases];
         const current = next[showcaseIndex];
+        const removedUrl = current.new_previews?.[imgIndex];
+        revokeUrlIfOwned(removedUrl);
         next[showcaseIndex] = {
             ...current,
             new_images: current.new_images.filter((_, i) => i !== imgIndex),
@@ -106,10 +133,10 @@ export default function ProjectShowcaseTab({
                 <button
                     type="button"
                     onClick={addShowcaseItem}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs font-medium transition-colors cursor-pointer shrink-0"
+                    className="admin-btn-secondary admin-btn-md inline-flex items-center justify-center font-medium transition-colors cursor-pointer shrink-0"
                 >
                     <HiOutlinePlus className="w-4 h-4" />
-                    <span>Add Showcase Item</span>
+                    <span>Add Showcase</span>
                 </button>
             </div>
 
@@ -127,10 +154,10 @@ export default function ProjectShowcaseTab({
                     <button
                         type="button"
                         onClick={addShowcaseItem}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs font-medium transition-colors cursor-pointer"
+                        className="admin-btn-secondary admin-btn-md inline-flex items-center justify-center font-medium transition-colors cursor-pointer"
                     >
                         <HiOutlinePlus className="w-4 h-4" />
-                        <span>Add First Showcase</span>
+                        <span>Add Showcase</span>
                     </button>
                 </div>
             ) : (
@@ -139,16 +166,27 @@ export default function ProjectShowcaseTab({
                         const totalSlides =
                             (showcase.existing_previews?.length || 0) +
                             (showcase.new_previews?.length || 0);
+                        const titleError = errors?.[`showcases.${idx}.title`];
+                        const descError =
+                            errors?.[`showcases.${idx}.description`];
+                        const imageError = Object.entries(errors || {}).find(
+                            ([key]) =>
+                                key === `showcases.${idx}.new_images` ||
+                                key.startsWith(`showcases.${idx}.new_images.`)
+                        )?.[1];
+                        const titleId = `showcase-title-${idx}`;
+                        const descId = `showcase-desc-${idx}`;
+                        const uploadId = `showcase-upload-${idx}`;
 
                         return (
                             <div
-                                key={idx}
+                                key={showcase.id ?? `new-${idx}`}
                                 className="p-4 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-4"
                             >
                                 {/* Card Header */}
                                 <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-800/80">
-                                    <div className="flex items-center gap-2">
-                                        <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-[11px] font-mono text-zinc-300">
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-[11px] font-mono text-zinc-300 shrink-0 tabular-nums">
                                             {String(idx + 1).padStart(2, "0")} /{" "}
                                             {String(showcases.length).padStart(
                                                 2,
@@ -161,14 +199,15 @@ export default function ProjectShowcaseTab({
                                         </span>
                                     </div>
 
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 shrink-0">
                                         <button
                                             type="button"
                                             disabled={idx === 0}
                                             onClick={() =>
                                                 moveShowcaseItem(idx, -1)
                                             }
-                                            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 disabled:opacity-30 transition-colors cursor-pointer"
+                                            className="admin-icon-btn inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 disabled:opacity-30 transition-colors cursor-pointer"
+                                            aria-label="Move showcase up"
                                             title="Move up"
                                         >
                                             <HiOutlineArrowUp className="w-3.5 h-3.5" />
@@ -181,7 +220,8 @@ export default function ProjectShowcaseTab({
                                             onClick={() =>
                                                 moveShowcaseItem(idx, 1)
                                             }
-                                            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 disabled:opacity-30 transition-colors cursor-pointer"
+                                            className="admin-icon-btn inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 disabled:opacity-30 transition-colors cursor-pointer"
+                                            aria-label="Move showcase down"
                                             title="Move down"
                                         >
                                             <HiOutlineArrowDown className="w-3.5 h-3.5" />
@@ -191,7 +231,8 @@ export default function ProjectShowcaseTab({
                                             onClick={() =>
                                                 removeShowcaseItem(idx)
                                             }
-                                            className="p-1.5 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                                            className="admin-icon-btn inline-flex items-center justify-center text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                                            aria-label="Remove showcase item"
                                             title="Remove showcase item"
                                         >
                                             <HiOutlineTrash className="w-3.5 h-3.5" />
@@ -202,10 +243,14 @@ export default function ProjectShowcaseTab({
                                 {/* Title & Description */}
                                 <div className="grid grid-cols-1 gap-3">
                                     <div className="space-y-1">
-                                        <label className="block text-xs font-medium text-zinc-300">
+                                        <label
+                                            htmlFor={titleId}
+                                            className="block text-xs font-medium text-zinc-300"
+                                        >
                                             Showcase Title
                                         </label>
                                         <input
+                                            id={titleId}
                                             type="text"
                                             value={showcase.title}
                                             onChange={(e) =>
@@ -216,15 +261,25 @@ export default function ProjectShowcaseTab({
                                                 )
                                             }
                                             placeholder="e.g. Seller Login Portal"
-                                            className="w-full text-xs px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                                            aria-invalid={Boolean(titleError)}
+                                            className="admin-input w-full text-xs px-3 py-2 rounded-lg border outline-none transition-colors"
                                         />
+                                        {titleError && (
+                                            <p className="text-xs text-red-400">
+                                                {titleError}
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label className="block text-xs font-medium text-zinc-300">
+                                        <label
+                                            htmlFor={descId}
+                                            className="block text-xs font-medium text-zinc-300"
+                                        >
                                             Walkthrough Description
                                         </label>
                                         <textarea
+                                            id={descId}
                                             rows={2}
                                             value={showcase.description}
                                             onChange={(e) =>
@@ -235,21 +290,31 @@ export default function ProjectShowcaseTab({
                                                 )
                                             }
                                             placeholder="Explain what this screen does and its key features..."
-                                            className="w-full text-xs px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                                            aria-invalid={Boolean(descError)}
+                                            className="admin-input w-full text-xs px-3 py-2 rounded-lg border outline-none transition-colors"
                                         />
+                                        {descError && (
+                                            <p className="text-xs text-red-400">
+                                                {descError}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
                                 {/* Screenshots / Slides Manager */}
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <label className="block text-xs font-medium text-zinc-300">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="block text-xs font-medium text-zinc-300">
                                             Screenshots / Slides ({totalSlides})
-                                        </label>
-                                        <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-[11px] font-medium transition-colors cursor-pointer">
+                                        </span>
+                                        <label
+                                            htmlFor={uploadId}
+                                            className="admin-btn-secondary admin-btn-xs inline-flex items-center justify-center font-medium transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-[var(--orange)]"
+                                        >
                                             <HiOutlinePlus className="w-3.5 h-3.5" />
                                             <span>Upload Images</span>
                                             <input
+                                                id={uploadId}
                                                 type="file"
                                                 multiple
                                                 accept="image/jpeg,image/png,image/jpg,image/webp"
@@ -260,10 +325,15 @@ export default function ProjectShowcaseTab({
                                                     );
                                                     e.target.value = "";
                                                 }}
-                                                className="hidden"
+                                                className="sr-only"
                                             />
                                         </label>
                                     </div>
+                                    {imageError && (
+                                        <p className="text-xs text-red-400">
+                                            {imageError}
+                                        </p>
+                                    )}
 
                                     {totalSlides === 0 ? (
                                         <div className="py-4 px-3 rounded-lg bg-zinc-900/60 border border-dashed border-zinc-800 text-center">
@@ -285,7 +355,7 @@ export default function ProjectShowcaseTab({
                                                             alt={`Slide ${imgIdx + 1}`}
                                                             className="w-full h-full object-cover"
                                                         />
-                                                        <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/75 text-[10px] font-mono text-zinc-200">
+                                                        <span className="admin-media-overlay-badge absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-mono">
                                                             #{imgIdx + 1}
                                                         </span>
                                                         <button
@@ -296,10 +366,11 @@ export default function ProjectShowcaseTab({
                                                                     imgIdx
                                                                 )
                                                             }
-                                                            className="absolute top-1 right-1 p-1 rounded-md bg-black/80 text-zinc-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                            className="admin-media-overlay-btn absolute top-1 right-1 w-7 h-7 rounded-md flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity cursor-pointer"
+                                                            aria-label="Remove screenshot"
                                                             title="Remove image"
                                                         >
-                                                            <HiXMark className="w-3.5 h-3.5" />
+                                                            <HiXMark className="w-4 h-4" />
                                                         </button>
                                                     </div>
                                                 )
@@ -328,10 +399,11 @@ export default function ProjectShowcaseTab({
                                                                     imgIdx
                                                                 )
                                                             }
-                                                            className="absolute top-1 right-1 p-1 rounded-md bg-black/80 text-zinc-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                            className="admin-media-overlay-btn absolute top-1 right-1 w-7 h-7 rounded-md flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity cursor-pointer"
+                                                            aria-label="Remove screenshot"
                                                             title="Remove image"
                                                         >
-                                                            <HiXMark className="w-3.5 h-3.5" />
+                                                            <HiXMark className="w-4 h-4" />
                                                         </button>
                                                     </div>
                                                 )

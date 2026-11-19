@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Head, router, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
+import MobileFab from "@/Components/Admin/MobileFab";
 import {
     HiOutlineShieldCheck,
     HiOutlineKey,
-    HiOutlinePlus,
 } from "react-icons/hi2";
-import { notifyAdmin } from "@/Utils/notify";
 import ConfirmDeleteModal from "@/Components/UI/ConfirmDeleteModal";
 import RolesMatrixSection from "@/Components/Admin/Roles/RolesMatrixSection";
 import RoleFormModal from "@/Components/Admin/Roles/RoleFormModal";
@@ -54,18 +53,20 @@ export default function RolesPermissionsIndex({
     const openCreateRole = () => {
         setEditingRole(null);
         roleForm.clearErrors();
+        const availableNames = new Set(permissions.map((p) => p.name));
+        const defaultRolePerms = [
+            "dashboard.view",
+            "home.manage",
+            "projects.manage",
+            "skills.manage",
+            "experiences.manage",
+            "contacts.manage",
+        ].filter((name) => availableNames.has(name));
+
         roleForm.setData({
             name: "",
             description: "",
-            permissions: [
-                "dashboard.view",
-                "home.manage",
-                "projects.manage",
-                "skills.manage",
-                "experiences.manage",
-                "tech-stacks.manage",
-                "contacts.manage",
-            ],
+            permissions: defaultRolePerms,
         });
         setRoleModalOpen(true);
     };
@@ -83,18 +84,12 @@ export default function RolesPermissionsIndex({
 
     const handleSaveRole = (e) => {
         e.preventDefault();
-        const roleName = roleForm.data.name.trim();
 
         if (editingRole) {
             roleForm.put(route("admin.roles.update", editingRole.id), {
                 preserveScroll: true,
                 onSuccess: () => {
                     setRoleModalOpen(false);
-                    notifyAdmin({
-                        type: "success",
-                        title: "Role Updated",
-                        message: `Role "${roleName}" has been updated.`,
-                    });
                 },
             });
         } else {
@@ -103,11 +98,6 @@ export default function RolesPermissionsIndex({
                 onSuccess: () => {
                     setRoleModalOpen(false);
                     roleForm.reset();
-                    notifyAdmin({
-                        type: "success",
-                        title: "Role Created",
-                        message: `Role "${roleName}" has been created.`,
-                    });
                 },
             });
         }
@@ -139,7 +129,6 @@ export default function RolesPermissionsIndex({
 
     const handleSavePermission = (e) => {
         e.preventDefault();
-        const permName = permForm.data.name.trim();
 
         if (editingPermission) {
             permForm.put(
@@ -148,11 +137,6 @@ export default function RolesPermissionsIndex({
                     preserveScroll: true,
                     onSuccess: () => {
                         setPermModalOpen(false);
-                        notifyAdmin({
-                            type: "success",
-                            title: "Permission Updated",
-                            message: `Permission "${permName}" has been updated.`,
-                        });
                     },
                 }
             );
@@ -162,11 +146,6 @@ export default function RolesPermissionsIndex({
                 onSuccess: () => {
                     setPermModalOpen(false);
                     permForm.reset();
-                    notifyAdmin({
-                        type: "success",
-                        title: "Permission Created",
-                        message: `Permission "${permName}" has been created.`,
-                    });
                 },
             });
         }
@@ -177,96 +156,71 @@ export default function RolesPermissionsIndex({
         setDeleting(true);
 
         const isRole = deleteTarget.type === "role";
-        const itemName = deleteTarget.item.name;
+        const deletedId = deleteTarget.item.id;
         const targetRoute = isRole
-            ? route("admin.roles.destroy", deleteTarget.item.id)
-            : route("admin.permissions.destroy", deleteTarget.item.id);
+            ? route("admin.roles.destroy", deletedId)
+            : route("admin.permissions.destroy", deletedId);
 
         router.delete(targetRoute, {
             preserveScroll: true,
             onSuccess: () => {
-                if (isRole && selectedRoleId === deleteTarget.item.id) {
-                    setSelectedRoleId(roles[0]?.id || null);
+                if (isRole && selectedRoleId === deletedId) {
+                    const fallbackRole = roles.find((r) => r.id !== deletedId);
+                    setSelectedRoleId(fallbackRole?.id || null);
                 }
                 setDeleteTarget(null);
-                setDeleting(false);
-                notifyAdmin({
-                    type: "success",
-                    title: "Deleted",
-                    message: isRole
-                        ? `Custom role "${itemName}" has been deleted.`
-                        : `Permission "${itemName}" has been deleted.`,
-                });
             },
             onFinish: () => setDeleting(false),
         });
     };
 
     return (
-        <AdminLayout
-            title="Roles & Permissions"
-            headerActions={
-                <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={openCreatePermission}
-                        className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 font-medium text-xs transition-colors cursor-pointer"
-                    >
-                        <HiOutlineKey className="w-4 h-4 text-emerald-400" />
-                        <span className="sm:hidden">+ Perm</span>
-                        <span className="hidden sm:inline">
-                            New Permission
-                        </span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={openCreateRole}
-                        className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 font-medium text-xs transition-colors cursor-pointer"
-                    >
-                        <HiOutlinePlus className="w-4 h-4" />
-                        <span className="sm:hidden">+ Role</span>
-                        <span className="hidden sm:inline">New Role</span>
-                    </button>
-                </div>
-            }
-        >
-            <Head title="Roles & Permissions - Zeefolio" />
+        <>
+            <Head title="Roles & Permissions" />
 
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
                 {/* Summary Banner & Section Tabs */}
-                <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="admin-card rounded-xl border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 border border-amber-500/25 text-amber-300">
-                                Spatie RBAC
+                                Access Control
                             </span>
                             <h2 className="text-xs sm:text-sm font-semibold text-zinc-100">
-                                Role-Based Access Control & Permission Registry
+                                Roles & Access
                             </h2>
                         </div>
                         <p className="text-xs text-zinc-400">
-                            Create custom roles, configure granular permission matrices, and manually register new permissions without running database seeders.
+                            Create custom roles and choose what each role can view or edit.
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-950 border border-zinc-800 shrink-0">
+                    <div
+                        role="tablist"
+                        aria-label="Access control sections"
+                        className="admin-pill-track grid grid-cols-2 sm:flex items-center gap-1 p-1 rounded-xl border w-full sm:w-auto shrink-0"
+                    >
                         <button
                             type="button"
+                            role="tab"
+                            aria-selected={activeSection === "roles"}
                             onClick={() => setActiveSection("roles")}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${activeSection === "roles"
-                                    ? "bg-zinc-800 text-zinc-100 border border-zinc-700"
-                                    : "text-zinc-400 hover:text-zinc-200 border border-transparent"
+                            className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${activeSection === "roles"
+                                    ? "admin-pill-active"
+                                    : "admin-pill-inactive"
                                 }`}
                         >
                             <HiOutlineShieldCheck className="w-4 h-4" />
-                            <span>Roles & Matrix ({roles.length})</span>
+                            <span>Roles ({roles.length})</span>
                         </button>
                         <button
                             type="button"
+                            role="tab"
+                            aria-selected={activeSection === "permissions"}
                             onClick={() => setActiveSection("permissions")}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${activeSection === "permissions"
-                                    ? "bg-zinc-800 text-zinc-100 border border-zinc-700"
-                                    : "text-zinc-400 hover:text-zinc-200 border border-transparent"
+                            className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${activeSection === "permissions"
+                                    ? "admin-pill-active"
+                                    : "admin-pill-inactive"
                                 }`}
                         >
                             <HiOutlineKey className="w-4 h-4" />
@@ -304,6 +258,17 @@ export default function RolesPermissionsIndex({
                     />
                 )}
             </div>
+
+            <MobileFab
+                onClick={
+                    activeSection === "roles"
+                        ? openCreateRole
+                        : openCreatePermission
+                }
+                label={
+                    activeSection === "roles" ? "New Role" : "New Permission"
+                }
+            />
 
             <RoleFormModal
                 open={roleModalOpen}
@@ -361,7 +326,11 @@ export default function RolesPermissionsIndex({
                 onClose={() => setDeleteTarget(null)}
                 onConfirm={confirmDelete}
             />
-        </AdminLayout>
+        </>
     );
 }
+
+RolesPermissionsIndex.layout = (page) => (
+    <AdminLayout title="Roles & Permissions">{page}</AdminLayout>
+);
 

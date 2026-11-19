@@ -20,7 +20,7 @@ export default function ProfileInfoForm({
     return (
         <form
             onSubmit={onSubmit}
-            className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-4 sm:p-6 space-y-4 sm:space-y-5"
+            className="admin-card rounded-xl border p-4 sm:p-6 space-y-4 sm:space-y-5"
         >
             <div>
                 <h2 className="text-sm font-semibold text-zinc-100">
@@ -47,14 +47,18 @@ export default function ProfileInfoForm({
 
                 <div className="flex-1 min-w-0 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                        <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs font-medium cursor-pointer transition-colors">
+                        <label
+                            htmlFor="account-photo-input"
+                            className="admin-btn-secondary admin-btn-sm inline-flex items-center justify-center font-medium cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-[var(--orange)]"
+                        >
                             <HiOutlineCamera className="w-3.5 h-3.5" />
                             <span>Change Photo</span>
                             <input
+                                id="account-photo-input"
                                 type="file"
                                 accept="image/jpeg,image/png,image/jpg,image/webp"
                                 onChange={onPhotoChange}
-                                className="hidden"
+                                className="sr-only"
                             />
                         </label>
 
@@ -62,10 +66,12 @@ export default function ProfileInfoForm({
                             <button
                                 type="button"
                                 onClick={onRemovePhoto}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-red-500/10 text-zinc-400 hover:text-red-300 border border-zinc-800 hover:border-red-500/30 text-xs font-medium cursor-pointer transition-colors"
+                                title="Remove photo"
+                                aria-label="Remove photo"
+                                className="admin-btn-ghost admin-btn-sm admin-btn-mobile-icon inline-flex items-center justify-center font-medium hover:!text-[var(--danger)] hover:!border-[color-mix(in_srgb,var(--danger)_35%,transparent)] cursor-pointer transition-colors"
                             >
-                                <HiOutlineTrash className="w-3.5 h-3.5" />
-                                <span>Remove</span>
+                                <HiOutlineTrash className="w-3.5 h-3.5 shrink-0" />
+                                <span className="hidden sm:inline">Remove</span>
                             </button>
                         )}
                     </div>
@@ -82,17 +88,23 @@ export default function ProfileInfoForm({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-zinc-300">
+                    <label
+                        htmlFor="account-name"
+                        className="block text-xs font-medium text-zinc-300"
+                    >
                         Full Name
                     </label>
                     <input
+                        id="account-name"
                         type="text"
                         required
+                        autoComplete="name"
                         value={profileForm.data.name}
                         onChange={(e) =>
                             profileForm.setData("name", e.target.value)
                         }
-                        className="w-full text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none transition-colors"
+                        aria-invalid={Boolean(profileForm.errors.name)}
+                        className="admin-input w-full text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-lg border outline-none transition-colors"
                     />
                     {profileForm.errors.name && (
                         <p className="text-xs text-red-400">
@@ -102,17 +114,23 @@ export default function ProfileInfoForm({
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-zinc-300">
+                    <label
+                        htmlFor="account-username"
+                        className="block text-xs font-medium text-zinc-300"
+                    >
                         Username
                     </label>
                     <input
+                        id="account-username"
                         type="text"
                         required
+                        autoComplete="username"
                         value={profileForm.data.username}
                         onChange={(e) =>
                             profileForm.setData("username", e.target.value)
                         }
-                        className="w-full text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none transition-colors"
+                        aria-invalid={Boolean(profileForm.errors.username)}
+                        className="admin-input w-full text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-lg border outline-none transition-colors"
                     />
                     {profileForm.errors.username && (
                         <p className="text-xs text-red-400">
@@ -124,7 +142,10 @@ export default function ProfileInfoForm({
 
             <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                    <label className="block text-xs font-medium text-zinc-300">
+                    <label
+                        htmlFor="account-email"
+                        className="block text-xs font-medium text-zinc-300"
+                    >
                         Email Address
                     </label>
                     {isVerified ? (
@@ -141,15 +162,21 @@ export default function ProfileInfoForm({
                 </div>
 
                 <div className="relative">
-                    <HiOutlineEnvelope className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <HiOutlineEnvelope
+                        className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                        aria-hidden="true"
+                    />
                     <input
+                        id="account-email"
                         type="email"
                         required
+                        autoComplete="email"
                         value={profileForm.data.email}
                         onChange={(e) =>
                             profileForm.setData("email", e.target.value)
                         }
-                        className="w-full text-sm pl-10 pr-3.5 py-2 sm:py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none transition-colors"
+                        aria-invalid={Boolean(profileForm.errors.email)}
+                        className="admin-input w-full text-sm pl-10 pr-3.5 py-2 sm:py-2.5 rounded-lg border outline-none transition-colors"
                     />
                 </div>
                 {profileForm.errors.email && (
@@ -167,11 +194,11 @@ export default function ProfileInfoForm({
                             type="button"
                             disabled={sendingVerification}
                             onClick={onSendVerification}
-                            className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 border border-amber-500/30 text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer shrink-0 self-start sm:self-auto"
+                            className="admin-btn-secondary admin-btn-sm inline-flex items-center justify-center font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0 self-start sm:self-auto"
                         >
                             {sendingVerification
                                 ? "Sending..."
-                                : "Send Verification Email"}
+                                : "Verify Email"}
                         </button>
                     </div>
                 )}
@@ -181,7 +208,7 @@ export default function ProfileInfoForm({
                 <button
                     type="submit"
                     disabled={profileForm.processing}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition-colors disabled:opacity-50 cursor-pointer"
+                    className="admin-btn-primary admin-btn-lg inline-flex items-center justify-center w-full sm:w-auto transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                     {profileForm.processing ? "Saving..." : "Save Profile"}
                 </button>

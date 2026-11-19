@@ -22,6 +22,8 @@ class AuthService
      */
     public function attemptLogin(array $credentials, bool $remember = false): User
     {
+        $credentials['email'] = Str::lower(trim((string) ($credentials['email'] ?? '')));
+
         if (! Auth::guard('web')->attempt($credentials, $remember)) {
             throw new AuthenticationException('Invalid credentials');
         }
@@ -47,19 +49,13 @@ class AuthService
     /**
      * Register a new user and authenticate them into the web session.
      */
-    public function register(array $data, ?UploadedFile $photoFile = null): User
+    public function register(array $data, ?UploadedFile $photo = null): User
     {
-        $disk = Storage::disk('public');
         $photoPath = null;
 
         DB::beginTransaction();
 
         try {
-            if ($photoFile) {
-                // SEC-08: Use server-detected MIME extension via store() instead of getClientOriginalExtension()
-                $photoPath = $photoFile->store('users/photos', 'public');
-            }
-
             $baseUsername = ! empty($data['username'])
                 ? Str::slug($data['username'], '_')
                 : (Str::slug($data['name']) ?: 'user');
@@ -69,11 +65,18 @@ class AuthService
                 $username = $baseUsername.'_'.Str::lower(Str::random(4));
             }
 
+            if ($photo instanceof UploadedFile) {
+                $photoPath = $photo->store('users/photos', 'public');
+                if (! $photoPath) {
+                    throw new \RuntimeException('Failed to store uploaded profile photo.');
+                }
+            }
+
             $ipAddress = request()->ip();
             $user = User::create([
                 'name' => trim($data['name']),
                 'username' => $username,
-                'email' => trim($data['email']),
+                'email' => Str::lower(trim((string) $data['email'])),
                 'photo_path' => $photoPath,
                 'role' => User::ROLE_MEMBER,
                 'status' => 'active',
@@ -92,11 +95,9 @@ class AuthService
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
-
             if ($photoPath) {
-                $disk->delete($photoPath);
+                Storage::disk('public')->delete($photoPath);
             }
-
             throw $e;
         }
 

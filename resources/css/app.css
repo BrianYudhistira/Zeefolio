@@ -1,4 +1,4 @@
-/* Retro fonts */
+﻿/* Retro fonts */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
 
 @tailwind base;
@@ -12,16 +12,15 @@ html {
     scrollbar-color: #27272a #09090b;
 }
 
+
+html[data-admin-theme="light"] {
+    color-scheme: light;
+    scrollbar-color: #CBD5E1 #F1F5F9;
+}
 :root {
     --radius: 0.5rem;
 }
 
-@theme {
-  --breakpoint-xl: 1280px;
-  --breakpoint-2xl: 2600px;
-}
-
-/* Subtle dark scrollbars across the app */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -40,11 +39,26 @@ html {
     background: #3f3f46;
 }
 
+
+html[data-admin-theme="light"] ::-webkit-scrollbar-track {
+    background: #F1F5F9;
+}
+
+html[data-admin-theme="light"] ::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+}
+
+html[data-admin-theme="light"] ::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
 /* Utility classes for retro fonts */
 .font-retro-pixel {
     font-family: 'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
     letter-spacing: 0.02em;
 }
+
 .font-retro-mono {
     font-family: 'VT323', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
+

@@ -1,5 +1,5 @@
-import { HiXMark } from "react-icons/hi2";
-import { getRoleConfig } from "./MemberStatsGrid";
+import AdminModal from "@/Components/UI/AdminModal";
+import { getRoleConfig } from "@/Utils/memberHelpers";
 
 export default function MemberFormModal({
     open,
@@ -10,9 +10,7 @@ export default function MemberFormModal({
     onClose,
     onSubmit,
 }) {
-    if (!open) return null;
-
-    const roleOptions =
+    const baseRoleOptions =
         availableRoles.length > 0
             ? availableRoles
             : [
@@ -21,51 +19,54 @@ export default function MemberFormModal({
                   { name: "superadmin" },
               ];
 
+    const roleOptions = isSuperAdmin
+        ? baseRoleOptions
+        : [{ name: form.data.role || "member" }];
+
     const selectedRoleInfo = getRoleConfig(form.data.role, availableRoles);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm">
-            <div className="w-full max-w-lg rounded-xl bg-zinc-900 border border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="px-4 py-3.5 sm:px-5 sm:py-4 border-b border-zinc-800 flex items-center justify-between gap-3 shrink-0">
-                    <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-zinc-100 truncate">
-                            {editingMember
-                                ? `Configure Account — ${editingMember.name}`
-                                : "Create New Account"}
-                        </h3>
-                        <p className="hidden sm:block text-xs text-zinc-400 mt-0.5">
-                            {isSuperAdmin
-                                ? "Manage account credentials, role assignment, and status."
-                                : "Manage member account credentials and status."}
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-zinc-400 hover:text-zinc-100 cursor-pointer shrink-0"
-                    >
-                        <HiXMark className="w-5 h-5" />
-                    </button>
-                </div>
-
-                <form
-                    onSubmit={onSubmit}
-                    className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto"
-                >
+        <AdminModal
+            open={open}
+            onClose={onClose}
+            title={
+                editingMember
+                    ? `Configure Account — ${editingMember.name}`
+                    : "Create New Account"
+            }
+            subtitle={
+                isSuperAdmin
+                    ? "Manage account credentials, role assignment, and status."
+                    : "Manage member account credentials and status."
+            }
+            maxWidthClass="max-w-lg"
+            preventClose={form.processing}
+        >
+            <form
+                onSubmit={onSubmit}
+                className="flex flex-col flex-1 min-h-0 overflow-hidden"
+            >
+                <div className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-zinc-300">
+                            <label
+                                htmlFor="member-name"
+                                className="block text-xs font-medium text-zinc-300"
+                            >
                                 Full Name
                             </label>
                             <input
+                                id="member-name"
                                 type="text"
                                 required
+                                autoComplete="name"
                                 value={form.data.name}
                                 onChange={(e) =>
                                     form.setData("name", e.target.value)
                                 }
                                 placeholder="e.g. John Doe"
-                                className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                                aria-invalid={Boolean(form.errors.name)}
+                                className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                             />
                             {form.errors.name && (
                                 <p className="text-xs text-red-400">
@@ -75,18 +76,24 @@ export default function MemberFormModal({
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-zinc-300">
+                            <label
+                                htmlFor="member-username"
+                                className="block text-xs font-medium text-zinc-300"
+                            >
                                 Username
                             </label>
                             <input
+                                id="member-username"
                                 type="text"
                                 required
+                                autoComplete="username"
                                 value={form.data.username}
                                 onChange={(e) =>
                                     form.setData("username", e.target.value)
                                 }
                                 placeholder="e.g. johndoe"
-                                className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                                aria-invalid={Boolean(form.errors.username)}
+                                className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                             />
                             {form.errors.username && (
                                 <p className="text-xs text-red-400">
@@ -98,18 +105,24 @@ export default function MemberFormModal({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-zinc-300">
+                            <label
+                                htmlFor="member-email"
+                                className="block text-xs font-medium text-zinc-300"
+                            >
                                 Email Address
                             </label>
                             <input
+                                id="member-email"
                                 type="email"
                                 required
+                                autoComplete="email"
                                 value={form.data.email}
                                 onChange={(e) =>
                                     form.setData("email", e.target.value)
                                 }
                                 placeholder="user@example.com"
-                                className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                                aria-invalid={Boolean(form.errors.email)}
+                                className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                             />
                             {form.errors.email && (
                                 <p className="text-xs text-red-400">
@@ -119,14 +132,20 @@ export default function MemberFormModal({
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-zinc-300">
+                            <label
+                                htmlFor="member-password"
+                                className="block text-xs font-medium text-zinc-300"
+                            >
                                 {editingMember
                                     ? "New Password (Optional)"
                                     : "Password"}
                             </label>
                             <input
+                                id="member-password"
                                 type="password"
                                 required={!editingMember}
+                                autoComplete="new-password"
+                                minLength={editingMember ? undefined : 8}
                                 value={form.data.password}
                                 onChange={(e) =>
                                     form.setData("password", e.target.value)
@@ -136,7 +155,8 @@ export default function MemberFormModal({
                                         ? "Leave blank to keep current"
                                         : "Min. 8 characters"
                                 }
-                                className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                                aria-invalid={Boolean(form.errors.password)}
+                                className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                             />
                             {form.errors.password && (
                                 <p className="text-xs text-red-400">
@@ -148,10 +168,14 @@ export default function MemberFormModal({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-zinc-300">
+                            <label
+                                htmlFor="member-role"
+                                className="block text-xs font-medium text-zinc-300"
+                            >
                                 Role
                             </label>
                             <select
+                                id="member-role"
                                 value={form.data.role}
                                 disabled={
                                     !isSuperAdmin ||
@@ -161,20 +185,18 @@ export default function MemberFormModal({
                                 onChange={(e) =>
                                     form.setData("role", e.target.value)
                                 }
-                                className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 disabled:opacity-50 outline-none capitalize"
+                                className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border disabled:opacity-50 outline-none capitalize transition-colors"
                             >
-                                {isSuperAdmin ? (
-                                    roleOptions.map((r) => (
-                                        <option key={r.name} value={r.name}>
-                                            {getRoleConfig(
+                                {roleOptions.map((r) => (
+                                    <option key={r.name} value={r.name}>
+                                        {
+                                            getRoleConfig(
                                                 r.name,
                                                 availableRoles
-                                            ).label}
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option value="member">Member</option>
-                                )}
+                                            ).label
+                                        }
+                                    </option>
+                                ))}
                             </select>
                             {form.errors.role && (
                                 <p className="text-xs text-red-400">
@@ -184,15 +206,19 @@ export default function MemberFormModal({
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-zinc-300">
+                            <label
+                                htmlFor="member-status"
+                                className="block text-xs font-medium text-zinc-300"
+                            >
                                 Account Status
                             </label>
                             <select
+                                id="member-status"
                                 value={form.data.status}
                                 onChange={(e) =>
                                     form.setData("status", e.target.value)
                                 }
-                                className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                                className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                             >
                                 <option value="active">Active</option>
                                 <option value="dnd">
@@ -216,29 +242,30 @@ export default function MemberFormModal({
                         </span>
                         {selectedRoleInfo.description}
                     </div>
+                </div>
 
-                    <div className="pt-2 flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition-colors cursor-pointer"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={form.processing}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-xs font-medium text-zinc-100 transition-colors disabled:opacity-50 cursor-pointer"
-                        >
-                            {form.processing
-                                ? "Saving..."
-                                : editingMember
-                                  ? "Save Changes"
-                                  : "Create Account"}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <div className="px-4 sm:px-5 py-3.5 border-t border-zinc-800 bg-zinc-950/60 flex items-center justify-end gap-2 shrink-0">
+                    <button
+                        type="button"
+                        disabled={form.processing}
+                        onClick={onClose}
+                        className="admin-btn-secondary admin-btn-md inline-flex items-center justify-center font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={form.processing}
+                        className="admin-btn-primary admin-btn-md inline-flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        {form.processing
+                            ? "Saving..."
+                            : editingMember
+                              ? "Save Changes"
+                              : "Create Account"}
+                    </button>
+                </div>
+            </form>
+        </AdminModal>
     );
 }

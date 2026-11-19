@@ -1,8 +1,16 @@
-import { Head, Link, router } from "@inertiajs/react";
+import { useEffect, useRef, useState } from "react";
+import { Head, router } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import EmptyState from "@/Components/UI/EmptyState";
+import PaginationBar from "@/Components/UI/PaginationBar";
+import ConfirmDeleteModal from "@/Components/UI/ConfirmDeleteModal";
+import { formatDateTime } from "@/Utils/dateHelpers";
 import {
-    HiOutlineBell,
+    NOTIFICATION_TONE_STYLES,
+    getNotificationTone,
+    navigateNotification,
+} from "@/Utils/notificationHelpers";
+import {
     HiOutlinePlusCircle,
     HiOutlineTrash,
 } from "react-icons/hi2";
@@ -12,12 +20,44 @@ export default function NotificationsIndex({
     stats = {},
     filter = "all",
 }) {
+    const [clearModalOpen, setClearModalOpen] = useState(false);
+    const [clearingAll, setClearingAll] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
+    const reloadTimerRef = useRef(null);
+
     const rows = Array.isArray(notificationsList?.data)
         ? notificationsList.data
         : [];
     const paginationLinks = Array.isArray(notificationsList?.links)
         ? notificationsList.links
         : [];
+
+    useEffect(() => {
+        const handleIncomingNotification = () => {
+            if (reloadTimerRef.current) {
+                clearTimeout(reloadTimerRef.current);
+            }
+            reloadTimerRef.current = setTimeout(() => {
+                router.reload({
+                    only: ["notificationsList", "stats"],
+                    preserveState: true,
+                    preserveScroll: true,
+                    showProgress: false,
+                });
+            }, 400);
+        };
+
+        window.addEventListener("admin:sse-notification", handleIncomingNotification);
+        return () => {
+            window.removeEventListener(
+                "admin:sse-notification",
+                handleIncomingNotification
+            );
+            if (reloadTimerRef.current) {
+                clearTimeout(reloadTimerRef.current);
+            }
+        };
+    }, []);
 
     const handleFilterChange = (nextFilter) => {
         const query = nextFilter === "all" ? {} : { filter: nextFilter };
@@ -29,193 +69,176 @@ export default function NotificationsIndex({
     };
 
     const handleDeleteAll = () => {
+        setClearModalOpen(true);
+    };
+
+    const confirmDeleteAll = () => {
+        setClearingAll(true);
         router.delete(route("admin.notifications.clear"), {
             preserveScroll: true,
+            onSuccess: () => setClearModalOpen(false),
+            onFinish: () => setClearingAll(false),
         });
     };
 
     const handleDeleteOne = (e, id) => {
         e.stopPropagation();
+        if (deletingId === id) return;
+        setDeletingId(id);
         router.delete(route("admin.notifications.destroy", id), {
             preserveScroll: true,
+            onFinish: () => setDeletingId(null),
         });
     };
 
     const handleNotificationClick = (item) => {
-        const isRead = Boolean(item.is_read || item.read_at);
-        const targetUrl = item.action_url;
-
-        if (!isRead) {
-            router.put(
-                route("admin.notifications.read", item.id),
-                {},
-                {
-                    preserveScroll: true,
-                    onFinish: () => {
-                        if (targetUrl) {
-                            router.visit(targetUrl);
-                        }
-                    },
-                }
-            );
-            return;
-        }
-
-        if (targetUrl) {
-            router.visit(targetUrl);
-        }
+        navigateNotification(item);
     };
-
-    const formatDateTime = (iso) => {
-        if (!iso) return "-";
-        return new Date(iso).toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
-
-    const headerActions = (
-        <div className="flex items-center gap-2">
-            {(stats.total ?? 0) > 0 && (
-                <button
-                    type="button"
-                    onClick={handleDeleteAll}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-red-500/10 border border-zinc-800 hover:border-red-500/25 text-zinc-300 hover:text-red-400 text-xs font-medium transition-colors cursor-pointer"
-                >
-                    <HiOutlineTrash className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Delete all</span>
-                </button>
-            )}
-        </div>
-    );
 
     return (
-        <AdminLayout title="Notifications" headerActions={headerActions}>
-            <Head title="Notifications - Zeefolio" />
+        <>
+            <Head title="Notifications" />
 
             <div className="space-y-5">
-                {/* Filter Tabs */}
-                <div className="flex items-center gap-2">
-                    {[
-                        { key: "all", label: "All" },
-                        { key: "unread", label: "Unread" },
-                        { key: "read", label: "Read" },
-                    ].map((tab) => (
-                        <button
-                            key={tab.key}
-                            type="button"
-                            onClick={() => handleFilterChange(tab.key)}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${filter === tab.key
-                                ? "bg-zinc-100 text-zinc-950 border-zinc-100"
-                                : "bg-zinc-900/70 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800/60"
+                {/* Filter Tabs & Safe Toolbar Action */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div
+                        role="tablist"
+                        aria-label="Notification filter"
+                        className="admin-pill-track grid grid-cols-3 sm:inline-flex items-center gap-1 p-1 rounded-lg border w-full sm:w-auto"
+                    >
+                        {[
+                            { key: "all", label: "All" },
+                            { key: "unread", label: "Unread" },
+                            { key: "read", label: "Read" },
+                        ].map((tab) => (
+                            <button
+                                key={tab.key}
+                                type="button"
+                                role="tab"
+                                aria-selected={filter === tab.key}
+                                onClick={() => handleFilterChange(tab.key)}
+                                className={`px-3.5 py-2 sm:py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer text-center ${
+                                    filter === tab.key
+                                        ? "admin-pill-active"
+                                        : "admin-pill-inactive"
                                 }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {(stats.total ?? 0) > 0 && (
+                        <div className="flex items-center justify-between sm:justify-end gap-2">
+                            <span className="sm:hidden text-xs text-[var(--text-muted)]">
+                                {stats.total}{" "}
+                                {stats.total === 1
+                                    ? "notification"
+                                    : "notifications"}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={handleDeleteAll}
+                                disabled={clearingAll}
+                                className="admin-btn-danger admin-btn-sm inline-flex items-center justify-center font-medium transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                            >
+                                <HiOutlineTrash className="w-3.5 h-3.5 shrink-0" />
+                                <span>Delete All</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Notifications List */}
-                <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 overflow-hidden">
-                    {rows.length === 0 ? (
-                        <div className="p-6">
-                            <EmptyState
-                                icon={HiOutlineBell}
-                                title="No notifications"
-                                description="You have no notifications in this view."
-                            />
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-zinc-800/70">
+                {rows.length === 0 ? (
+                    <div className="admin-card rounded-xl border p-6">
+                        <EmptyState message="You have no notifications in this view." />
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        <div className="space-y-2.5">
                             {rows.map((item) => {
                                 const isRead = Boolean(
                                     item.is_read || item.read_at
                                 );
-                                const msg = item.message || "";
-                                const isDelete =
-                                    msg.toLowerCase().includes("deleted") ||
-                                    msg.toLowerCase().includes("removed");
-                                const isAdd =
-                                    msg.toLowerCase().includes("added") ||
-                                    msg.toLowerCase().includes("created") ||
-                                    msg.toLowerCase().includes("promoted");
+                                const tone = getNotificationTone(item.message);
+                                const Icon =
+                                    tone === "delete"
+                                        ? HiOutlineTrash
+                                        : HiOutlinePlusCircle;
 
                                 return (
                                     <div
                                         key={item.id}
-                                        role="button"
-                                        tabIndex={0}
-                                        onClick={() =>
-                                            handleNotificationClick(item)
-                                        }
-                                        onKeyDown={(e) => {
-                                            if (
-                                                e.key === "Enter" ||
-                                                e.key === " "
-                                            ) {
-                                                e.preventDefault();
-                                                handleNotificationClick(item);
-                                            }
-                                        }}
-                                        className={`px-4 sm:px-5 py-3.5 transition-colors flex items-start gap-3.5 cursor-pointer ${isRead
-                                            ? "bg-transparent opacity-65 hover:bg-zinc-800/30 hover:opacity-95"
-                                            : "bg-zinc-800/55 hover:bg-zinc-800/80"
-                                            }`}
+                                        data-unread={!isRead ? "true" : "false"}
+                                        className="admin-card admin-item-card admin-notif-item rounded-xl border px-4 sm:px-5 py-3.5 flex items-start gap-2.5"
                                     >
-                                        <div
-                                            className={`mt-0.5 w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${isDelete
-                                                ? "bg-red-500/10 border-red-500/20 text-red-400"
-                                                : isAdd
-                                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                                                    : "bg-zinc-800 border-zinc-700 text-zinc-300"
-                                                }`}
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleNotificationClick(item)
+                                            }
+                                            className="flex items-start gap-3 min-w-0 flex-1 text-left cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--orange)]"
                                         >
-                                            {isDelete ? (
-                                                <HiOutlineTrash className="w-4 h-4" />
-                                            ) : (
-                                                <HiOutlinePlusCircle className="w-4 h-4" />
-                                            )}
-                                        </div>
+                                            <Icon
+                                                aria-hidden="true"
+                                                className={`w-4 h-4 mt-0.5 shrink-0 ${NOTIFICATION_TONE_STYLES[tone]}`}
+                                            />
 
-                                        <div className="min-w-0 flex-1">
-                                            <p
-                                                className={`text-xs sm:text-sm leading-snug ${isRead
-                                                    ? "text-zinc-300"
-                                                    : "text-zinc-100 font-medium"
-                                                    }`}
-                                            >
-                                                {item.message}
-                                            </p>
-
-                                            <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px] text-zinc-500">
-                                                {item.module && (
-                                                    <span className="px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 text-[10px]">
-                                                        {item.module}
-                                                    </span>
-                                                )}
-                                                <span>
-                                                    {item.user?.name ||
-                                                        "System"}
-                                                </span>
-                                                <span>•</span>
-                                                <span className="font-mono">
-                                                    {formatDateTime(
-                                                        item.created_at
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    {!isRead && (
+                                                        <>
+                                                            <span
+                                                                aria-hidden="true"
+                                                                className="w-1.5 h-1.5 rounded-full bg-[var(--orange)] shrink-0"
+                                                            />
+                                                            <span className="sr-only">
+                                                                Unread notification:
+                                                            </span>
+                                                        </>
                                                     )}
-                                                </span>
+                                                    <p
+                                                        className={`text-xs sm:text-sm leading-snug ${
+                                                            isRead
+                                                                ? "text-[var(--text-muted)]"
+                                                                : "text-[var(--text)] font-medium"
+                                                        }`}
+                                                    >
+                                                        {item.message}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px] text-[var(--text-muted)]">
+                                                    {item.module && (
+                                                        <span className="admin-notif-module-pill px-1.5 py-0.5 rounded text-[10px] font-medium">
+                                                            {item.module}
+                                                        </span>
+                                                    )}
+                                                    <span>
+                                                        {item.user?.name ||
+                                                            "System"}
+                                                    </span>
+                                                    <span>•</span>
+                                                    <span className="font-mono">
+                                                        {formatDateTime(
+                                                            item.created_at
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </button>
 
                                         <button
                                             type="button"
+                                            disabled={deletingId === item.id}
                                             onClick={(e) =>
                                                 handleDeleteOne(e, item.id)
                                             }
+                                            aria-label="Delete notification"
                                             title="Delete notification"
-                                            className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0 cursor-pointer"
+                                            className="admin-icon-btn inline-flex items-center justify-center shrink-0 text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] transition-colors cursor-pointer disabled:opacity-45"
                                         >
                                             <HiOutlineTrash className="w-4 h-4" />
                                         </button>
@@ -223,48 +246,25 @@ export default function NotificationsIndex({
                                 );
                             })}
                         </div>
-                    )}
 
-                    {/* Pagination */}
-                    {paginationLinks.length > 3 && (
-                        <div className="px-4 py-3 border-t border-zinc-800 flex flex-wrap items-center justify-center sm:justify-end gap-1.5 bg-zinc-950/30">
-                            {paginationLinks.map((link, idx) => {
-                                const label = link.label
-                                    .replace("&laquo; Previous", "Prev")
-                                    .replace("Next &raquo;", "Next");
-
-                                if (!link.url) {
-                                    return (
-                                        <span
-                                            key={idx}
-                                            className="px-2.5 py-1 rounded-lg text-xs text-zinc-600 border border-transparent select-none"
-                                            dangerouslySetInnerHTML={{
-                                                __html: label,
-                                            }}
-                                        />
-                                    );
-                                }
-
-                                return (
-                                    <Link
-                                        key={idx}
-                                        href={link.url}
-                                        preserveScroll
-                                        preserveState
-                                        className={`px-2.5 py-1 rounded-lg text-xs border transition-colors ${link.active
-                                            ? "bg-zinc-100 text-zinc-950 border-zinc-100 font-semibold"
-                                            : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800"
-                                            }`}
-                                        dangerouslySetInnerHTML={{
-                                            __html: label,
-                                        }}
-                                    />
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
+                        <PaginationBar links={paginationLinks} standalone />
+                    </div>
+                )}
             </div>
-        </AdminLayout>
+
+            <ConfirmDeleteModal
+                open={clearModalOpen}
+                title="Delete All Notifications"
+                description="Are you sure you want to delete all notifications? This action cannot be undone."
+                confirmLabel="Delete All"
+                processing={clearingAll}
+                onClose={() => !clearingAll && setClearModalOpen(false)}
+                onConfirm={confirmDeleteAll}
+            />
+        </>
     );
 }
+
+NotificationsIndex.layout = (page) => (
+    <AdminLayout title="Notifications">{page}</AdminLayout>
+);

@@ -78,8 +78,8 @@ class PortfolioUser extends Model
     public function experiences(): HasMany
     {
         return $this->hasMany(Experience::class)
-            ->orderBy('sort_order')
-            ->orderByDesc('start_date');
+            ->orderByDesc('start_date')
+            ->orderByDesc('id');
     }
 
     /**

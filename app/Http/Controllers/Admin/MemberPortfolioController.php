@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\TechStack;
+use App\Models\TechStackCategory;
 use App\Models\User;
 use App\Services\LogService;
 use App\Services\PortfolioService;
@@ -351,11 +352,33 @@ class MemberPortfolioController extends Controller
     public function promoteSkill(Request $request, TechStack $techStack): RedirectResponse
     {
         $originalUserId = $techStack->user_id;
+        $techStack->load('category');
 
-        $techStack->update([
-            'is_global' => true,
-            'user_id' => null,
-        ]);
+        DB::transaction(function () use ($techStack): void {
+            $category = $techStack->category;
+            $nextCategoryId = $techStack->category_id;
+
+            if ($category && ! $category->is_global) {
+                $existingGlobalCategory = TechStackCategory::global()
+                    ->whereRaw('LOWER(name) = ?', [Str::lower($category->name)])
+                    ->first();
+
+                if ($existingGlobalCategory) {
+                    $nextCategoryId = $existingGlobalCategory->id;
+                } else {
+                    $category->update([
+                        'is_global' => true,
+                        'user_id' => null,
+                    ]);
+                }
+            }
+
+            $techStack->update([
+                'is_global' => true,
+                'user_id' => null,
+                'category_id' => $nextCategoryId,
+            ]);
+        });
 
         if ($originalUserId) {
             $this->portfolioService->forgetUserPortfolioCache((int) $originalUserId);
@@ -364,13 +387,13 @@ class MemberPortfolioController extends Controller
 
         $this->logService->adminLog(
             'Portfolio',
-            "Promoted custom skill '{$techStack->name}' to global default",
+            "Promoted custom skill '{$techStack->name}' to default",
             array_filter([
                 'notify_user_id' => $originalUserId ? (int) $originalUserId : null,
                 'action_url' => '/admin/skills',
             ])
         );
 
-        return redirect()->back()->with('success', "Skill \"{$techStack->name}\" promoted to Global Default.");
+        return redirect()->back()->with('success', "Skill \"{$techStack->name}\" promoted to Default.");
     }
 }

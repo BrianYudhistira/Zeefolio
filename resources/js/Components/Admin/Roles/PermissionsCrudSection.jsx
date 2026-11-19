@@ -6,7 +6,7 @@ import {
 } from "react-icons/hi2";
 import SearchInput from "@/Components/UI/SearchInput";
 import EmptyState from "@/Components/UI/EmptyState";
-import { getRoleConfig } from "@/Components/Admin/Members/MemberStatsGrid";
+import { getRoleConfig } from "@/Utils/roleHelpers";
 
 export default function PermissionsCrudSection({
     permissions = [],
@@ -33,17 +33,18 @@ export default function PermissionsCrudSection({
     });
 
     return (
-        <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 overflow-hidden">
+        <div className="admin-card rounded-xl border overflow-hidden">
             {/* Filter & Action Header */}
-            <div className="p-4 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            <div className="p-4 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+                <div className="admin-scroll-strip flex items-center gap-1.5 overflow-x-auto min-w-0 pb-2.5 sm:pb-2 sm:-mb-2">
                     <button
                         type="button"
+                        aria-pressed={selectedGroup === "all"}
                         onClick={() => onGroupChange("all")}
                         className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer shrink-0 ${
                             selectedGroup === "all"
-                                ? "bg-zinc-800 text-zinc-100 border-zinc-700"
-                                : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200"
+                                ? "admin-pill-active"
+                                : "admin-pill-inactive"
                         }`}
                     >
                         All Groups ({permissions.length})
@@ -52,11 +53,12 @@ export default function PermissionsCrudSection({
                         <button
                             key={grp}
                             type="button"
+                            aria-pressed={selectedGroup === grp}
                             onClick={() => onGroupChange(grp)}
                             className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer shrink-0 ${
                                 selectedGroup === grp
-                                    ? "bg-zinc-800 text-zinc-100 border-zinc-700"
-                                    : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200"
+                                    ? "admin-pill-active"
+                                    : "admin-pill-inactive"
                             }`}
                         >
                             {grp}
@@ -74,9 +76,9 @@ export default function PermissionsCrudSection({
                     <button
                         type="button"
                         onClick={onOpenCreatePermission}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs font-medium transition-colors cursor-pointer shrink-0"
+                        className="admin-btn-primary admin-btn-sm hidden sm:inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
                     >
-                        <HiOutlinePlus className="w-4 h-4" />
+                        <HiOutlinePlus className="w-4 h-4 shrink-0" />
                         <span>New Permission</span>
                     </button>
                 </div>
@@ -85,7 +87,7 @@ export default function PermissionsCrudSection({
             {filteredPermissions.length === 0 ? (
                 <EmptyState
                     message="No permissions match your filter criteria."
-                    actionLabel="Create Permission"
+                    actionLabel="New Permission"
                     onAction={onOpenCreatePermission}
                 />
             ) : (
@@ -97,8 +99,8 @@ export default function PermissionsCrudSection({
                         >
                             <div className="space-y-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs font-mono font-semibold text-emerald-300">
-                                        <HiOutlineKey className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs font-mono font-semibold text-emerald-300 break-all max-w-full">
+                                        <HiOutlineKey className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                                         {perm.name}
                                     </span>
                                     <span className="px-2 py-0.5 rounded bg-zinc-800/80 border border-zinc-700 text-[10px] font-medium text-zinc-300">
@@ -135,16 +137,18 @@ export default function PermissionsCrudSection({
                                 <button
                                     type="button"
                                     onClick={() => onOpenEditPermission(perm)}
-                                    className="p-1.5 sm:p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+                                    className="admin-icon-btn inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
                                     title="Edit permission"
+                                    aria-label={`Edit permission ${perm.name}`}
                                 >
                                     <HiOutlinePencilSquare className="w-4 h-4" />
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => onDeletePermission(perm)}
-                                    className="p-1.5 sm:p-2 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                                    className="admin-icon-btn inline-flex items-center justify-center text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                                     title="Delete permission"
+                                    aria-label={`Delete permission ${perm.name}`}
                                 >
                                     <HiOutlineTrash className="w-4 h-4" />
                                 </button>

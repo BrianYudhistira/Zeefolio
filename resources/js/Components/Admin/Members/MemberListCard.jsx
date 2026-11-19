@@ -1,8 +1,10 @@
 import {
-    HiOutlineMagnifyingGlass,
+    HiOutlinePlus,
     HiOutlineUserCircle,
 } from "react-icons/hi2";
-import { getRoleConfig, STATUS_CONFIG } from "./MemberStatsGrid";
+import SearchInput from "@/Components/UI/SearchInput";
+import EmptyState from "@/Components/UI/EmptyState";
+import { getRoleConfig, STATUS_CONFIG } from "@/Utils/memberHelpers";
 
 export default function MemberListCard({
     members = [],
@@ -13,6 +15,8 @@ export default function MemberListCard({
     onRoleFilterChange,
     search = "",
     onSearchChange,
+    visibleOnMobile = true,
+    onCreateAccount = null,
 }) {
     const filterTabs = [
         { id: "all", label: "All" },
@@ -32,48 +36,61 @@ export default function MemberListCard({
     ];
 
     return (
-        <div className="lg:col-span-5 rounded-xl bg-zinc-900/60 border border-zinc-800 overflow-hidden">
+        <div
+            className={`lg:col-span-5 admin-card rounded-xl border overflow-hidden ${
+                visibleOnMobile ? "block" : "hidden lg:block"
+            }`}
+        >
             <div className="p-3.5 sm:p-4 border-b border-zinc-800 space-y-2.5 sm:space-y-3">
                 <div className="flex items-center justify-between gap-2">
                     <h2 className="text-xs sm:text-sm font-semibold text-zinc-100 shrink-0">
                         Accounts ({members.length})
                     </h2>
-                    <div className="flex items-center gap-1 overflow-x-auto">
-                        {filterTabs.map((tab) => (
+                    {onCreateAccount && (
+                        <button
+                            type="button"
+                            onClick={onCreateAccount}
+                            className="admin-btn-primary admin-btn-sm hidden sm:inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                        >
+                            <HiOutlinePlus className="w-4 h-4 shrink-0" />
+                            <span>New Account</span>
+                        </button>
+                    )}
+                </div>
+
+                <div className="admin-scroll-strip flex items-center gap-1 overflow-x-auto pb-2 -mb-1">
+                    {filterTabs.map((tab) => {
+                        const isActive = roleFilter === tab.id;
+                        return (
                             <button
                                 key={tab.id}
                                 type="button"
+                                aria-pressed={isActive}
                                 onClick={() => onRoleFilterChange(tab.id)}
-                                className={`px-2 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer shrink-0 capitalize ${
-                                    roleFilter === tab.id
-                                        ? "bg-zinc-800 text-zinc-100 border border-zinc-700"
-                                        : "text-zinc-500 hover:text-zinc-300"
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer shrink-0 capitalize ${
+                                    isActive
+                                        ? "admin-pill-active"
+                                        : "admin-pill-inactive"
                                 }`}
                             >
                                 {tab.label}
                             </button>
-                        ))}
-                    </div>
+                        );
+                    })}
                 </div>
 
-                <div className="relative">
-                    <HiOutlineMagnifyingGlass className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        placeholder="Search accounts..."
-                        className="w-full text-xs pl-9 pr-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 placeholder-zinc-500 outline-none"
-                    />
-                </div>
+                <SearchInput
+                    value={search}
+                    onChange={onSearchChange}
+                    placeholder="Search accounts..."
+                    className="w-full"
+                />
             </div>
 
             {members.length === 0 ? (
-                <p className="text-xs text-zinc-500 py-10 text-center">
-                    No accounts found.
-                </p>
+                <EmptyState message="No accounts found." />
             ) : (
-                <div className="divide-y divide-zinc-800 max-h-64 sm:max-h-[600px] overflow-y-auto">
+                <div className="divide-y divide-zinc-800 lg:max-h-[600px] lg:overflow-y-auto">
                     {members.map((member) => {
                         const isSelected = selectedId === member.id;
                         const roleCfg = getRoleConfig(
@@ -88,11 +105,12 @@ export default function MemberListCard({
                             <button
                                 key={member.id}
                                 type="button"
+                                aria-current={isSelected ? "true" : undefined}
                                 onClick={() => onSelectMember(member.id)}
-                                className={`w-full text-left p-3 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 transition-colors cursor-pointer ${
+                                className={`w-full text-left p-3 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 border-l-2 transition-colors cursor-pointer ${
                                     isSelected
-                                        ? "bg-zinc-800/80"
-                                        : "hover:bg-zinc-800/30"
+                                        ? "bg-zinc-800/80 border-l-[var(--orange)]"
+                                        : "border-l-transparent hover:bg-zinc-800/30"
                                 }`}
                             >
                                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
@@ -129,9 +147,10 @@ export default function MemberListCard({
                                 <div className="text-right shrink-0 space-y-1">
                                     <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-zinc-950 border border-zinc-800 text-[10px] text-zinc-400">
                                         <span
+                                            aria-hidden="true"
                                             className={`w-1.5 h-1.5 rounded-full ${statusCfg.dotClass}`}
                                         />
-                                        <span className="hidden sm:inline">
+                                        <span className="sr-only sm:not-sr-only">
                                             {statusCfg.label}
                                         </span>
                                     </div>

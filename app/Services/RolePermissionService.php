@@ -56,11 +56,6 @@ class RolePermissionService
                 'description' => 'Create, update, reorder, and delete work experiences.',
             ],
             [
-                'name' => 'tech-stacks.manage',
-                'group' => 'Portfolio',
-                'description' => 'Manage custom tech stack items for portfolio.',
-            ],
-            [
                 'name' => 'contacts.manage',
                 'group' => 'Portfolio',
                 'description' => 'Manage portfolio contact details and social channels.',
@@ -187,7 +182,6 @@ class RolePermissionService
                 'projects.manage',
                 'skills.manage',
                 'experiences.manage',
-                'tech-stacks.manage',
                 'contacts.manage',
                 'members.view',
                 'members.create',
@@ -206,21 +200,18 @@ class RolePermissionService
                 'projects.manage',
                 'skills.manage',
                 'experiences.manage',
-                'tech-stacks.manage',
                 'contacts.manage',
             ]);
         }
 
+        // Remove obsolete tech-stacks permission if still present from older builds
+        Permission::where('name', 'tech-stacks.manage')->where('guard_name', 'web')->delete();
+
         // Backfill split per-menu permissions for existing v1 roles that already have permissions
         foreach ([$adminRole, $memberRole] as $role) {
             $role->load('permissions');
-            if ($role->permissions->isNotEmpty()) {
-                if ($role->permissions->contains('name', 'profile.manage')) {
-                    $role->givePermissionTo(['home.manage', 'contacts.manage']);
-                }
-                if ($role->permissions->contains('name', 'skills.manage') && ! $role->permissions->contains('name', 'tech-stacks.manage')) {
-                    $role->givePermissionTo('tech-stacks.manage');
-                }
+            if ($role->permissions->isNotEmpty() && $role->permissions->contains('name', 'profile.manage')) {
+                $role->givePermissionTo(['home.manage', 'contacts.manage']);
             }
         }
 

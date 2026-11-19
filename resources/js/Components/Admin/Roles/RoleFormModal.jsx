@@ -1,4 +1,9 @@
-import { HiXMark, HiOutlineCheck } from "react-icons/hi2";
+import { HiOutlineCheck } from "react-icons/hi2";
+import AdminModal from "@/Components/UI/AdminModal";
+import {
+    groupPermissions,
+    togglePermissionList,
+} from "@/Utils/permissionHelpers";
 
 export default function RoleFormModal({
     open,
@@ -8,64 +13,46 @@ export default function RoleFormModal({
     onClose,
     onSubmit,
 }) {
-    if (!open) return null;
-
     const isSystem = Boolean(editingRole?.is_system);
     const isSuperAdmin = editingRole?.name === "superadmin";
-
-    const groupedPermissions = permissions.reduce((acc, perm) => {
-        const grp = perm.group || "General";
-        if (!acc[grp]) acc[grp] = [];
-        acc[grp].push(perm);
-        return acc;
-    }, {});
+    const groupedPermissions = groupPermissions(permissions);
 
     const togglePerm = (permName) => {
         if (isSuperAdmin) return;
-        const current = form.data.permissions || [];
-        if (current.includes(permName)) {
-            form.setData(
-                "permissions",
-                current.filter((p) => p !== permName)
-            );
-        } else {
-            form.setData("permissions", [...current, permName]);
-        }
+        form.setData(
+            "permissions",
+            togglePermissionList(form.data.permissions || [], permName)
+        );
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm">
-            <div className="w-full max-w-2xl rounded-xl bg-zinc-900 border border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between shrink-0">
-                    <div>
-                        <h3 className="text-sm font-semibold text-zinc-100">
-                            {editingRole
-                                ? `Edit Role — ${editingRole.name}`
-                                : "Create New Role"}
-                        </h3>
-                        <p className="text-xs text-zinc-400 mt-0.5">
-                            Define a Spatie role and choose which permissions it grants.
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-zinc-400 hover:text-zinc-100 cursor-pointer"
-                    >
-                        <HiXMark className="w-5 h-5" />
-                    </button>
-                </div>
-
-                <form
-                    onSubmit={onSubmit}
-                    className="p-5 space-y-4 overflow-y-auto flex-1"
-                >
+        <AdminModal
+            open={open}
+            onClose={onClose}
+            title={
+                editingRole
+                    ? `Edit Role — ${editingRole.name}`
+                    : "Create New Role"
+            }
+            subtitle="Set up a role and choose which features it can access."
+            maxWidthClass="max-w-2xl"
+            preventClose={form.processing}
+        >
+            <form
+                onSubmit={onSubmit}
+                className="flex flex-col flex-1 min-h-0 overflow-hidden"
+            >
+                <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-zinc-300">
-                                Role Identifier (Slug)
+                            <label
+                                htmlFor="role-name"
+                                className="block text-xs font-medium text-zinc-300"
+                            >
+                                Role Name
                             </label>
                             <input
+                                id="role-name"
                                 type="text"
                                 required
                                 disabled={isSystem}
@@ -74,7 +61,8 @@ export default function RoleFormModal({
                                     form.setData("name", e.target.value)
                                 }
                                 placeholder="e.g. editor, content_manager, reviewer"
-                                className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 disabled:opacity-50 outline-none font-mono"
+                                aria-invalid={Boolean(form.errors.name)}
+                                className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border disabled:opacity-50 outline-none font-mono transition-colors"
                             />
                             {isSystem && (
                                 <p className="text-[11px] text-zinc-500">
@@ -89,17 +77,22 @@ export default function RoleFormModal({
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-zinc-300">
+                            <label
+                                htmlFor="role-description"
+                                className="block text-xs font-medium text-zinc-300"
+                            >
                                 Description
                             </label>
                             <input
+                                id="role-description"
                                 type="text"
                                 value={form.data.description}
                                 onChange={(e) =>
                                     form.setData("description", e.target.value)
                                 }
                                 placeholder="Brief summary of what this role can do..."
-                                className="w-full text-sm px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-zinc-600 text-zinc-100 outline-none"
+                                aria-invalid={Boolean(form.errors.description)}
+                                className="admin-input w-full text-sm px-3.5 py-2 rounded-lg border outline-none transition-colors"
                             />
                             {form.errors.description && (
                                 <p className="text-xs text-red-400">
@@ -109,17 +102,17 @@ export default function RoleFormModal({
                         </div>
                     </div>
 
-                    <div className="space-y-2.5">
-                        <div className="flex items-center justify-between">
-                            <label className="block text-xs font-medium text-zinc-300">
+                    <fieldset className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                            <legend className="text-xs font-medium text-zinc-300">
                                 Assigned Permissions (
                                 {isSuperAdmin
                                     ? permissions.length
                                     : (form.data.permissions || []).length}{" "}
                                 / {permissions.length})
-                            </label>
+                            </legend>
                             {!isSuperAdmin && (
-                                <div className="flex items-center gap-2 text-xs">
+                                <div className="flex items-center gap-1.5 text-xs">
                                     <button
                                         type="button"
                                         onClick={() =>
@@ -128,7 +121,7 @@ export default function RoleFormModal({
                                                 permissions.map((p) => p.name)
                                             )
                                         }
-                                        className="text-emerald-400 hover:text-emerald-300 cursor-pointer"
+                                        className="px-2 py-1 rounded text-emerald-400 hover:text-emerald-300 hover:bg-zinc-800/60 transition-colors cursor-pointer"
                                     >
                                         Select All
                                     </button>
@@ -138,7 +131,7 @@ export default function RoleFormModal({
                                         onClick={() =>
                                             form.setData("permissions", [])
                                         }
-                                        className="text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                                        className="px-2 py-1 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors cursor-pointer"
                                     >
                                         Clear All
                                     </button>
@@ -146,7 +139,7 @@ export default function RoleFormModal({
                             )}
                         </div>
 
-                        <div className="max-h-72 overflow-y-auto space-y-3 p-3 rounded-xl bg-zinc-950 border border-zinc-800">
+                        <div className="space-y-3 p-3 rounded-xl bg-zinc-950 border border-zinc-800">
                             {Object.entries(groupedPermissions).map(
                                 ([groupName, groupPerms]) => (
                                     <div key={groupName} className="space-y-1.5">
@@ -166,16 +159,18 @@ export default function RoleFormModal({
                                                         key={perm.id}
                                                         type="button"
                                                         disabled={isSuperAdmin}
+                                                        aria-pressed={checked}
+                                                        data-selected={
+                                                            checked
+                                                                ? "true"
+                                                                : "false"
+                                                        }
                                                         onClick={() =>
                                                             togglePerm(
                                                                 perm.name
                                                             )
                                                         }
-                                                        className={`text-left px-2.5 py-2 rounded-lg border text-xs flex items-center gap-2 transition-colors ${
-                                                            checked
-                                                                ? "bg-zinc-900 border-emerald-500/40 text-zinc-100"
-                                                                : "bg-zinc-900/40 border-zinc-800 text-zinc-400 hover:text-zinc-200"
-                                                        } ${
+                                                        className={`admin-cat-chip text-left px-2.5 py-2 rounded-lg border text-xs flex items-center gap-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--orange)] ${
                                                             isSuperAdmin
                                                                 ? "opacity-75 cursor-not-allowed"
                                                                 : "cursor-pointer"
@@ -203,31 +198,31 @@ export default function RoleFormModal({
                                 )
                             )}
                         </div>
-                    </div>
+                    </fieldset>
+                </div>
 
-                    <div className="pt-2 flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition-colors cursor-pointer"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={form.processing}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-xs font-medium text-zinc-100 transition-colors disabled:opacity-50 cursor-pointer"
-                        >
-                            {form.processing
-                                ? "Saving..."
-                                : editingRole
-                                  ? "Save Role"
-                                  : "Create Role"}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <div className="px-4 sm:px-5 py-3.5 border-t border-zinc-800 bg-zinc-950/60 flex items-center justify-end gap-2 shrink-0">
+                    <button
+                        type="button"
+                        disabled={form.processing}
+                        onClick={onClose}
+                        className="admin-btn-secondary admin-btn-md inline-flex items-center justify-center font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={form.processing}
+                        className="admin-btn-primary admin-btn-md inline-flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        {form.processing
+                            ? "Saving..."
+                            : editingRole
+                              ? "Save Changes"
+                              : "Create Role"}
+                    </button>
+                </div>
+            </form>
+        </AdminModal>
     );
 }
-

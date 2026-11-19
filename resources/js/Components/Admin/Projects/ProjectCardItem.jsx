@@ -16,13 +16,11 @@ export default function ProjectCardItem({
 }) {
     const { auth } = usePage().props;
     const portfolioSlug =
-        auth?.user?.portfolio_slug ||
-        auth?.user?.username ||
-        "brian-yudhistira";
+        auth?.user?.portfolio_slug || auth?.user?.username || null;
     const showcaseCount = project.images?.length || 0;
 
     return (
-        <div className="p-3.5 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 hover:bg-zinc-800/30 transition-colors">
+        <div className="admin-card admin-item-card rounded-xl border p-3.5 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-start gap-3 sm:gap-4 min-w-0">
                 <div className="w-14 h-10 sm:w-16 sm:h-12 rounded-lg bg-zinc-950 border border-zinc-800 overflow-hidden flex items-center justify-center shrink-0">
                     {project.image_url ? (
@@ -59,7 +57,8 @@ export default function ProjectCardItem({
                         <button
                             type="button"
                             onClick={() => onEdit(project, "showcase")}
-                            className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-[10px] font-medium text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                            aria-label={`Manage ${showcaseCount} ${showcaseCount === 1 ? "showcase" : "showcases"} for ${project.title}`}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-[10px] font-medium text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer tabular-nums"
                             title="Manage Interface Showcases"
                         >
                             <HiOutlineRectangleGroup className="w-3 h-3" />
@@ -100,21 +99,22 @@ export default function ProjectCardItem({
                 <button
                     type="button"
                     onClick={() => onEdit(project, "showcase")}
-                    className="px-2 sm:px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] sm:text-xs text-zinc-300 hover:text-zinc-100 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="admin-btn-ghost admin-btn-xs inline-flex items-center justify-center font-medium transition-colors cursor-pointer"
                     title="Edit Interface Showcase"
                 >
                     <HiOutlineRectangleGroup className="w-3.5 h-3.5" />
                     <span>Showcase</span>
                 </button>
-                {project.slug && (
+                {project.slug && portfolioSlug && (
                     <a
                         href={route("portfolio.project", {
                             slug: portfolioSlug,
                             projectSlug: project.slug,
                         })}
                         target="_blank"
-                        rel="noreferrer"
-                        className="p-1.5 sm:p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                        rel="noopener noreferrer"
+                        aria-label={`View public page for ${project.title}`}
+                        className="admin-icon-btn inline-flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
                         title="View public page"
                     >
                         <HiOutlineArrowTopRightOnSquare className="w-4 h-4" />
@@ -123,7 +123,8 @@ export default function ProjectCardItem({
                 <button
                     type="button"
                     onClick={() => onEdit(project, "general")}
-                    className="p-1.5 sm:p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                    aria-label={`Edit project ${project.title}`}
+                    className="admin-icon-btn inline-flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
                     title="Edit project"
                 >
                     <HiOutlinePencilSquare className="w-4 h-4" />
@@ -131,7 +132,8 @@ export default function ProjectCardItem({
                 <button
                     type="button"
                     onClick={() => onDelete(project)}
-                    className="p-1.5 sm:p-2 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    aria-label={`Delete project ${project.title}`}
+                    className="admin-icon-btn inline-flex items-center justify-center text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                     title="Delete project"
                 >
                     <HiOutlineTrash className="w-4 h-4" />

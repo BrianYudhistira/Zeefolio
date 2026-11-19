@@ -5,7 +5,6 @@ use App\Http\Controllers\Admin\ExperienceController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\SkillController;
-use App\Http\Controllers\Admin\TechStackController;
 use Illuminate\Support\Facades\Route;
 
 // ── Home Profile (permission: home.manage) ─────────────────────────────
@@ -44,22 +43,15 @@ Route::middleware('permission:skills.manage')->group(function () {
         Route::get('/', [SkillController::class, 'index'])->name('index');
         Route::post('/', [SkillController::class, 'store'])->name('store');
         Route::put('/categories', [SkillController::class, 'updateCategories'])->name('categories.update');
+        Route::post('/custom-categories', [SkillController::class, 'storeCustomCategory'])->name('custom-categories.store');
+        Route::put('/custom-categories/{category}', [SkillController::class, 'updateCustomCategory'])->name('custom-categories.update');
+        Route::delete('/custom-categories/{category}', [SkillController::class, 'destroyCustomCategory'])->name('custom-categories.destroy');
         Route::put('/{skill}', [SkillController::class, 'update'])->name('update');
         Route::delete('/{skill}', [SkillController::class, 'destroy'])->name('destroy');
     });
 });
 
-// ── Custom Tech Stacks (permission: tech-stacks.manage) ────────────────
-Route::middleware('permission:tech-stacks.manage')->group(function () {
-    Route::prefix('tech-stacks')->name('tech-stacks.')->group(function () {
-        Route::get('/', [TechStackController::class, 'index'])->name('index');
-        Route::post('/', [TechStackController::class, 'store'])->name('store');
-        Route::put('/{techStack}', [TechStackController::class, 'update'])->name('update');
-        Route::delete('/{techStack}', [TechStackController::class, 'destroy'])->name('destroy');
-    });
-});
-
-// ── Career & Education Experiences (permission: experiences.manage) ──
+// ── Career & Experience History (permission: experiences.manage) ──
 Route::middleware('permission:experiences.manage')
     ->prefix('experiences')
     ->name('experiences.')
@@ -67,7 +59,6 @@ Route::middleware('permission:experiences.manage')
         Route::get('/', [ExperienceController::class, 'index'])->name('index');
         Route::post('/', [ExperienceController::class, 'store'])->name('store');
         Route::put('/{experience}', [ExperienceController::class, 'update'])->name('update');
-        Route::put('/{experience}/move', [ExperienceController::class, 'move'])->name('move');
         Route::delete('/{experience}', [ExperienceController::class, 'destroy'])->name('destroy');
     });
 

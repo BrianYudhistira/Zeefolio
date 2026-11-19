@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Head, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import HeroContentForm from "@/Components/Admin/Home/HeroContentForm";
 import QuickBioSidebar from "@/Components/Admin/Home/QuickBioSidebar";
-import { notifyAdmin } from "@/Utils/notify";
-import { HiOutlineGlobeAlt } from "react-icons/hi2";
 
 export default function HomeIndex({ home = {}, portfolioMeta = {} }) {
     const [passionInput, setPassionInput] = useState("");
     const [imagePreview, setImagePreview] = useState(home?.image_url || null);
+    const blobUrlRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (blobUrlRef.current) {
+                URL.revokeObjectURL(blobUrlRef.current);
+            }
+        };
+    }, []);
 
     const socialLinks = home?.social_media_links || {};
 
@@ -53,8 +60,16 @@ export default function HomeIndex({ home = {}, portfolioMeta = {} }) {
     const handleImageChange = (e) => {
         const file = e.target.files?.[0] || null;
         setData("image", file);
+        if (blobUrlRef.current) {
+            URL.revokeObjectURL(blobUrlRef.current);
+            blobUrlRef.current = null;
+        }
         if (file) {
-            setImagePreview(URL.createObjectURL(file));
+            const url = URL.createObjectURL(file);
+            blobUrlRef.current = url;
+            setImagePreview(url);
+        } else {
+            setImagePreview(home?.image_url || null);
         }
     };
 
@@ -64,48 +79,17 @@ export default function HomeIndex({ home = {}, portfolioMeta = {} }) {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
-                notifyAdmin({
-                    type: "success",
-                    title: "Home Updated",
-                    message: "Home & profile settings have been saved.",
-                });
+                setData((prev) => ({ ...prev, image: null, cv: null }));
             },
         });
     };
 
-    const liveSlug = data.slug || portfolioMeta?.slug;
-
-    const headerActions = (
-        <>
-            <span className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] sm:text-xs text-zinc-300">
-                <span
-                    className={`w-1.5 h-1.5 rounded-full ${data.is_active ? "bg-emerald-400" : "bg-zinc-500"
-                        }`}
-                />
-                {data.is_active ? "Active" : "Draft"}
-            </span>
-
-            {liveSlug && (
-                <a
-                    href={route("portfolio.index", { slug: liveSlug })}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 font-medium text-xs transition-colors"
-                >
-                    <HiOutlineGlobeAlt className="w-3.5 h-3.5" />
-                    <span className="sm:hidden">Live</span>
-                    <span className="hidden sm:inline">Live Site</span>
-                </a>
-            )}
-        </>
-    );
-
     return (
-        <AdminLayout title="Home & Profile" headerActions={headerActions}>
-            <Head title="Home & Profile - Zeefolio" />
+        <>
+            <Head title="Home & Profile" />
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_auto_auto_1fr_auto] gap-4 sm:gap-6 items-start">
                     <HeroContentForm
                         data={data}
                         setData={setData}
@@ -128,6 +112,10 @@ export default function HomeIndex({ home = {}, portfolioMeta = {} }) {
                     />
                 </div>
             </form>
-        </AdminLayout>
+        </>
     );
 }
+
+HomeIndex.layout = (page) => (
+    <AdminLayout title="Home & Profile">{page}</AdminLayout>
+);

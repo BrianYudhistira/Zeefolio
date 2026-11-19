@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Head, router, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
-import { HiOutlinePlus } from "react-icons/hi2";
-import { notifyAdmin } from "@/Utils/notify";
+import MobileFab from "@/Components/Admin/MobileFab";
 import ConfirmDeleteModal from "@/Components/UI/ConfirmDeleteModal";
 import SkillCategoriesCard from "@/Components/Admin/Settings/SkillCategoriesCard";
 import ProjectCategoriesCard from "@/Components/Admin/Settings/ProjectCategoriesCard";
@@ -17,6 +16,7 @@ export default function AdminSettingsIndex({
     const [search, setSearch] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [mobileSection, setMobileSection] = useState("skills");
+    const [activeGroupFocus, setActiveGroupFocus] = useState("skill");
 
     // Global Skill Modal State
     const [skillModalOpen, setSkillModalOpen] = useState(false);
@@ -72,7 +72,6 @@ export default function AdminSettingsIndex({
 
     const handleSaveSkill = (e) => {
         e.preventDefault();
-        const skillName = skillForm.data.name.trim();
 
         if (editingSkill) {
             skillForm.put(
@@ -82,11 +81,6 @@ export default function AdminSettingsIndex({
                     onSuccess: () => {
                         setSkillModalOpen(false);
                         skillForm.reset();
-                        notifyAdmin({
-                            type: "success",
-                            title: "Global Skill Updated",
-                            message: `Global skill "${skillName}" has been updated.`,
-                        });
                     },
                 }
             );
@@ -96,11 +90,6 @@ export default function AdminSettingsIndex({
                 onSuccess: () => {
                     setSkillModalOpen(false);
                     skillForm.reset();
-                    notifyAdmin({
-                        type: "success",
-                        title: "Global Skill Added",
-                        message: `Global skill "${skillName}" has been added.`,
-                    });
                 },
             });
         }
@@ -112,36 +101,23 @@ export default function AdminSettingsIndex({
 
         const isCategory = deleteTarget.type === "category";
         const isProjectCategory = deleteTarget.type === "project_category";
-        const itemName = deleteTarget.item.name;
+        const deletedId = deleteTarget.item.id;
         const routeName = isCategory
-            ? route("admin.settings.categories.destroy", deleteTarget.item.id)
+            ? route("admin.settings.categories.destroy", deletedId)
             : isProjectCategory
-              ? route(
-                    "admin.settings.project-categories.destroy",
-                    deleteTarget.item.id
-                )
-              : route("admin.settings.skills.destroy", deleteTarget.item.id);
+              ? route("admin.settings.project-categories.destroy", deletedId)
+              : route("admin.settings.skills.destroy", deletedId);
 
         router.delete(routeName, {
             preserveScroll: true,
             onSuccess: () => {
                 if (
                     isCategory &&
-                    String(selectedCategory) === String(deleteTarget.item.id)
+                    String(selectedCategory) === String(deletedId)
                 ) {
                     setSelectedCategory("all");
                 }
                 setDeleteTarget(null);
-                setDeleting(false);
-                notifyAdmin({
-                    type: "success",
-                    title: "Deleted",
-                    message: isCategory
-                        ? `Skill category "${itemName}" has been deleted.`
-                        : isProjectCategory
-                          ? `Project category "${itemName}" has been deleted.`
-                          : `Global skill "${itemName}" has been deleted.`,
-                });
             },
             onFinish: () => setDeleting(false),
         });
@@ -152,90 +128,150 @@ export default function AdminSettingsIndex({
             ? "Delete Skill Category"
             : deleteTarget?.type === "project_category"
               ? "Delete Project Category"
-              : "Delete Global Skill";
+              : "Delete Default Skill";
+
+    const scrollToSection = (elementId) => {
+        requestAnimationFrame(() => {
+            document.getElementById(elementId)?.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+            });
+        });
+    };
+
+    const handleSelectSkillCategory = (categoryId) => {
+        setSelectedCategory(categoryId);
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+            setMobileSection("skills");
+            scrollToSection("settings-skills-list");
+        }
+    };
+
+    const isSkillsCardActive =
+        mobileSection === "skills" && selectedCategory === "all";
+    const isSkillGroupsActive =
+        (mobileSection === "categories" && activeGroupFocus === "skill") ||
+        selectedCategory !== "all";
+    const isProjectGroupsActive =
+        mobileSection === "categories" && activeGroupFocus === "project";
 
     return (
-        <AdminLayout
-            title="Settings"
-            headerActions={
-                <button
-                    type="button"
-                    onClick={openCreateSkill}
-                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 font-medium text-xs transition-colors cursor-pointer"
-                >
-                    <HiOutlinePlus className="w-4 h-4" />
-                    <span className="sm:hidden">Add Skill</span>
-                    <span className="hidden sm:inline">Add Global Skill</span>
-                </button>
-            }
-        >
-            <Head title="Admin Settings - Zeefolio" />
+        <>
+            <Head title="Admin Settings" />
 
-            <div className="space-y-4 sm:space-y-6">
+            <div
+                className={`space-y-4 sm:space-y-6 ${
+                    mobileSection === "skills" ? "pb-20 sm:pb-0" : ""
+                }`}
+            >
                 {/* Summary Banner */}
-                <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3.5 sm:p-5 flex items-center justify-between gap-3 sm:gap-4">
+                <div className="admin-card rounded-xl border p-3.5 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800 border border-zinc-700 text-zinc-300">
-                                Admin Configuration
+                                Shared Defaults
                             </span>
                             <h2 className="text-xs sm:text-sm font-semibold text-zinc-100 truncate">
-                                Global Skills & Categories
+                                Default Skills & Categories
                             </h2>
                         </div>
                         <p className="hidden sm:block text-xs text-zinc-400 mt-1">
-                            Configure the default global skills and skill categories available to all members across the platform.
+                            Configure the default skills and skill categories available to all members across the platform.
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                        <div className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-center">
+                    <div className="grid grid-cols-3 sm:flex items-center gap-2 sm:gap-3 shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSelectedCategory("all");
+                                setMobileSection("skills");
+                                scrollToSection("settings-skills-list");
+                            }}
+                            data-active={isSkillsCardActive ? "true" : "false"}
+                            aria-pressed={isSkillsCardActive}
+                            title="Show all default skills"
+                            style={{ "--accent": "var(--orange)" }}
+                            className="admin-well admin-well-btn px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg border text-center cursor-pointer active:scale-[0.98]"
+                        >
                             <p className="text-[10px] sm:text-[11px] text-zinc-500">
                                 Skills
                             </p>
-                            <p className="text-xs sm:text-sm font-semibold text-zinc-100">
+                            <p className="text-xs sm:text-sm font-semibold text-zinc-100 tabular-nums">
                                 {globalSkills.length}
                             </p>
-                        </div>
-                        <div className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-center">
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setActiveGroupFocus("skill");
+                                setMobileSection("categories");
+                                scrollToSection("settings-skill-categories");
+                            }}
+                            data-active={isSkillGroupsActive ? "true" : "false"}
+                            aria-pressed={isSkillGroupsActive}
+                            title="Jump to skill categories"
+                            style={{ "--accent": "var(--indigo)" }}
+                            className="admin-well admin-well-btn px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg border text-center cursor-pointer active:scale-[0.98]"
+                        >
                             <p className="text-[10px] sm:text-[11px] text-zinc-500">
-                                Skill Cats
+                                Skill Groups
                             </p>
-                            <p className="text-xs sm:text-sm font-semibold text-zinc-100">
+                            <p className="text-xs sm:text-sm font-semibold text-zinc-100 tabular-nums">
                                 {categories.length}
                             </p>
-                        </div>
-                        <div className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-center">
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setActiveGroupFocus("project");
+                                setMobileSection("categories");
+                                scrollToSection("settings-project-categories");
+                            }}
+                            data-active={isProjectGroupsActive ? "true" : "false"}
+                            aria-pressed={isProjectGroupsActive}
+                            title="Jump to project categories"
+                            style={{ "--accent": "var(--emerald)" }}
+                            className="admin-well admin-well-btn px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg border text-center cursor-pointer active:scale-[0.98]"
+                        >
                             <p className="text-[10px] sm:text-[11px] text-zinc-500">
-                                Project Cats
+                                Project Groups
                             </p>
-                            <p className="text-xs sm:text-sm font-semibold text-zinc-100">
+                            <p className="text-xs sm:text-sm font-semibold text-zinc-100 tabular-nums">
                                 {projectCategories.length}
                             </p>
-                        </div>
+                        </button>
                     </div>
                 </div>
 
                 {/* Mobile Section Switcher (< lg) */}
-                <div className="lg:hidden grid grid-cols-2 gap-1 p-1 rounded-xl bg-zinc-900/80 border border-zinc-800">
+                <div
+                    role="tablist"
+                    aria-label="Settings views"
+                    className="lg:hidden admin-pill-track grid grid-cols-2 gap-1 p-1 rounded-xl border"
+                >
                     <button
                         type="button"
+                        role="tab"
+                        aria-selected={mobileSection === "skills"}
                         onClick={() => setMobileSection("skills")}
-                        className={`py-2 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                        className={`py-2.5 px-3 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
                             mobileSection === "skills"
-                                ? "bg-zinc-800 text-zinc-100 border border-zinc-700"
-                                : "text-zinc-400 hover:text-zinc-200 border border-transparent"
+                                ? "admin-pill-active"
+                                : "admin-pill-inactive"
                         }`}
                     >
-                        Global Skills ({globalSkills.length})
+                        Default Skills ({globalSkills.length})
                     </button>
                     <button
                         type="button"
+                        role="tab"
+                        aria-selected={mobileSection === "categories"}
                         onClick={() => setMobileSection("categories")}
-                        className={`py-2 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                        className={`py-2.5 px-3 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
                             mobileSection === "categories"
-                                ? "bg-zinc-800 text-zinc-100 border border-zinc-700"
-                                : "text-zinc-400 hover:text-zinc-200 border border-transparent"
+                                ? "admin-pill-active"
+                                : "admin-pill-inactive"
                         }`}
                     >
                         Categories (
@@ -252,33 +288,44 @@ export default function AdminSettingsIndex({
                                 : "hidden lg:block"
                         }`}
                     >
-                        <SkillCategoriesCard
-                            categories={categories}
-                            globalSkillsCount={globalSkills.length}
-                            selectedCategory={selectedCategory}
-                            onSelectCategory={setSelectedCategory}
-                            onDeleteCategory={(cat) =>
-                                setDeleteTarget({
-                                    type: "category",
-                                    item: cat,
-                                })
-                            }
-                        />
+                        <div
+                            id="settings-skill-categories"
+                            className="scroll-mt-20"
+                        >
+                            <SkillCategoriesCard
+                                categories={categories}
+                                globalSkillsCount={globalSkills.length}
+                                selectedCategory={selectedCategory}
+                                onSelectCategory={handleSelectSkillCategory}
+                                onDeleteCategory={(cat) =>
+                                    setDeleteTarget({
+                                        type: "category",
+                                        item: cat,
+                                    })
+                                }
+                            />
+                        </div>
 
-                        <ProjectCategoriesCard
-                            projectCategories={projectCategories}
-                            onDeleteProjectCategory={(cat) =>
-                                setDeleteTarget({
-                                    type: "project_category",
-                                    item: cat,
-                                })
-                            }
-                        />
+                        <div
+                            id="settings-project-categories"
+                            className="scroll-mt-20"
+                        >
+                            <ProjectCategoriesCard
+                                projectCategories={projectCategories}
+                                onDeleteProjectCategory={(cat) =>
+                                    setDeleteTarget({
+                                        type: "project_category",
+                                        item: cat,
+                                    })
+                                }
+                            />
+                        </div>
                     </div>
 
                     {/* Right Column: Global Default Skills List */}
                     <div
-                        className={`lg:col-span-8 ${
+                        id="settings-skills-list"
+                        className={`lg:col-span-8 scroll-mt-20 ${
                             mobileSection === "skills"
                                 ? "block"
                                 : "hidden lg:block"
@@ -298,10 +345,15 @@ export default function AdminSettingsIndex({
                                     item: skill,
                                 })
                             }
+                            onCreateSkill={openCreateSkill}
                         />
                     </div>
                 </div>
             </div>
+
+            {mobileSection === "skills" && (
+                <MobileFab onClick={openCreateSkill} label="Add Skill" />
+            )}
 
             <GlobalSkillModal
                 open={skillModalOpen}
@@ -320,6 +372,10 @@ export default function AdminSettingsIndex({
                 onClose={() => setDeleteTarget(null)}
                 onConfirm={confirmDelete}
             />
-        </AdminLayout>
+        </>
     );
 }
+
+AdminSettingsIndex.layout = (page) => (
+    <AdminLayout title="Settings">{page}</AdminLayout>
+);
